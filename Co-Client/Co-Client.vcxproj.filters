@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Client">
+      <UniqueIdentifier>{31c07b23-61f8-4aa4-bfc8-56188a4015a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLWindow">
+      <UniqueIdentifier>{bf007861-8245-4a17-a1b8-a76bf2bec2b4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Client.cpp">
+      <Filter>Client</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="GLWindow.cpp">
+      <Filter>GLWindow</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Client.hpp">
+      <Filter>Client</Filter>
+    </ClInclude>
+    <ClInclude Include="GLWindow.hpp">
+      <Filter>GLWindow</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

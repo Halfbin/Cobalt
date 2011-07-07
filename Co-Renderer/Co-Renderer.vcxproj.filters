@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="API">
+      <UniqueIdentifier>{d7d0519e-0724-4de8-9796-94015d4fb6da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLBuffer">
+      <UniqueIdentifier>{0e8abb45-c3f3-46ab-8619-00359baf8531}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLCompilation">
+      <UniqueIdentifier>{6bdd161c-33d1-4e68-b0e9-a91c4dea27d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLTexture">
+      <UniqueIdentifier>{cd7ecfb6-3f61-4cd1-88e4-a764e4731360}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Co\IxRenderer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Frame.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\IxRenderDevice.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\IxGeomBuffer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\IxGeomCompilation.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\IxTexture.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.hpp" />
+    <ClInclude Include="GLBuffer.hpp">
+      <Filter>GLBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="GLCompilation.hpp">
+      <Filter>GLCompilation</Filter>
+    </ClInclude>
+    <ClInclude Include="GLTexture.hpp">
+      <Filter>GLTexture</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GLTexture.cpp">
+      <Filter>GLTexture</Filter>
+    </ClCompile>
+    <ClCompile Include="GLCompilation.cpp">
+      <Filter>GLCompilation</Filter>
+    </ClCompile>
+    <ClCompile Include="GLBuffer.cpp">
+      <Filter>GLBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="GLRenderer.cpp" />
+  </ItemGroup>
+</Project>

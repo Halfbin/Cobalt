@@ -1,0 +1,16 @@
+*.exe
+*.lib
+*.obj
+*.o
+*.a
+*.dll
+*.sdf
+*.suo
+Debug/
+*/Debug/
+*.log
+*.vcxproj.user
+ipch/
+*/ipch/
+thumbs.db
+desktop.ini
