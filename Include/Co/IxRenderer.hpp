@@ -12,13 +12,14 @@ namespace Co
 {
   class Clock;
   class Frame;
+  class Log;
 
   class IxRenderer
   {
   public:
-    enum : u64 { id = 0x98c54ca97b88cd35ull };
+    static const u64 id = 0x98c54ca97b88cd35ull;
 
-    virtual void init (void* target, Clock* clock) = 0;
+    virtual void init (void* target, Clock& clock, Log& log) = 0;
     
     virtual void start () = 0;
     virtual void stop  () = 0;

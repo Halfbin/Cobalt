@@ -11,25 +11,46 @@
 #include <Co/IxRenderer.hpp>
 #include <Co/IxEngine.hpp>
 #include <Co/IxLoader.hpp>
+#include <Co/Library.hpp>
 #include <Co/IxGame.hpp>
 
 #include <Rk/ShortString.hpp>
 
-namespace
-{
-  extern "C"
-  {
-    __declspec(dllimport) void __stdcall PostQuitMessage (u32);
-  }
+#include "GLWindow.hpp"
+#include "Common.hpp"
 
-  enum
-  {
-    wm_close = 0x10
-  };
+struct Point
+{
+  i32 x, y;
+};
+
+struct Message
+{
+  void* window;
+  u32   message;
+  uptr  wp;
+  iptr  lp;
+  u32   time;
+  Point cursor;
+};
+
+extern "C"
+{
+  __declspec(dllimport) void __stdcall PostQuitMessage  (u32);
+  __declspec(dllimport) i32  __stdcall PeekMessageW     (Message*, void*, u32, u32, u32);
+  __declspec(dllimport) i32  __stdcall DispatchMessageW (const Message*);
 }
+
+enum WinAPIConstants
+{
+  wm_size  = 0x05,
+  wm_close = 0x10
+};
 
 namespace Co
 {
+  extern Log log;
+
   iptr Client::handler_proxy (GLWindow* win, u32 message, uptr wp, iptr lp)
   {
     auto client = (Client*) win -> get_user ();
@@ -41,7 +62,11 @@ namespace Co
     switch (message)
     {
       case wm_close:
-        PostQuitMessage (0);
+        engine -> terminate ();
+      break;
+
+      case wm_size:
+        render_device -> set_size (lp & 0xffff, (lp >> 16) & 0xffff);
       break;
 
       default:
@@ -51,11 +76,11 @@ namespace Co
     return 0;
   }
 
-  Client::Client (Rk::StringRef config_path) try
+  Client::Client (Rk::StringRef config_path)
   {
     // Parse configuration
     //ConfigReader config (config_path);
-    Rk::ShortString <256> game_path ("../");
+    Rk::ShortString <512> game_path ("../");
     game_path += "SH/";//config ["Client.Game"].as_string ("SH");
 
     // Load subsystem modules
@@ -70,20 +95,18 @@ namespace Co
     engine = engine_module.expose <IxEngine> ();
 
     game_module.load (game_path + "Binaries/Co-Game" CO_SUFFIX ".dll");
-    game = game_module.expose <IxGame> ();
+    game    = game_module.expose <IxGame>  ();
+    library = game_module.expose <Library> ();
 
     // Initialize subsystems
     window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
+    
+    renderer -> init (window.get_handle (), clock, log);
+    loader   -> init (*render_device, log, game_path);
+    engine   -> init (*renderer, *loader, clock);
+    game     -> init (*engine);
 
-    renderer -> init (window.get_handle (), &clock);
-    loader   -> init (render_device);
-    engine   -> init (renderer, loader, &clock);
-    game     -> init (engine);
-  }
-  catch (...)
-  {
-    Rk::log_frame ("Co::Client::Client")
-      << " config_path: " << config_path;
+    engine -> register_classes (library -> classes, library -> class_count);
   }
 
   Client::~Client ()
@@ -94,18 +117,31 @@ namespace Co
     loader   -> stop ();
   }
 
-  void Client::run () try
+  void Client::run ()
   {
     loader   -> start ();
     renderer -> start ();
-    game     -> start ();
+    game     -> start (*engine);
+
     window.show ();
-    engine -> run (game);
-  }
-  catch (...)
-  {
-    Rk::log_frame ("Co::Client::run");
-    throw;
-  }
+
+    float next_update = engine -> start ();
+
+    for (;;)
+    {
+      Message msg;
+      while (PeekMessageW (&msg, 0, 0, 0, 1))
+      {
+        DispatchMessageW (&msg);
+        if (clock.time () + 0.01 >= next_update)
+          break;
+      }
+
+      engine -> wait ();
+
+      if (!engine -> update (next_update))
+        break;
+    }
+  } // run
 
 } // namespace Co

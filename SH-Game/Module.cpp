@@ -3,12 +3,13 @@
 // All Rights Reserved.
 //
 
-#include <Co/IxGame.hpp>
+#include <Rk/Expose.hpp>
 
-extern Co::IxGame* ix_game;
+void expose_game (u64, void**);
+void expose_lib  (u64, void**);
 
-extern "C" __declspec(dllexport) void* __cdecl ix_expose (u64 ixid)
+IX_EXPOSE (void** out, u64 ixid)
 {
-  if (ixid == Co::IxGame::id) return ix_game;
-  else return 0;
+  expose_game (ixid, out);
+  expose_lib  (ixid, out);
 }

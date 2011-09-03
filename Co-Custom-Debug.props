@@ -13,7 +13,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)Include;D:\Halfbin\Projects\Rk\Include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link />
     <Link>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
     </Link>

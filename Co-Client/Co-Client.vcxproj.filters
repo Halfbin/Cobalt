@@ -24,5 +24,6 @@
     <ClInclude Include="GLWindow.hpp">
       <Filter>GLWindow</Filter>
     </ClInclude>
+    <ClInclude Include="Common.hpp" />
   </ItemGroup>
 </Project>

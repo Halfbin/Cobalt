@@ -3,5 +3,7 @@
   <ItemGroup>
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Library.cpp" />
+    <ClCompile Include="TestEntity.cpp" />
   </ItemGroup>
 </Project>

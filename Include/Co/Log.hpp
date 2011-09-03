@@ -6,10 +6,10 @@
 #ifndef CO_H_LOG
 #define CO_H_LOG
 
-#include <Rk/Stream.hpp>
+#include <Rk/VirtualOutStream.hpp>
+#include <Rk/NoCopy.hpp>
 #include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
-#include <Rk/StringRef.hpp>
 
 namespace Co
 {
@@ -24,22 +24,34 @@ namespace Co
   }
 
   class Log :
-    public Rk::IxLockedOutStream
+    public Rk::IxLockedOutStreamImpl,
+    public Rk::LockedOutStreamInterface <char, Log>
   {
+    typedef Rk::LockedOutStreamInterface <char, Log>
+      Interface;
+    
     Rk::Mutex mutex;
     Rk::File  file;
     char      buf [64];
 
     // No copy or move
-    Log             (const Log&) { }
-    Log& operator = (const Log&) { }
-
+    Rk::NoCopy no_copy;
+    
+  public:
+    #pragma warning (push)
+    #pragma warning (disable: 4355)
+      Log (const char* path) :
+        Interface (*this),
+        file      (path, file.open_replace_or_create)
+      { }
+    #pragma warning (pop)
+    
     virtual void write_chars (Rk::StringRef chars)
     {
       file.write (chars.data (), chars.length ());
     }
     
-    virtual void write_int (u64 magnitude, bool negative, uint base)
+    virtual void write_int (u64 magnitude, bool negative, uint base, uint width)
     {
       if (base < 2 || base > 36) return;
       char* p = buf;
@@ -67,16 +79,11 @@ namespace Co
       }
     }
     
-    virtual void flush ()
+    virtual void do_flush ()
     {
       file.flush ();
     }
-    
-  public:
-    Log (const char* path) :
-      file (path, file.open_replace_or_create)
-    { }
-    
+
     // Sync
     virtual void lock ()
     {
@@ -93,20 +100,8 @@ namespace Co
       return mutex.try_lock ();
     }
     
-    // No copy or move
-    //Log             (const Log&) = delete;
-    //Log& operator = (const Log&) = delete;
-    
-    /*template <typename ...P>
-    void operator () (P... params)
-    {
-      auto lock = get_lock ();
-      IxOutStream::operator () (std::forward <P> (params) ..., '\n');
-      flush ();
-    }*/
-    
-  };
+  }; // class Log
 
-}
+} // namespace Co
 
 #endif

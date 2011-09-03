@@ -11,16 +11,16 @@
 
 namespace Co
 {
-  enum : u8
+  enum AttribIndex : u8
   {
     attrib_position = 0,
-    attrib_tex_coords,
+    attrib_tcoords,
     attrib_normal
   };
   
-  enum : u8
+  enum AttribType : u8
   {
-    attrib_i8,
+    attrib_i8 = 0,
     attrib_i16,
     attrib_i32,
     attrib_f32

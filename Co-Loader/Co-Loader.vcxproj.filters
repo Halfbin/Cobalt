@@ -12,6 +12,12 @@
     <ClInclude Include="..\Include\Co\IxResource.hpp">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\IxLoadContext.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="IxDataSource.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Loader.cpp" />

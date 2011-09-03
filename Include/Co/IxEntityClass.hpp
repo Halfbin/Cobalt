@@ -6,18 +6,27 @@
 #ifndef CO_H_IXENTITYCLASS
 #define CO_H_IXENTITYCLASS
 
+#include <Rk/StringRef.hpp>
+#include <Rk/IxUnique.hpp>
+
 namespace Co
 {
   class IxPropMap;
-  class IxEntImpl;
+  class IxLoadContext;
+  class IxEntity;
 
   class IxEntityClass
   {
   public:
-    u64 id;
+    Rk::StringRef name;
 
-    virtual IxEntImpl* create (IxPropMap* props, IxEntity* parent) = 0;
+    virtual IxEntity* create (IxLoadContext& context, IxPropMap* props) = 0;
 
+  protected:
+    IxEntityClass (Rk::StringRef new_name) :
+      name (new_name)
+    { }
+    
   };
 
 }

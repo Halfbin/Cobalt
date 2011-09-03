@@ -15,6 +15,8 @@ namespace Co
     public Rk::IxUnique
   {
   public:
+    typedef Rk::IxUniquePtr <IxGeomBuffer> Ptr;
+
     virtual void load_data (const void* data, uptr size) = 0;
 
   };

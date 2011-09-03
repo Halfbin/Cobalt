@@ -9,66 +9,62 @@
 // Uses
 #include <Rk/Exception.hpp>
 
-namespace
+typedef iptr (__stdcall *WndProc) (void*, u32, uptr, iptr);
+
+struct WndClassExW
 {
-  typedef iptr (__stdcall *WndProc) (void*, u32, uptr, iptr);
+  u32           size,
+                style;
+  WndProc       window_proc;
+  u32           class_extra,
+                window_extra;
+  void          *instance,
+                *icon,
+                *cursor,
+                *background_brush;
+  const wchar_t *menu_name,
+                *class_name;
+  void*         small_icon;
+};
 
-  struct WndClassExW
-  {
-    u32           size,
-                  style;
-    WndProc       window_proc;
-    u32           class_extra,
-                  window_extra;
-    void          *instance,
-                  *icon,
-                  *cursor,
-                  *background_brush;
-    const wchar_t *menu_name,
-                  *class_name;
-    void*         small_icon;
-  };
+struct Rect
+{
+  i32 left, top, right, bottom;
+};
 
-  struct Rect
-  {
-    i32 left, top, right, bottom;
-  };
-
-  enum
-  {
-    ws_maximizebox  = 0x00010000L,
-    ws_minimizebox  = 0x00020000L,
-    ws_thickframe   = 0x00040000L,
-    ws_sysmenu      = 0x00080000L,
-    ws_border       = 0x00800000L,
-    ws_dlgframe     = 0x00400000L,
-    ws_clipchildren = 0x02000000L,
-    ws_clipsiblings = 0x04000000L,
-    ws_popup        = 0x80000000L,
-    ws_caption      = ws_border | ws_dlgframe,
+enum WinAPIConstants
+{
+  ws_maximizebox  = 0x00010000L,
+  ws_minimizebox  = 0x00020000L,
+  ws_thickframe   = 0x00040000L,
+  ws_sysmenu      = 0x00080000L,
+  ws_border       = 0x00800000L,
+  ws_dlgframe     = 0x00400000L,
+  ws_clipchildren = 0x02000000L,
+  ws_clipsiblings = 0x04000000L,
+  ws_popup        = 0x80000000L,
+  ws_caption      = ws_border | ws_dlgframe,
     
-    ws_ex_topmost = 0x00000008L,
+  ws_ex_topmost = 0x00000008L,
     
-    idi_application = 32512,
-    idc_arrow = 32512,
+  idi_application = 32512,
+  idc_arrow = 32512,
     
-    gwlp_userdata = -21,
+  gwlp_userdata = -21,
 
-    sm_cxscreen = 0,
-    sm_cyscreen = 1,
+  sm_cxscreen = 0,
+  sm_cyscreen = 1,
     
-    sw_hide = 0,
-    sw_show = 5,
+  sw_hide = 0,
+  sw_show = 5,
     
-    wm_size = 5,
+  wm_size = 5,
 
-    windowed_style      = ws_caption | ws_thickframe | ws_sysmenu | ws_minimizebox | ws_maximizebox,
-    windowed_style_ex   = 0,
-    fullscreen_style    = ws_popup,
-    fullscreen_style_ex = ws_ex_topmost
-  };
-
-} // namespace
+  windowed_style      = ws_caption | ws_thickframe | ws_sysmenu | ws_minimizebox | ws_maximizebox,
+  windowed_style_ex   = 0,
+  fullscreen_style    = ws_popup,
+  fullscreen_style_ex = ws_ex_topmost
+};
 
 extern "C"
 {

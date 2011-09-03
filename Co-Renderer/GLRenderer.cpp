@@ -4,317 +4,212 @@
 //
 
 // Implements
-#include <Co/IxRenderDevice.hpp>
-#include <Co/IxRenderer.hpp>
-#include <Co/Frame.hpp>
+#include "GLRenderer.hpp"
 
 // Uses
-#include <Co/IxGeomBuffer.hpp>
-#include <Co/IxTexture.hpp>
+#include <Co/IxGeomCompilation.hpp>
 #include <Co/Clock.hpp>
 
-#include <Rk/FixedQueue.hpp>
-#include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
-#include <Rk/Thread.hpp>
-#include <Rk/Mutex.hpp>
+#include <Rk/File.hpp>
 
-#include <gl/glew.h>
-
-#include "GLCompilation.hpp"
-#include "GLTexture.hpp"
-#include "GLBuffer.hpp"
+#include "GL.hpp"
+#include "GLTexImage.hpp"
 
 //
 // = WGL stuff =========================================================================================================
 //
-namespace
+struct PixelFormatDescriptor
 {
-  struct PixelFormatDescriptor
-  {
-    i16 size, version;
-    u32 flags;
-    u8  pixel_type,
-        color_bits, red_bits, red_shift, green_bits, green_shift, blue_bits, blue_shift,
-        alpha_bits, alpha_shift,
-        accum_bits, accum_red_bits, accum_green_bits, accum_blue_bits, accum_alpha_bits,
-        depth_bits, stencil_bits,
-        aux_buffers,
-        layer_type,
-        reserved;
-    u32 layer_mask, visible_mask, damage_mask;
-  };
-  
-  enum
-  {
-    pfd_support_opengl      = 0x00000020,
-    pfd_draw_to_window      = 0x00000004,
-    pfd_doublebuffer        = 0x00000001,
-    pfd_support_gdi         = 0x00000010,
-    pfd_generic_format      = 0x00000040,
-    pfd_generic_accelerated = 0x00001000,
-    pfd_swap_copy           = 0x00000400,
-    pfd_need_palette        = 0x00000080,
-    pfd_need_system_palette = 0x00000100,
+  i16 size, version;
+  u32 flags;
+  u8  pixel_type,
+      color_bits, red_bits, red_shift, green_bits, green_shift, blue_bits, blue_shift,
+      alpha_bits, alpha_shift,
+      accum_bits, accum_red_bits, accum_green_bits, accum_blue_bits, accum_alpha_bits,
+      depth_bits, stencil_bits,
+      aux_buffers,
+      layer_type,
+      reserved;
+  u32 layer_mask, visible_mask, damage_mask;
+};
+
+enum PFDConstants
+{
+  pfd_support_opengl      = 0x00000020,
+  pfd_draw_to_window      = 0x00000004,
+  pfd_doublebuffer        = 0x00000001,
+  pfd_support_gdi         = 0x00000010,
+  pfd_generic_format      = 0x00000040,
+  pfd_generic_accelerated = 0x00001000,
+  pfd_swap_copy           = 0x00000400,
+  pfd_need_palette        = 0x00000080,
+  pfd_need_system_palette = 0x00000100,
       
-    pfd_type_rgba = 0,
+  pfd_type_rgba = 0,
       
-    pfd_main_plane = 0
-  };
-  
-  typedef void  (__stdcall *GLFunction) ();
-  typedef void* (__stdcall *WGLCCA)     (void*, void*, const int*);
+  pfd_main_plane = 0
+};
 
-  extern "C"
-  {
-    __declspec(dllimport) GLFunction __stdcall wglGetProcAddress   (const char*);
-    __declspec(dllimport) void*      __stdcall GetDC               (void*);
-    __declspec(dllimport) i32        __stdcall ChoosePixelFormat   (void*, PixelFormatDescriptor*);
-    __declspec(dllimport) i32        __stdcall DescribePixelFormat (void*, i32, u32, PixelFormatDescriptor*);
-    __declspec(dllimport) i32        __stdcall SetPixelFormat      (void*, i32, PixelFormatDescriptor*);
-    __declspec(dllimport) void*      __stdcall wglCreateContext    (void*);
-    __declspec(dllimport) i32        __stdcall wglMakeCurrent      (void*, void*);
-    __declspec(dllimport) void       __stdcall wglDeleteContext    (void*);
-    __declspec(dllimport) void       __stdcall ReleaseDC           (void*, void*);
-    __declspec(dllimport) void       __stdcall SwapBuffers         (void*);
-  }
+typedef void  (__stdcall *GLFunction) ();
 
-  enum
-  {
-    WGL_CONTEXT_MAJOR_VERSION    = 0x2091,
-    WGL_CONTEXT_MINOR_VERSION    = 0x2092,
-    WGL_CONTEXT_PROFILE_MASK     = 0x9126,
-    WGL_CONTEXT_FLAGS            = 0x2094,
-    WGL_CONTEXT_DEBUG_BIT        = 0x0001,
-    WGL_CONTEXT_CORE_PROFILE_BIT = 0x00000001
-  };
-
+extern "C"
+{
+  __declspec(dllimport) GLFunction __stdcall wglGetProcAddress   (const char*);
+  __declspec(dllimport) i32        __stdcall wglMakeCurrent      (void*, void*);
+  __declspec(dllimport) void       __stdcall wglDeleteContext    (void*);
+  __declspec(dllimport) void*      __stdcall GetDC               (void*);
+  __declspec(dllimport) void       __stdcall ReleaseDC           (void*, void*);
+  __declspec(dllimport) i32        __stdcall ChoosePixelFormat   (void*, PixelFormatDescriptor*);
+  __declspec(dllimport) i32        __stdcall DescribePixelFormat (void*, i32, u32, PixelFormatDescriptor*);
+  __declspec(dllimport) i32        __stdcall SetPixelFormat      (void*, i32, PixelFormatDescriptor*);
+  __declspec(dllimport) void*      __stdcall wglCreateContext    (void*);
 }
 
 namespace Co
 {
-namespace
-{
   //
-  // = OpenGL version ==================================================================================================
+  // Instance
   //
-  enum
-  {
-    opengl_major = 3,
-    opengl_minor = 3
-  };
-
-  //
-  // = GLContext =======================================================================================================
-  //
-  class GLContext :
-    public IxRenderContext
-  {
-    Rk::Mutex& mutex;
-    void*      dc;
-    void*      rc;
-
-  public:
-    typedef Rk::IxUniquePtr <GLContext> Ptr;
-
-    GLContext (Rk::Mutex& device_mutex, WGLCCA wglCCA, void* shared_dc, void* shared_rc, void* target);
-
-    void present ();
-
-    virtual IxGeomBuffer*      create_buffer      (uptr size, const void* data);
-    virtual IxGeomCompilation* create_compilation (const GeomAttrib*, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices);
-    virtual IxTexture*         create_texture     (uint level_count, bool wrap);
-
-    ~GLContext ();
-    virtual void destroy ();
-
-  }; // class GLContext
-  
-  //
-  // Constructor
-  //
-  GLContext::GLContext (Rk::Mutex& device_mutex, WGLCCA wglCCA, void* shared_dc, void* shared_rc, void* target) try :
-    mutex (device_mutex)
-  {
-    auto lock = mutex.get_lock ();
-      
-    int attribs [] = {
-      WGL_CONTEXT_MAJOR_VERSION, opengl_major,
-      WGL_CONTEXT_MINOR_VERSION, opengl_minor,
-      WGL_CONTEXT_PROFILE_MASK,  WGL_CONTEXT_CORE_PROFILE_BIT, // Ignored for 3.1 and earlier
-      WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
-      0,                         0
-    };
-      
-    rc = wglCCA (shared_dc, shared_rc, attribs);
-    if (!rc)
-      throw Rk::Exception ("Error creating render context");
-      
-    dc = GetDC (target);
-    if (!dc)
-      throw Rk::Exception ("Error retrieving device context");
-      
-    bool ok = wglMakeCurrent (dc, rc);
-    if (!ok)
-      throw Rk::Exception ("Error making render context current");
-  }
-  catch (...)
-  {
-    Rk::log_frame ("Co::GLContext::GLContext");
-
-    if (dc)
-      ReleaseDC (target, dc);
-
-    if (rc)
-      wglDeleteContext (rc);
-  }
-
-  //
-  // Present
-  //
-  void GLContext::present ()
-  {
-    glFlush ();
-    SwapBuffers (dc);
-  }
-
-  //
-  // Buffer creation
-  //
-  IxGeomBuffer* GLContext::create_buffer (uptr size, const void* data)
-  {
-    return new GLBuffer (size, data);
-  }
-
-  //
-  // Compilation creation
-  //
-  IxGeomCompilation* GLContext::create_compilation (
-    const GeomAttrib* attribs, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices)
-  {
-    return new GLCompilation (attribs, attrib_count, static_cast <GLBuffer*> (elements), static_cast <GLBuffer*> (indices));
-  }
-
-  //
-  // Texture creation
-  //
-  IxTexture* GLContext::create_texture (uint level_count, bool wrap)
-  {
-    return new GLTexture (level_count, wrap);
-  }
-
-  //
-  // Destructors
-  //
-  GLContext::~GLContext ()
-  {
-    if (dc && rc)
-    {
-      auto lock = mutex.get_lock ();
-      wglMakeCurrent (0, 0);
-      wglDeleteContext (rc);
-    }
-  }
-
-  void GLContext::destroy ()
-  {
-    delete this;
-  }
-
-  //
-  // = GLFrame =========================================================================================================
-  //
-  class GLFrame :
-    public Frame
-  {
-  public:
-    uint id;
-    float time, prev_time;
-
-    void render (float alpha);
-    
-    u32 reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id);
-
-  }; // class GLFrame
-
-  void GLFrame::render (float alpha)
-  {
-    glClearColor (0.0f, 0.03f, 0.2f, 1.0f);
-    glViewport (0, 0, width, height);
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-  }
-
-  u32 GLFrame::reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id)
-  {
-    prev_time = new_prev_time;
-    time      = new_current_time;
-
-    point_geoms_back_index = 0;
-    meshes_back_index      = 0;
-    ui_rects_back_index    = 0;
-    lights_back_index      = 0;
-    materials_back_index   = 0;
-    
-    u32 old_id = id;
-    new_id = (id += id_advance);
-    return old_id;
-  }
-
-  //
-  // = GLRenderer ======================================================================================================
-  //
-  class GLRenderer :
-    public IxRenderer,
-    public IxRenderDevice
-  {
-    // Frame queuing
-    enum { frame_count = 10 };
-    GLFrame frames [frame_count];
-    Rk::FixedQueue <GLFrame*, frame_count> free_frames;
-    Rk::Mutex                              free_frames_mutex;
-    Rk::FixedQueue <GLFrame*, frame_count> ready_frames;
-    Rk::Mutex                              ready_frames_mutex;
-
-    // Render device
-    void*      target;
-    Clock*     clock;
-    Rk::Thread thread;
-    void*      shared_dc;
-    int        format;
-    void*      shared_rc;
-    WGLCCA     wglCreateContextAttribs;
-    Rk::Mutex  mutex;
-
-    void       loop ();
-    GLContext* create_context_impl ();
-
-    virtual void             init           (void* new_target, Clock* new_clock);
-    virtual IxRenderContext* create_context ();
-    virtual void             start          ();
-    virtual void             stop           ();
-    virtual Frame*           begin_frame    (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id);
-    virtual void             submit_frame   (Frame*);
-
-  public:
-    GLRenderer ();
-
-    void expose (u64 ixid, void*& result);
-
-  } renderer;
+  GLRenderer GLRenderer::instance;
 
   //
   // Constructor
   //
   GLRenderer::GLRenderer ()
   {
-    target = 0;
-    clock  = 0;
+    target    = 0;
+    clock     = 0;
     shared_dc = 0;
-    format = 0;
+    format    = 0;
     shared_rc = 0;
     wglCreateContextAttribs = 0;
+  }
+
+  //
+  // Destructor
+  //
+  GLRenderer::~GLRenderer ()
+  {
+    cleanup ();
+  }
+
+  //
+  // Shader init
+  //
+  u32 GLRenderer::load_shader (const char* path, uint type)
+  {
+    Rk::File file (path, Rk::File::open_read_existing);
+    u32 size = u32 (file.size ());
+    std::unique_ptr <char []> buffer (new char [size]);
+    file.read (buffer.get (), size);
+    
+    u32 shader = glCreateShader (type);
+    check_gl ("glCreateShader");
+
+    const char* data = buffer.get ();
+    u32 len = size;
+    glShaderSource (shader, 1, &data, (const i32*) &len);
+    check_gl ("glShaderSource");
+
+    glCompileShader (shader);
+    check_gl ("glCompileShader");
+
+    glGetShaderiv (shader, GL_INFO_LOG_LENGTH, (i32*) &len);
+    check_gl ("glGetShaderiv (GL_INFO_LOG_LENGTH)");
+
+    if (len > 1)
+    {
+      if (len > size)
+        buffer.reset (new char [len]);
+      glGetShaderInfoLog (shader, len, (i32*) &len, buffer.get ());
+      check_gl ("glGetShaderInfoLog");
+      
+      log () << "- Infolog from shader compiler:\n"
+             << Rk::StringRef (buffer.get (), len - 1)
+             << '\n';
+    }
+
+    int ok;
+    glGetShaderiv (shader, GL_COMPILE_STATUS, &ok);
+    check_gl ("glGetShaderiv (GL_COMPILE_STATUS)");
+
+    if (!ok)
+      throw Rk::Exception ("Error compiling shader");
+
+    return shader;
+  }
+
+  static void link_attrib (u32 program, const char* name, u32 index)
+  {
+    glBindAttribLocation (program, index, name);
+    check_gl ("glBindAttribLocation");
+  }
+
+  static u32 link_uniform (u32 program, const char* name)
+  {
+    u32 uniform = glGetUniformLocation (program, name);
+    check_gl ("glGetUniformLocation");
+    if (uniform == 0xffffffff)
+      throw Rk::Exception ("Uniform not present or inactive");
+    return uniform;
+  }
+
+  void GLRenderer::load_program ()
+  {
+    log () << "- GLRenderer loading shaders\n";
+
+    u32 vertex_shader   = load_shader ("../Common/Shaders/Main-Vertex.glsl",   GL_VERTEX_SHADER  );
+    u32 fragment_shader = load_shader ("../Common/Shaders/Main-Fragment.glsl", GL_FRAGMENT_SHADER);
+
+    program = glCreateProgram ();
+    check_gl ("glCreateProgram");
+
+    glAttachShader (program, vertex_shader);
+    check_gl ("glAttachShader (vertex_shader)");
+
+    glAttachShader (program, fragment_shader);
+    check_gl ("glAttachShader (fragment_shader)");
+
+    link_attrib  (program, "attrib_position", attrib_position);
+    link_attrib  (program, "attrib_normal",   attrib_normal  );
+    link_attrib  (program, "attrib_tcoords",  attrib_tcoords );
+
+    glLinkProgram (program);
+    check_gl ("glLinkProgram");
+
+    u32 len;
+    glGetProgramiv (program, GL_INFO_LOG_LENGTH, (i32*) &len);
+    check_gl ("glGetProgramiv (GL_INFO_LOG_LENGTH)");
+
+    if (len > 1)
+    {
+      std::unique_ptr <char []> buffer (new char [len]);
+      glGetProgramInfoLog (program, len, (i32*) &len, buffer.get ());
+      check_gl ("glGetProgramInfoLog");
+
+      log () << "- Infolog from program linker:\n"
+             << Rk::StringRef (buffer.get (), len - 1)
+             << '\n';
+    }
+
+    int ok;
+    glGetProgramiv (program, GL_LINK_STATUS, &ok);
+    check_gl ("glGetProgramiv (GL_LINK_STATUS)");
+
+    model_to_world = link_uniform (program, "model_to_world");
+    world_to_clip  = link_uniform (program, "world_to_clip" );
+    world_to_eye   = link_uniform (program, "world_to_eye"  );
+
+    glUseProgram (program);
+    check_gl ("glUseProgram");
+
+    u32 tex_diffuse = link_uniform (program, "tex_diffuse");
+    glUniform1i (tex_diffuse, texunit_diffuse);
+    check_gl ("glUniform1i");
+
+    if (!ok)
+      throw Rk::Exception ("Error linking shader program");
   }
 
   //
@@ -328,16 +223,28 @@ namespace
 
   void GLRenderer::loop () try
   {
+    log () << "- GLRenderer running\n";
+
     GLContext::Ptr context = create_context_impl ();
 
     // Set up shader
-    // ...
+    if (!opengl_compat)
+      load_program ();
 
     SetThreadPriority (GetCurrentThread (), 31); // THREAD_PRIORITY_TIME_CRITICAL
 
+    if (wglewIsSupported ("WGL_EXT_swap_control"))
+    {
+      auto wglSwapInterval = (i32 (__stdcall*) (i32)) wglGetProcAddress ("wglSwapIntervalEXT");
+      wglSwapInterval (1);
+    }
+
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_CULL_FACE);
+
     uint frames = 0;
     GLFrame* frame = 0;
-
+    
     // The real loop
     for (;;)
     {
@@ -372,35 +279,36 @@ namespace
       if (now >= frame -> prev_time)
         alpha = (now - frame -> prev_time) / (frame -> time - frame -> prev_time);
       
-      frame -> render (alpha);
+      frame -> render (alpha, model_to_world, world_to_clip, world_to_eye);
       
       context -> present ();
       frames++;
     }
   }
+  catch (const std::exception& e)
+  {
+    log () << e.what () << '\n'
+           << "from Co::GLRenderer::loop\n";
+  }
   catch (...)
   {
-    Rk::log_frame ("Co::GLRenderer::loop");
-    throw;
+    log () << "Exception from Co::GLRenderer::loop\n";
   }
 
   //
   // Initialization
   //
-  void GLRenderer::init (void* new_target, Clock* new_clock) try
+  void GLRenderer::init (void* new_target, Clock& new_clock, Log& new_logger) try
   {
-    if (target)
-      throw Rk::Violation ("Renderer already initialized");
-
-    if (!new_target)
-      throw Rk::Violation ("target is null");
-
-    if (!new_clock)
-      throw Rk::Violation ("clock is null");
+    Rk::require (!target, "Renderer already initialized");
+    Rk::require (new_target != 0, "target is null");
 
     target = new_target;
-    clock  = new_clock;
-    
+    clock  = &new_clock;
+    logger = &new_logger;
+
+    log () << "- GLRenderer initializing\n";
+
     shared_dc = GetDC (target);
     if (!shared_dc)
       throw Rk::Exception ("Error retrieving shared device context");
@@ -424,7 +332,10 @@ namespace
     
     enum
     {
+      // These flags should always be present in a good PFD
       set_flags = pfd_support_opengl | pfd_draw_to_window | pfd_doublebuffer,
+
+      // These flags should ONLY appear in rubbish, useless PFDs
       clear_flags = pfd_support_gdi | pfd_generic_format | pfd_generic_accelerated | pfd_swap_copy | pfd_need_palette |
         pfd_need_system_palette
     };
@@ -451,38 +362,88 @@ namespace
     
     void* temp_dc = GetDC (target);
     if (!temp_dc)
+    {
+      wglDeleteContext (temp_rc);
       throw Rk::Exception ("Error retrieving temporary device context");
-    
+    }
+
     ok = wglMakeCurrent (temp_dc, temp_rc);
     if (!ok)
+    {
+      wglDeleteContext (temp_rc);
+      ReleaseDC (target, temp_dc);
       throw Rk::Exception ("Error making temporary render context current");
+    }
     
     wglCreateContextAttribs = (WGLCCA) wglGetProcAddress ("wglCreateContextAttribsARB");
     if (!wglCreateContextAttribs)
+    {
+      wglMakeCurrent (0, 0);
       throw Rk::Exception ("wglCreateContextAttribsARB () not supported");
+    }
     
-    bool fail = glewInit ();
+    bool fail = glewInit () != GLEW_OK;
     if (fail)
+    {
+      wglMakeCurrent (0, 0);
       throw Rk::Exception ("Error initializing GLEW");
+    }
     
     int attribs [] = {
       WGL_CONTEXT_MAJOR_VERSION, opengl_major,
       WGL_CONTEXT_MINOR_VERSION, opengl_minor,
-      WGL_CONTEXT_PROFILE_MASK,  WGL_CONTEXT_CORE_PROFILE_BIT, // Ignored for 3.1 and earlier
+      WGL_CONTEXT_PROFILE_MASK,  (opengl_compat ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT : WGL_CONTEXT_CORE_PROFILE_BIT), // Ignored for 3.1 and earlier
       WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
       0, 0
     };
     
     shared_rc = wglCreateContextAttribs (shared_dc, 0, attribs);
+
+    wglMakeCurrent (0, 0);
+
     if (!shared_rc)
       throw Rk::Exception ("Error creating shared render context");
-    
-    wglMakeCurrent (0, 0);
+
+    prepping_frame = 0;
   }
   catch (...)
   {
-    Rk::log_frame ("Co::GLRenderer::init");
+    cleanup ();
     throw;
+  }
+
+  //
+  // Cleanup
+  //
+  void GLRenderer::cleanup ()
+  {
+    if (shared_rc)
+    {
+      wglDeleteContext (shared_rc);
+      shared_rc = 0;
+    }
+    
+    if (shared_dc)
+    {
+      ReleaseDC (target, shared_dc);
+      shared_dc = 0;
+    }
+
+    logger = 0;
+    clock  = 0;
+    target = 0;
+    format = 0;
+    wglCreateContextAttribs = 0;
+    prepping_frame = 0;
+  }
+
+  //
+  // Device size
+  //
+  void GLRenderer::set_size (uint new_width, uint new_height)
+  {
+    width  = new_width;
+    height = new_height;
   }
 
   //
@@ -490,7 +451,8 @@ namespace
   //
   GLContext* GLRenderer::create_context_impl ()
   {
-    return new GLContext (mutex, wglCreateContextAttribs, shared_dc, shared_rc, target);
+    log () << "- Creating render context on GLRenderer\n";
+    return new GLContext (device_mutex, wglCreateContextAttribs, shared_dc, shared_rc, target);
   }
 
   IxRenderContext* GLRenderer::create_context ()
@@ -503,12 +465,19 @@ namespace
   //
   void GLRenderer::start ()
   {
+    Rk::require (!thread, "Renderer already running");
+
+    ready_frames.clear ();
+    free_frames.clear ();
+
     for (uint i = 0; i != frame_count; i++)
     {
       frames [i].id = i + 1;
       free_frames.push_back (&frames [i]);
     }
-    
+
+    log () << "- GLRenderer starting\n";
+
     thread.execute (
       [this] { loop (); }
     );
@@ -516,49 +485,65 @@ namespace
 
   void GLRenderer::stop ()
   {
+    if (!thread)
+      return;
+
+    Rk::require (!prepping_frame, "Attempt to stop renderer while preparing frame");
+
     auto lock = ready_frames_mutex.get_lock ();
     ready_frames.push_back (0);
     lock = nil;
     
+    log () << "- GLRenderer stopping\n";
+
     thread.join ();
   }
   
   //
   // Frame specification
   //
-  Frame* GLRenderer::begin_frame (float prev_time, float current_time, u32&  old_frame_id, u32& new_frame_id)
+  Frame* GLRenderer::begin_frame (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id)
   {
-    auto lock = free_frames_mutex.get_lock ();
-    GLFrame* free_frame = 0;
+    Rk::require (!prepping_frame, "Current frame must be submitted before requesting a new one");
 
-    if (free_frames.pop_front (free_frame))
-      old_frame_id = free_frame -> reset (prev_time, current_time, frame_count, new_frame_id);
+    while (!prepping_frame)
+    {
+      auto lock = free_frames_mutex.get_lock ();
+      free_frames.pop_front (prepping_frame);
+    }
+    
+    old_frame_id = prepping_frame -> reset (prev_time, current_time, frame_count, new_frame_id);
 
-    return free_frame;
+    return prepping_frame;
   }
 
   void GLRenderer::submit_frame (Frame* frame)
   {
+    auto gl_frame = static_cast <GLFrame*> (frame);
+
+    Rk::require (prepping_frame == gl_frame, "Submitted frame does not match with tracked current frame");
+
+    prepping_frame -> set_size (width, height);
+
     auto lock = ready_frames_mutex.get_lock ();
-    ready_frames.push_back (static_cast <GLFrame*> (frame));
+    ready_frames.push_back (gl_frame);
+
+    prepping_frame = 0;
   }
 
-  void GLRenderer::expose (u64 ixid, void*& result)
+  void GLRenderer::add_garbage_vao (u32 vao)
+  {
+    Rk::require (prepping_frame != 0, "VAO disposal request with no current frame");
+    prepping_frame -> garbage_vaos [prepping_frame -> garbage_vao_back_index++] = vao;
+  }
+
+  //
+  // Interface exposure
+  //
+  void GLRenderer::expose (u64 ixid, void** result)
   {
     Rk::expose <IxRenderer>     (this, ixid, result);
     Rk::expose <IxRenderDevice> (this, ixid, result);
-  }
-
-} // namespace
-  
-  //
-  // Module interface
-  //
-  extern "C" __declspec(dllexport) void* __cdecl ix_expose (u64 ixid)
-  {
-    void* result = 0;
-    renderer.expose (ixid, result);
-    return result;
   }
 
 } // namespace Co

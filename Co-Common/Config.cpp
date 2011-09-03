@@ -154,14 +154,9 @@ namespace Co
     delete data;
   }*/
 
-  ConfigFile::ConfigFile (Rk::StringRef path) try
+  ConfigFile::ConfigFile (Rk::StringRef path)
   {
     //impl = new Impl (path);
-  }
-  catch (...)
-  {
-    Rk::log_frame ("Co::ConfigFile::ConfigFile")
-      << " path: " << path;
   }
 
   ConfigKey ConfigFile::operator () (Rk::StringRef section, Rk::StringRef key) const

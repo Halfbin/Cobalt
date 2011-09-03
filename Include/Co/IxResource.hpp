@@ -10,6 +10,8 @@
 
 namespace Co
 {
+  class IxRenderContext;
+
   class IxDisposable
   {
   public:
@@ -22,7 +24,7 @@ namespace Co
     public IxDisposable
   {
   protected:
-    volatile bool ready;
+    bool ready;
 
     IxResource () :
       ready (false)
@@ -31,7 +33,7 @@ namespace Co
   public:
     typedef Rk::IxSharedPtr <IxResource> Ptr;
 
-    virtual void load (IxRenderContext* rc) = 0;
+    virtual void load (IxRenderContext& rc) = 0;
 
   }; // class IxResource
 

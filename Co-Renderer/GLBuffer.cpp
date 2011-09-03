@@ -7,14 +7,14 @@
 #include "GLBuffer.hpp"
 
 // Uses
-#include "Common.hpp"
+#include "GL.hpp"
 
 namespace Co
 {
-  void GLBuffer::load_data (const void* data, uptr size) try
+  void GLBuffer::load_data (const void* data, uptr size)
   {
-    if (data && !size)
-      throw Rk::Violation ("data with zero size");
+    if (data)
+      Rk::require (size != 0, "data with zero size");
 
     glBindBuffer (GL_ARRAY_BUFFER, name);
     check_gl ("glBindBuffer");
@@ -27,12 +27,6 @@ namespace Co
 
     glBindBuffer (GL_ARRAY_BUFFER, 0);
   }
-  catch (...)
-  {
-    Rk::log_frame ("Co::GLBuffer::load_data")
-      << " size: " << size;
-    throw;
-  }
 
   GLBuffer::~GLBuffer ()
   {
@@ -44,23 +38,18 @@ namespace Co
     delete this;
   }
 
-  GLBuffer::GLBuffer (uptr size, const void* data) try
+  GLBuffer::GLBuffer (uptr size, const void* data)
   {
     glGenBuffers (1, &name);
     check_gl ("glGenBuffers");
 
     load_data (data, size);
   }
-  catch (...)
-  {
-    Rk::log_frame ("Co::GLBuffer::GLBuffer")
-      << " size: " << size;
-    throw;
-  }
 
   void GLBuffer::bind (uint target)
   {
     glBindBuffer (target, name);
+    check_gl ("glBindBuffer");
   }
 
 } // namespace Co

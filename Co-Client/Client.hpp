@@ -6,11 +6,13 @@
 #ifndef CO_CLIENT_H_CLIENT
 #define CO_CLIENT_H_CLIENT
 
-#include "GLWindow.hpp"
 #include <Co/Clock.hpp>
+
+#include <Rk/StringRef.hpp>
 #include <Rk/Module.hpp>
 #include <Rk/Types.hpp>
-#include <Rk/StringRef.hpp>
+
+#include "GLWindow.hpp"
 
 namespace Co
 {
@@ -19,24 +21,25 @@ namespace Co
   class IxLoader;
   class IxEngine;
   class IxGame;
-
+  class Library;
+  class GLWindow;
+  
   class Client
   {
-    GLWindow        window;
-    Clock           clock;
+    GLWindow window;
+    Clock    clock;
 
-    Rk::Module      renderer_module;
+    Rk::Module renderer_module,
+               loader_module,
+               engine_module,
+               game_module;
+
     IxRenderer*     renderer;
     IxRenderDevice* render_device;
-
-    Rk::Module      loader_module;
     IxLoader*       loader;
-
-    Rk::Module      engine_module;
     IxEngine*       engine;
-
-    Rk::Module      game_module;
     IxGame*         game;
+    Library*        library;
 
     void cleanup ();
 
@@ -49,8 +52,8 @@ namespace Co
 
     void run ();
 
-  };
+  }; // class Client
 
-}
+} // namespace Co
 
 #endif

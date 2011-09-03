@@ -13,12 +13,12 @@
 namespace Co
 {
   class IxGeomCompilation;
-  class IxTexture;
+  class IxTexImage;
 
   //
   // = Meshes ==========================================================================================================
   //
-  enum :
+  enum PrimType :
     u32
   {
     prim_points = 0,
@@ -30,7 +30,7 @@ namespace Co
     prim_triangle_fan
   };
   
-  enum :
+  enum IndexType :
     u16
   {
     index_none = 0,
@@ -58,7 +58,7 @@ namespace Co
                  specular_mat,
                  emissive_mat;
     float        exponent_mat;
-    IxTexture   *diffuse_tex,
+    IxTexImage  *diffuse_tex,
                 *specular_tex,
                 *emissive_tex,
                 *exponent_tex,
@@ -71,7 +71,7 @@ namespace Co
   class Frame
   {
   protected:
-    enum
+    enum Maxima
     {
       max_point_geoms = 256,
       max_meshes      = 256,
@@ -95,7 +95,7 @@ namespace Co
     PointSpatial       point_spats [max_point_geoms];
     PointGeom          point_geoms [max_point_geoms];
     IxGeomCompilation* point_comps [max_point_geoms];
-    
+		
     Mesh     meshes    [max_meshes];
     Material materials [max_materials];
     //UIRect   ui_rects  [max_ui_rects];

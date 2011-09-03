@@ -1,13 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Label="UserMacros">
+    <CoSuffix />
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>C:\Cobalt\Binaries\</OutDir>
+    <TargetName>$(ProjectName)$(CoSuffix)</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)Include;D:\Halfbin\Projects\Rk\Include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CO_SUFFIX="";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <BuildMacro Include="CoSuffix">
+      <Value>$(CoSuffix)</Value>
+    </BuildMacro>
+  </ItemGroup>
 </Project>

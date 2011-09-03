@@ -12,6 +12,9 @@
 
 #include <Rk/StringRef.hpp>
 
+#pragma warning (push)
+#pragma warning (disable:4251)
+
 namespace Co
 {
   class CO_COMMON_API ConfigKey;
@@ -34,7 +37,7 @@ namespace Co
   {
     Rk::StringRef data;
     
-    friend struct ConfigFile;
+    friend class ConfigFile;
     ConfigKey (Rk::StringRef);
 
   public:
@@ -46,5 +49,7 @@ namespace Co
   };
 
 } // namespace Co
+
+#pragma warning (pop)
 
 #endif

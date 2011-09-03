@@ -18,9 +18,9 @@ namespace Co
   public:
     enum : u64 { id = 0xb31a8a07f5fb1b71ull };
 
-    virtual void init (IxEngine* api) = 0;
+    virtual void init (IxEngine& engine) = 0;
     
-    virtual void start () = 0;
+    virtual void start (IxEngine& engine) = 0;
     virtual void stop  () = 0;
     
     virtual void tick (float time, float prev_time) = 0;
