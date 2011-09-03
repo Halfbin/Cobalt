@@ -14,3 +14,8 @@ ipch/
 */ipch/
 thumbs.db
 desktop.ini
+*.pdb
+*.tlog
+*.manifest
+*.lastbuildstate
+*.cache
