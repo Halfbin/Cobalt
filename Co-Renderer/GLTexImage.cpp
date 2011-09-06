@@ -19,7 +19,8 @@ namespace Co
     Rk::require (data != 0, "data is null");
     Rk::require (format < texformat_count, "format not valid");
 
-    bind (texunit_diffuse);
+    glBindTexture (GL_TEXTURE_2D, name);
+    check_gl ("glBindTexture");
 
     GLenum gl_formats [texformat_count][3] = {
       { GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5 }, // rgb565

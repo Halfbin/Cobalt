@@ -5,6 +5,7 @@
 *.a
 *.dll
 *.sdf
+*.opensdf
 *.suo
 Debug/
 */Debug/

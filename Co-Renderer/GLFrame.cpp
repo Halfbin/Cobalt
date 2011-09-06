@@ -203,7 +203,15 @@ namespace Co
         const Mesh& mesh = meshes [cur_mesh++];
 
         auto tex = static_cast <GLTexImage*> (materials [cur_mat + mesh.material].diffuse_tex);
-        tex -> bind (texunit_diffuse);
+        if (tex)
+        {
+          tex -> bind (texunit_diffuse);
+        }
+        else
+        {
+          glActiveTexture (texunit_diffuse);
+          glBindTexture (GL_TEXTURE_2D, 0);
+        }
 
         static const GLenum gl_prim_types [7] = {
           GL_POINTS,
@@ -240,6 +248,7 @@ namespace Co
     // Clean up old VAOs
     //
     glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
+    check_gl ("glDeleteVertexArrays");
 #endif
   } // GLFrame::render
 
