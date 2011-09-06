@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{06FB230F-2EFE-42A6-977C-57F63B193828}</ProjectGuid>
-    <RootNamespace>CoClient</RootNamespace>
+    <ProjectGuid>{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}</ProjectGuid>
+    <RootNamespace>CoFreetype</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -21,7 +21,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
@@ -43,12 +43,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>RK_API=__declspec(dllimport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -57,6 +54,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <DisableLanguageExtensions>true</DisableLanguageExtensions>
+      <PreprocessorDefinitions>FT2_BUILD_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -65,25 +64,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Client.cpp" />
-    <ClCompile Include="GLWindow.cpp" />
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbase.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbbox.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbitmap.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftdebug.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftglyph.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftinit.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftsystem.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\psnames\psnames.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\sfnt\sfnt.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\smooth\smooth.c" />
+    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\truetype\truetype.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
-      <Project>{abb70100-1fad-4a68-8a40-da9ce0526cbf}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Co-Engine\Co-Engine.vcxproj">
-      <Project>{73ae9533-7ac5-416b-816c-e9158c309318}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
-      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Client.hpp" />
-    <ClInclude Include="Common.hpp" />
-    <ClInclude Include="GLWindow.hpp" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftconfig.h" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftheader.h" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftmodule.h" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftoption.h" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\ft2build.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
