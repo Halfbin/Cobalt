@@ -34,6 +34,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Co-Texture-Tool", "Co-Textu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Co-Freetype", "Co-Freetype\Co-Freetype.vcxproj", "{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Co-Font", "Co-Font\Co-Font.vcxproj", "{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -84,6 +86,10 @@ Global
 		{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}.Debug|Win32.Build.0 = Debug|Win32
 		{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}.Release|Win32.ActiveCfg = Release|Win32
 		{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}.Release|Win32.Build.0 = Release|Win32
+		{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}.Debug|Win32.Build.0 = Debug|Win32
+		{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}.Release|Win32.ActiveCfg = Release|Win32
+		{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

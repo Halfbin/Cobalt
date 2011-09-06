@@ -3,8 +3,8 @@
 // All Rights Reserved.
 //
 
-#ifndef CO_H_IXTEXTURE
-#define CO_H_IXTEXTURE
+#ifndef CO_H_IXFONT
+#define CO_H_IXFONT
 
 // Implements
 #include <Co/IxResource.hpp>
@@ -14,24 +14,24 @@
 
 namespace Co
 {
-  class IxTexture : 
+  class IxFont : 
     public IxResource
   {
   protected:
     IxTexImage* image;
 
   public:
-    typedef Rk::IxSharedPtr <IxTexture> Ptr;
+    typedef Rk::IxSharedPtr <IxFont> Ptr;
 
-    IxTexImage* get ()
+    /*IxTexImage* get ()
     {
       if (!ready)
         return 0;
 
       return image;
-    }
+    }*/
 
-  }; // class IxTexture
+  }; // class IxFont
 
 } // namespace Co
 

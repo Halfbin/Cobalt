@@ -5,12 +5,12 @@
 
 // Implements
 #include <Co/IxTextureFactory.hpp>
+#include <Co/IxTexture.hpp>
 
 // Uses
 #include <Co/IxRenderContext.hpp>
 #include <Co/IxLoadContext.hpp>
 #include <Co/TextureFile.hpp>
-#include <Co/IxTexture.hpp>
 
 #include <Rk/ChunkLoader.hpp>
 #include <Rk/ShortString.hpp>

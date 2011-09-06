@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{FD1CD69B-B8ED-40A0-962A-2E89E43D538B}</ProjectGuid>
-    <RootNamespace>CoFreetype</RootNamespace>
+    <ProjectGuid>{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}</ProjectGuid>
+    <RootNamespace>CoFont</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -43,7 +43,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>FT2_BUILD_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -55,8 +54,6 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <DisableLanguageExtensions>true</DisableLanguageExtensions>
-      <PreprocessorDefinitions>FT2_BUILD_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -65,25 +62,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbase.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbbox.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftbitmap.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftdebug.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftglyph.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftinit.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\base\ftsystem.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\psnames\psnames.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\sfnt\sfnt.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\smooth\smooth.c" />
-    <ClCompile Include="..\..\..\..\freetype-2.4.6\src\truetype\truetype.c" />
+    <ClInclude Include="..\Include\Co\IxFont.hpp" />
+    <ClInclude Include="..\Include\Co\IxFontFactory.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftconfig.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftheader.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftmodule.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftoption.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftstdlib.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\ft2build.h" />
+    <ClCompile Include="..\Include\Co\Font.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Co-Freetype\Co-Freetype.vcxproj">
+      <Project>{fd1cd69b-b8ed-40a0-962a-2e89e43d538b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
+      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
