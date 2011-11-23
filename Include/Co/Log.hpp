@@ -25,7 +25,8 @@ namespace Co
 
   class Log :
     public Rk::IxLockedOutStreamImpl,
-    public Rk::LockedOutStreamInterface <char, Log>
+    public Rk::LockedOutStreamInterface <char, Log>,
+    public Rk::NoCopy
   {
     typedef Rk::LockedOutStreamInterface <char, Log>
       Interface;
@@ -33,16 +34,12 @@ namespace Co
     Rk::Mutex mutex;
     Rk::File  file;
     char      buf [64];
-
-    // No copy or move
-    Rk::NoCopy no_copy;
     
   public:
     #pragma warning (push)
     #pragma warning (disable: 4355)
       Log (const char* path) :
-        Interface (*this),
-        file      (path, file.open_replace_or_create)
+        file (path, file.open_replace_or_create)
       { }
     #pragma warning (pop)
     

@@ -49,8 +49,6 @@ enum WinAPIConstants
 
 namespace Co
 {
-  extern Log log;
-
   iptr Client::handler_proxy (GLWindow* win, u32 message, uptr wp, iptr lp)
   {
     auto client = (Client*) win -> get_user ();

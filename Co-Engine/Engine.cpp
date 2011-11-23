@@ -109,6 +109,9 @@ namespace
     virtual bool  update    (float& next_update);
     virtual void  terminate ();
 
+  public:
+    void expose (void** out, u64 ixid);
+
   } engine;
 
   const float Engine::frame_rate     = 50.0f,
@@ -257,11 +260,16 @@ namespace
     running = false;
   }
 
+  void Engine::expose (void** out, u64 ixid)
+  {
+    Rk::expose <Co::IxEngine> (this, ixid, out);
+  }
+
 } // namespace
   
   IX_EXPOSE (void** out, u64 ixid)
   {
-    Rk::expose <Co::IxEngine> (engine, ixid, out);
+    engine.expose (out, ixid);
   }
 
 } // namespace Co

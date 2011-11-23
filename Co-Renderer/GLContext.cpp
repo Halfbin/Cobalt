@@ -10,6 +10,7 @@
 #include <Rk/Exception.hpp>
 
 #include "GLCompilation.hpp"
+#include "GLGlyphPack.hpp"
 #include "GLTexImage.hpp"
 #include "GLBuffer.hpp"
 #include "GL.hpp"
@@ -37,7 +38,9 @@ namespace Co
       WGL_CONTEXT_MAJOR_VERSION, opengl_major,
       WGL_CONTEXT_MINOR_VERSION, opengl_minor,
       WGL_CONTEXT_PROFILE_MASK,  (opengl_compat ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT : WGL_CONTEXT_CORE_PROFILE_BIT), // Ignored for 3.1 and earlier
+    #ifndef NDEBUG
       WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
+    #endif
       0,                         0
     };
     
@@ -82,7 +85,12 @@ namespace Co
   IxGeomCompilation* GLContext::create_compilation (
     const GeomAttrib* attribs, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices)
   {
-    return new GLCompilation (attribs, attrib_count, static_cast <GLBuffer*> (elements), static_cast <GLBuffer*> (indices));
+    return new GLCompilation (
+      attribs,
+      attrib_count,
+      static_cast <GLBuffer*> (elements),
+      static_cast <GLBuffer*> (indices )
+    );
   }
 
   //
@@ -91,6 +99,19 @@ namespace Co
   IxTexImage* GLContext::create_tex_image (uint level_count, bool wrap)
   {
     return new GLTexImage (level_count, wrap);
+  }
+
+  //
+  // Glyph Pack creation
+  //
+  IxGlyphPack* GLContext::create_glyph_pack (
+    const u8*           atlas,
+    uint                width,
+    uint                height,
+    const GlyphMapping* mappings,
+    uint                glyph_count)
+  {
+    return new GLGlyphPack (atlas, width, height, mappings, glyph_count);
   }
 
   //
@@ -106,9 +127,10 @@ namespace Co
   //
   GLContext::~GLContext ()
   {
+    auto lock = mutex.get_lock ();
+
     if (dc && rc)
     {
-      auto lock = mutex.get_lock ();
       wglMakeCurrent (0, 0);
       wglDeleteContext (rc);
     }

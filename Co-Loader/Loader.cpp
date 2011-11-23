@@ -171,11 +171,13 @@ namespace
       }
       catch (const std::exception& e)
       {
-        log () << e.what () << '\n';
+        log () << e.what () << '\n'
+               << "X Caught in Loader\n";
       }
       catch (...)
       {
-        log () << "X Unknown exception during load job\n";
+        log () << "X Unknown exception\n"
+               << "X Caught in Loader\n";
       }
 
       for (auto g = temp_garbage_queue.begin (); g != temp_garbage_queue.end (); g++)

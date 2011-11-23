@@ -6,6 +6,7 @@
 #ifndef CO_GLRENDERER_H_GLFRAME
 #define CO_GLRENDERER_H_GLFRAME
 
+// Implements
 #include <Co/Frame.hpp>
 
 namespace Co
@@ -16,6 +17,10 @@ namespace Co
   class GLFrame :
     public Frame
   {
+    void render_point_geoms (u32 model_to_world_loc, float alpha);
+    void render_labels      (float alpha);
+    void render_glyph_runs  ();
+
   public:
     uint id;
     float time, prev_time;

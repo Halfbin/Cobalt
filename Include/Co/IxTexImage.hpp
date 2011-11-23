@@ -11,7 +11,8 @@
 
 namespace Co
 {
-  enum TexFormat : uint
+  enum TexFormat :
+    uint
   {
     tex_rgb565 = 0,
     tex_bgr565,
@@ -26,6 +27,8 @@ namespace Co
     tex_dxt5,
     tex_dxtn,
 
+    tex_i8,
+
     texformat_count
   };
   
@@ -33,6 +36,7 @@ namespace Co
     public Rk::IxUnique
   {
   public:
+    typedef Rk::IxUniquePtr <IxTexImage> Ptr;
     virtual void load_map (uint level, const void* data, TexFormat format, uint width, uint height, uptr size = 0) = 0;
 
   };

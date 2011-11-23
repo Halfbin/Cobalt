@@ -9,6 +9,7 @@
 // Uses
 #include <Co/IxTextureFactory.hpp>
 #include <Co/IxModelFactory.hpp>
+#include <Co/IxFontFactory.hpp>
 #include <Co/IxEngine.hpp>
 //#include <Co/IxEntity.hpp>
 #include <Co/IxModule.hpp>
@@ -17,6 +18,7 @@
 
 Co::IxModelFactory*   model_factory;
 Co::IxTextureFactory* texture_factory;
+Co::IxFontFactory*    font_factory;
 
 namespace
 {
@@ -25,6 +27,7 @@ namespace
   {
     Co::IxModule* model_module;
     Co::IxModule* texture_module;
+    Co::IxModule* font_module;
 
     virtual void init (Co::IxEngine& engine);
     
@@ -43,6 +46,9 @@ namespace
 
     texture_module = engine.load_module ("Co-Texture");
     texture_module -> expose (texture_factory);
+
+    font_module = engine.load_module ("Co-Font");
+    font_module -> expose (font_factory);
   }
 
   void Game::start (Co::IxEngine& engine)

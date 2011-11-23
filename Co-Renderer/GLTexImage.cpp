@@ -35,6 +35,8 @@ namespace Co
       { GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, 0, 0 }, // bc2/dxt3,
       { GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 0, 0 }, // bc3/dxt5,
       { GL_COMPRESSED_RG_RGTC2,           0, 0 }, // bc5/dxtn/3dc/ati2,
+
+      { GL_R8, GL_RED, GL_UNSIGNED_BYTE } // i8
     };
 
     if (!gl_formats [format][2]) // compressed

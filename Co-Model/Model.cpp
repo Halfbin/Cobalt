@@ -58,9 +58,8 @@ namespace Co
 
     Co::IxGeomBuffer::Ptr element_buffer,
                           index_buffer;
-
     Rk::ShortString <512> path;
-    long ref_count;
+    long                  ref_count;
 
     virtual void acquire ()
     {

@@ -9,16 +9,19 @@
 // Uses
 #include <Co/IxTextureFactory.hpp>
 #include <Co/IxModelFactory.hpp>
+#include <Co/IxFontFactory.hpp>
 #include <Co/IxLoadContext.hpp>
 #include <Co/EntityClass.hpp>
 #include <Co/IxTexture.hpp>
 #include <Co/IxModel.hpp>
 #include <Co/Spatial.hpp>
+#include <Co/IxFont.hpp>
 
 using namespace Co;
 
 extern IxModelFactory*   model_factory;
 extern IxTextureFactory* texture_factory;
+extern IxFontFactory*    font_factory;
 
 namespace
 {
@@ -27,6 +30,7 @@ namespace
   {
     static IxModel::Ptr   model;
     static IxTexture::Ptr tex;
+    static IxFont::Ptr    font;
     static Co::Material   mat;
 
     Spatial spatial;
@@ -65,8 +69,9 @@ namespace
 
       if (!model)
       {
-        model = model_factory   -> create (loadcontext, "cube.rkmodel"  );
+        model = model_factory   -> create (loadcontext, "cube.rkmodel");
         tex   = texture_factory -> create (loadcontext, "derp.cotexture");
+        font  = font_factory    -> create (loadcontext, "DejaVuSans.ttf", 32, fontsize_points);
       }
     }
 
@@ -75,6 +80,7 @@ namespace
   IxModel::Ptr   TestEntity::model;
   IxTexture::Ptr TestEntity::tex;
   Material       TestEntity::mat;
+  IxFont::Ptr    TestEntity::font;
 
   EntityClass <TestEntity> ent_class ("TestEntity");
 

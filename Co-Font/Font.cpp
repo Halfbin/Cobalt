@@ -8,12 +8,19 @@
 #include <Co/IxFont.hpp>
 
 // Uses
+#include <Co/IxRenderContext.hpp>
 #include <Co/IxLoadContext.hpp>
+#include <Co/IxTexImage.hpp>
 
 #include <Rk/ShortString.hpp>
+#include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
 
 #include <unordered_map>
+#include <algorithm>
+#include <vector>
+
+#include "Packer.hpp"
 
 namespace Co
 {
@@ -23,7 +30,16 @@ namespace Co
   class Font :
     public IxFont
   {
+    // Parameters
     Rk::ShortString <512> path;
+    uint                  size,
+                          index;
+    FontSizeMode          mode;
+
+    // Data
+    FontPack pack;
+    
+    // Management
     long ref_count;
 
     virtual void acquire ()
@@ -43,23 +59,34 @@ namespace Co
 
     ~Font ()
     {
-      image -> destroy ();
+      pack -> destroy ();
     }
 
     virtual void load (IxRenderContext& rc)
     {
-      
+      CodeRange ranges [1] = {
+        { 0x0020, 0x007f } // ASCII printable
+      };
+
+      Rk::Image image;
+      pack = FontPack (image, path, index, size, mode, ranges, ranges + 1, 0.95f);
+
+      tex = rc.create_tex_image (1, false);
+      tex -> load_map (0, image.data, tex_i8, image.width, image.height, image.size ());
 
       ready = true;
     }
 
   public:
-    Font (IxLoadContext& context, Rk::StringRef new_path)
+    Font (IxLoadContext& context, Rk::StringRef new_path, uint new_size, FontSizeMode new_mode, uint new_index)
     {
       ref_count = 1;
       path = context.get_game_path ();
       path += "Fonts/";
       path += new_path;
+      size = new_size;
+      mode = new_mode;
+      index = new_index;
       image = 0;
       context.load (this);
     }
@@ -80,11 +107,18 @@ namespace Co
     typedef std::unordered_map <Rk::ShortString <512>, IxFont*> CacheType;
     CacheType cache;
 
-    virtual IxFont* create (IxLoadContext& context, Rk::StringRef path)
+    virtual IxFont* create (IxLoadContext& context, Rk::StringRef path, uint size, FontSizeMode mode, uint index)
     {
       IxFont* font;
 
-      auto iter = cache.find (path);
+      Rk::ShortStringOutStream <512> lookup (path);
+      lookup << path << '-' << index << '-' << size;
+      if (mode == fontsize_points)
+        lookup << "pt";
+      else
+        lookup << "px";
+
+      auto iter = cache.find (lookup);
 
       if (iter != cache.end ())
       {
@@ -93,8 +127,8 @@ namespace Co
       }
       else
       {
-        font = new Font (context, path);
-        cache.insert (CacheType::value_type (path, font));
+        font = new Font (context, path, size, mode, index);
+        cache.insert (CacheType::value_type (lookup, font));
       }
       
       return font;

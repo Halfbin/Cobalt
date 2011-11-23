@@ -74,8 +74,8 @@ extern "C"
 #else
   __declspec(dllimport) void* __stdcall GetWindowLongW (void*, i32);
   __declspec(dllimport) void* __stdcall SetWindowLongW (void*, i32, void*);
-  #define GetWindowLongPtrW GetWindowLongW
-  #define SetWindowLongPtrW SetWindowLongW
+  auto& GetWindowLongPtrW = GetWindowLongW;
+  auto& SetWindowLongPtrW = SetWindowLongW;
 #endif
   __declspec(dllimport) iptr  __stdcall DefWindowProcW    (void*, u32, uptr, iptr);
   __declspec(dllimport) void* __stdcall GetModuleHandleW  (const wchar_t*);

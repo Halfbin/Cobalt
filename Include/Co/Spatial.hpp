@@ -7,11 +7,12 @@
 #define CO_H_SPATIAL
 
 #include <Rk/Quaternion.hpp>
-#include <Rk/Vector3.hpp>
+#include <Rk/Vector4.hpp>
 
 namespace Co
 {
   typedef Rk::Vector3f    Vector3;
+  typedef Rk::Vector4f    Vector4;
   typedef Rk::Quaternionf Quaternion;
 
   struct Spatial

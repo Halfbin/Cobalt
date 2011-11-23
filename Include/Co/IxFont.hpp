@@ -10,27 +10,22 @@
 #include <Co/IxResource.hpp>
 
 // Uses
-#include <Co/IxTexImage.hpp>
+//#include <Co/IxGlyphPack.hpp>
 
 namespace Co
 {
+  class IxTexImage;
+
   class IxFont : 
     public IxResource
   {
   protected:
-    IxTexImage* image;
+    IxTexImage* tex;
 
   public:
     typedef Rk::IxSharedPtr <IxFont> Ptr;
 
-    /*IxTexImage* get ()
-    {
-      if (!ready)
-        return 0;
-
-      return image;
-    }*/
-
+    
   }; // class IxFont
 
 } // namespace Co

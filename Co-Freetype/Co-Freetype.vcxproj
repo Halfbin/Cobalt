@@ -81,9 +81,9 @@
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftconfig.h" />
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftheader.h" />
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftmodule.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftoption.h" />
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftstdlib.h" />
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\ft2build.h" />
+    <ClInclude Include="..\Include\Co\FreetypeOptions.h" />
+    <ClInclude Include="..\Include\ft2build.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

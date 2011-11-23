@@ -45,11 +45,11 @@
     <Filter Include="Modules">
       <UniqueIdentifier>{c2dee09f-eb73-4a7f-9df3-2879acb59b08}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Local">
+      <UniqueIdentifier>{400798a3-7ea9-40e8-b73a-93fae1ab0a44}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\ft2build.h">
-      <Filter>Config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftconfig.h">
       <Filter>Config</Filter>
     </ClInclude>
@@ -59,11 +59,14 @@
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftmodule.h">
       <Filter>Config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftoption.h">
-      <Filter>Config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\freetype-2.4.6\include\freetype\config\ftstdlib.h">
       <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\ft2build.h">
+      <Filter>Local</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\FreetypeOptions.h">
+      <Filter>Local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

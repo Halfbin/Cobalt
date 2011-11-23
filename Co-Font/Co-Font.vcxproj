@@ -64,9 +64,11 @@
   <ItemGroup>
     <ClInclude Include="..\Include\Co\IxFont.hpp" />
     <ClInclude Include="..\Include\Co\IxFontFactory.hpp" />
+    <ClInclude Include="Packer.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Include\Co\Font.cpp" />
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="Packer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Co-Freetype\Co-Freetype.vcxproj">

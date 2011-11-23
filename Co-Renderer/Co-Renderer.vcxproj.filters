@@ -25,6 +25,9 @@
     <Filter Include="GLTexImage">
       <UniqueIdentifier>{cd7ecfb6-3f61-4cd1-88e4-a764e4731360}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GLGlyphPack">
+      <UniqueIdentifier>{3de09f8b-1136-41b2-81c2-a81e80898c0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\IxRenderer.hpp">
@@ -67,6 +70,12 @@
     <ClInclude Include="GLTexImage.hpp">
       <Filter>GLTexImage</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\IxGlyphPack.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="GLGlyphPack.hpp">
+      <Filter>GLGlyphPack</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GLCompilation.cpp">
@@ -87,6 +96,9 @@
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="GLTexImage.cpp">
       <Filter>GLTexImage</Filter>
+    </ClCompile>
+    <ClCompile Include="GLGlyphPack.cpp">
+      <Filter>GLGlyphPack</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

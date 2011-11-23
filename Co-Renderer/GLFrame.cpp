@@ -17,7 +17,105 @@
 namespace Co
 {
   //
-  // Render
+  // render_point_geoms
+  //
+  void GLFrame::render_point_geoms (u32 model_to_world_loc, float alpha)
+  {
+    Spatial point_interps [max_point_geoms];
+    for (uint i = 0; i != point_geoms_back_index; i++)
+      point_interps [i] = lerp (point_spats [i].prev, point_spats [i].cur, alpha);
+
+    uint cur_mesh = 0,
+         cur_mat  = 0;
+
+    glEnableVertexAttribArray (attrib_position);
+    glEnableVertexAttribArray (attrib_tcoords);
+    glEnableVertexAttribArray (attrib_normal);
+
+    for (uint geom_index = 0; geom_index != point_geoms_back_index; geom_index++)
+    {
+      auto comp = static_cast <GLCompilation*> (point_comps [geom_index]);
+      comp -> use ();
+
+      auto model_to_world = Rk::affine_xform (
+        point_interps [geom_index].position,
+        point_interps [geom_index].orientation
+      );
+      
+      glUniformMatrix4fv (model_to_world_loc, 1, true, model_to_world.raw ());
+
+      const uint end_mesh = cur_mesh + point_geoms [geom_index].mesh_count;
+      while (cur_mesh != end_mesh)
+      {
+        const Mesh& mesh = meshes [cur_mesh++];
+
+        auto tex = static_cast <GLTexImage*> (materials [cur_mat + mesh.material].diffuse_tex);
+        if (tex)
+        {
+          tex -> bind (texunit_diffuse);
+        }
+        else
+        {
+          glActiveTexture (texunit_diffuse);
+          glBindTexture (GL_TEXTURE_2D, 0);
+        }
+
+        static const GLenum gl_prim_types [7] = {
+          GL_POINTS,
+          GL_LINES,
+          GL_LINE_LOOP,
+          GL_LINE_STRIP,
+          GL_TRIANGLES,
+          GL_TRIANGLE_STRIP,
+          GL_TRIANGLE_FAN
+        };
+        GLenum prim_type = gl_prim_types [mesh.prim_type];
+
+        if (mesh.index_type)
+        {
+          static const GLenum gl_index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
+          GLenum index_type = gl_index_types [mesh.index_type];
+          
+          uptr offset = uptr (mesh.first_item) << uint (mesh.index_type - 1);
+          
+          glDrawElements (prim_type, mesh.element_count, index_type, (void*) offset);
+          check_gl ("glDrawElements");
+        }
+        else
+        {
+          glDrawArrays (prim_type, mesh.first_item, mesh.element_count);
+          check_gl ("glDrawArrays");
+        }
+      } // while (meshes)
+      
+      cur_mat += point_geoms [geom_index].material_count;
+    } // for (point_geoms)
+  }
+
+  //
+  // render_labels
+  //
+  void GLFrame::render_labels (float alpha)
+  {
+    // Interpolate label origins
+    Spatial label_interps [max_labels];
+    for (uint i = 0; i != labels_back_index; i++)
+      label_interps [i] = lerp (label_spats [i].prev, label_spats [i].cur, alpha);
+
+    // Project origins
+
+  }
+
+  //
+  // render_glyph_runs
+  //
+  void GLFrame::render_glyph_runs ()
+  {
+
+  }
+
+  //
+  // render
   // Renders a frame. This is where the interesting stuff happens.
   //
   void GLFrame::render (float alpha, u32 model_to_world_loc, u32 world_to_clip_loc, u32 world_to_eye_loc)
@@ -143,12 +241,13 @@ namespace Co
 
     glDisableClientState (GL_VERTEX_ARRAY);*/
 #else // !opengl_compat
+    
     glClearColor (0.0f, 0.03f, 0.2f, 1.0f);
     glViewport (0, 0, width, height);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Transformations
-    Spatial camera_sp = lerp (camera_prev, camera_cur, alpha);
+    Spatial camera_sp = lerp (camera_pos.prev, camera_pos.cur, alpha);
     
     auto world_to_eye = Rk::world_to_eye_xform (
       camera_sp.position,
@@ -171,84 +270,16 @@ namespace Co
     glUniformMatrix4fv (world_to_clip_loc, 1, true, world_to_clip.raw ());
     glUniformMatrix4fv (world_to_eye_loc,  1, true, world_to_eye.raw  ());
 
-    //
-    // Render point geoms
-    //
-    Spatial point_interps [max_point_geoms];
-    for (uint i = 0; i != point_geoms_back_index; i++)
-      point_interps [i] = lerp (point_spats [i].prev, point_spats [i].cur, alpha);
+    // Render point geometries
+    render_point_geoms (model_to_world_loc, alpha);
 
-    uint cur_mesh = 0,
-         cur_mat  = 0;
-
-    glEnableVertexAttribArray (attrib_position);
-    glEnableVertexAttribArray (attrib_tcoords);
-    glEnableVertexAttribArray (attrib_normal);
-
-    for (uint geom_index = 0; geom_index != point_geoms_back_index; geom_index++)
-    {
-      auto comp = static_cast <GLCompilation*> (point_comps [geom_index]);
-      comp -> use ();
-
-      auto model_to_world = Rk::affine_xform (
-        point_interps [geom_index].position,
-        point_interps [geom_index].orientation
-      );
-      
-      glUniformMatrix4fv (model_to_world_loc, 1, true, model_to_world.raw ());
-
-      const uint end_mesh = cur_mesh + point_geoms [geom_index].mesh_count;
-      while (cur_mesh != end_mesh)
-      {
-        const Mesh& mesh = meshes [cur_mesh++];
-
-        auto tex = static_cast <GLTexImage*> (materials [cur_mat + mesh.material].diffuse_tex);
-        if (tex)
-        {
-          tex -> bind (texunit_diffuse);
-        }
-        else
-        {
-          glActiveTexture (texunit_diffuse);
-          glBindTexture (GL_TEXTURE_2D, 0);
-        }
-
-        static const GLenum gl_prim_types [7] = {
-          GL_POINTS,
-          GL_LINES,
-          GL_LINE_LOOP,
-          GL_LINE_STRIP,
-          GL_TRIANGLES,
-          GL_TRIANGLE_STRIP,
-          GL_TRIANGLE_FAN
-        };
-        GLenum prim_type = gl_prim_types [mesh.prim_type];
-
-        if (mesh.index_type)
-        {
-          static const GLenum gl_index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
-          GLenum index_type = gl_index_types [mesh.index_type];
-          
-          uptr offset = uptr (mesh.first_item) << uint (mesh.index_type - 1);
-          
-          glDrawElements (prim_type, mesh.element_count, index_type, (void*) offset);
-          check_gl ("glDrawElements");
-        }
-        else
-        {
-          glDrawArrays (prim_type, mesh.first_item, mesh.element_count);
-          check_gl ("glDrawArrays");
-        }
-      } // while (meshes)
-      
-      cur_mat += point_geoms [geom_index].material_count;
-    } // for (point_geoms)
-
-    //
     // Clean up old VAOs
-    //
     glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
     check_gl ("glDeleteVertexArrays");
+
+    // Render labels
+    render_labels (alpha);
+    render_glyph_runs ();
 #endif
   } // GLFrame::render
 
