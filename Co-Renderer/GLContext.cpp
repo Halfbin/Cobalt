@@ -10,7 +10,7 @@
 #include <Rk/Exception.hpp>
 
 #include "GLCompilation.hpp"
-#include "GLGlyphPack.hpp"
+//#include "GLGlyphPack.hpp"
 #include "GLTexImage.hpp"
 #include "GLBuffer.hpp"
 #include "GL.hpp"
@@ -104,7 +104,7 @@ namespace Co
   //
   // Glyph Pack creation
   //
-  IxGlyphPack* GLContext::create_glyph_pack (
+  /*IxGlyphPack* GLContext::create_glyph_pack (
     const u8*           atlas,
     uint                width,
     uint                height,
@@ -112,7 +112,7 @@ namespace Co
     uint                glyph_count)
   {
     return new GLGlyphPack (atlas, width, height, mappings, glyph_count);
-  }
+  }*/
 
   //
   // Flush

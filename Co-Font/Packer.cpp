@@ -158,9 +158,9 @@ namespace Co
         std::swap (a.area,     b.area);
       }
 
-      FontPack::GlyphMetrics get_metrics () const
+      GlyphMetrics get_metrics () const
       {
-        return FontPack::GlyphMetrics (
+        return GlyphMetrics (
           best_x,
           best_y,
           width (),
@@ -353,9 +353,10 @@ namespace Co
   } // namespace
 
   //
-  // = load ============================================================================================================
+  // = create_font =====================================================================================================
   //
-  FontPack::FontPack (
+  std::unique_ptr <GlyphMetrics []> create_font (
+    CharMap&         char_map,
     Rk::Image&       image,
     Rk::StringRef    path,
     uint             index,
@@ -396,7 +397,7 @@ namespace Co
         if (freetype_index == 0)
         {
           // No glyph for this character
-          cp_map [cp] = ~uint (0);
+          char_map [cp] = ~uint (0);
           continue;
         }
         else
@@ -406,13 +407,13 @@ namespace Co
           if (remap != glyph_remaps.end ())
           {
             // We already have the glyph remapped
-            cp_map [cp] = remap -> second;
+            char_map [cp] = remap -> second;
           }
           else
           {
             // We need to remap the glyph
             glyph_remaps [freetype_index] = glyph_count;
-            cp_map [cp] = glyph_count;
+            char_map [cp] = glyph_count;
             glyph_count++;
           }
         }
@@ -465,12 +466,14 @@ namespace Co
       }
     );
 
-    metrics.reset (new GlyphMetrics [glyph_count]);
+    std::unique_ptr <GlyphMetrics []> metrics (new GlyphMetrics [glyph_count]);
     uint dest_index = 0;
     for (auto source = glyphs.begin (); source != glyphs.end (); source++)
       metrics [dest_index++] = source -> get_metrics ();
       
     FT_Done_Face (face);
+
+    return std::move (metrics);
   }
 
 } // namespace Co

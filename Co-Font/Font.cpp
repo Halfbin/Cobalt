@@ -24,52 +24,73 @@
 
 namespace Co
 {
-  //
-  // = Font ============================================================================================================
-  //
-  class Font :
-    public IxFont
+  namespace
   {
-    // Parameters
-    Rk::ShortString <512> path;
-    uint                  size,
-                          index;
-    FontSizeMode          mode;
+    //
+    // = Font ============================================================================================================
+    //
+    class Font :
+      public IxFont
+    {
+      // Parameters
+      Rk::ShortString <512> path;
+      uint                  size,
+                            index;
+      FontSizeMode          mode;
 
-    // Data
-    FontPack pack;
+      // Data
+      CharMap char_map;
     
-    // Management
-    long ref_count;
+      // Management
+      long ref_count;
 
-    virtual void acquire ()
+      virtual void acquire ();
+      virtual void release ();
+      virtual void dispose ();
+
+      ~Font ();
+
+      virtual void load (IxRenderContext& rc);
+
+      virtual void translate_codepoints (const char32* begin, const char32* end, u32* indices);
+
+    public:
+      Font (IxLoadContext& context, Rk::StringRef new_path, uint new_size, FontSizeMode new_mode, uint new_index);
+
+      bool dead () const;
+
+    }; // class Font
+
+    void Font::acquire ()
     {
       _InterlockedIncrement (&ref_count);
     }
 
-    virtual void release ()
+    void Font::release ()
     {
       _InterlockedDecrement (&ref_count);
     }
 
-    virtual void dispose ()
+    void Font::dispose ()
     {
       delete this;
     }
 
-    ~Font ()
+    Font::~Font ()
     {
-      pack -> destroy ();
+      tex -> destroy ();
+      delete [] metrics;
     }
 
-    virtual void load (IxRenderContext& rc)
+    void Font::load (IxRenderContext& rc)
     {
       CodeRange ranges [1] = {
         { 0x0020, 0x007f } // ASCII printable
       };
 
       Rk::Image image;
-      pack = FontPack (image, path, index, size, mode, ranges, ranges + 1, 0.95f);
+      auto ptr = create_font (char_map, image, path, index, size, mode, ranges, ranges + 1, 0.95f);
+      metrics = ptr.release ();
 
       tex = rc.create_tex_image (1, false);
       tex -> load_map (0, image.data, tex_i8, image.width, image.height, image.size ());
@@ -77,8 +98,25 @@ namespace Co
       ready = true;
     }
 
-  public:
-    Font (IxLoadContext& context, Rk::StringRef new_path, uint new_size, FontSizeMode new_mode, uint new_index)
+    void Font::translate_codepoints (const char32* begin, const char32* end, u32* indices)
+    {
+      if (!begin || !end || !indices)
+        throw Rk::Exception ("Co-Font: IxFont::translate_codepoints - null pointer");
+
+      if (end > begin)
+        throw Rk::Exception ("Co-Font: IxFont::translate_codepoints - invalid range");
+
+      while (begin != end)
+      {
+        auto iter = char_map.find (*begin++);
+        if (iter != char_map.end ())
+          *indices++ = iter -> second;
+        else
+          *indices++ = 0;
+      }
+    }
+
+    Font::Font (IxLoadContext& context, Rk::StringRef new_path, uint new_size, FontSizeMode new_mode, uint new_index)
     {
       ref_count = 1;
       path = context.get_game_path ();
@@ -87,27 +125,31 @@ namespace Co
       size = new_size;
       mode = new_mode;
       index = new_index;
-      image = 0;
       context.load (this);
     }
 
-    bool dead () const
+    bool Font::dead () const
     {
       return ref_count == 0;
     }
 
-  }; // class Font
+    //
+    // = FontFactory =====================================================================================================
+    //
+    class FontFactory :
+      public IxFontFactory
+    {
+      typedef std::unordered_map <Rk::ShortString <512>, IxFont*> CacheType;
+      CacheType cache;
 
-  //
-  // = FontFactory =====================================================================================================
-  //
-  class FontFactory :
-    public IxFontFactory
-  {
-    typedef std::unordered_map <Rk::ShortString <512>, IxFont*> CacheType;
-    CacheType cache;
+      virtual IxFont* create (IxLoadContext& context, Rk::StringRef path, uint size, FontSizeMode mode, uint index);
 
-    virtual IxFont* create (IxLoadContext& context, Rk::StringRef path, uint size, FontSizeMode mode, uint index)
+    public:
+      void expose (void** out, u64 ixid);
+
+    } factory;
+
+    IxFont* FontFactory::create (IxLoadContext& context, Rk::StringRef path, uint size, FontSizeMode mode, uint index)
     {
       IxFont* font;
 
@@ -134,11 +176,16 @@ namespace Co
       return font;
     }
 
-  } factory;
+    void FontFactory::expose (void** out, u64 ixid)
+    {
+      Rk::expose <IxFontFactory> (this, ixid, out);
+    }
+
+  } // namespace
 
   IX_EXPOSE (void** out, u64 ixid)
   {
-    Rk::expose <IxFontFactory> (factory, ixid, out);
+    factory.expose (out, ixid);
   }
 
 } // namespace Co

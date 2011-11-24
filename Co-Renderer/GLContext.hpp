@@ -39,7 +39,7 @@ namespace Co
     virtual IxGeomBuffer*      create_buffer      (uptr size, const void* data);
     virtual IxGeomCompilation* create_compilation (const GeomAttrib*, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices);
     virtual IxTexImage*        create_tex_image   (uint level_count, bool wrap);
-    virtual IxGlyphPack*       create_glyph_pack  (const u8* atlas, uint width, uint height, const GlyphMapping* mappings, uint glyph_count);
+    //virtual IxGlyphPack*       create_glyph_pack  (const u8* atlas, uint width, uint height, const GlyphMapping* mappings, uint glyph_count);
 
     virtual void flush ();
 
