@@ -71,7 +71,8 @@ namespace
       {
         model = model_factory   -> create (loadcontext, "cube.rkmodel");
         tex   = texture_factory -> create (loadcontext, "derp.cotexture");
-        font  = font_factory    -> create (loadcontext, "DejaVuSans.ttf", 32, fontsize_points);
+        CodeRange codepoints = { 0x0000, 0x0180 };
+        font  = font_factory    -> create (loadcontext, "DejaVuSans.ttf", 32, fontsize_points, &codepoints, &codepoints + 1);
       }
     }
 

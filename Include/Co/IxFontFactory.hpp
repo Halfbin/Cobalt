@@ -19,17 +19,25 @@ namespace Co
     fontsize_pixels = 1
   };
   
+  struct CodeRange
+  {
+    char32 begin,
+           end;
+  };
+
   class IxFontFactory
   {
   public:
     static const u64 id = 0xee56399853afa81dull;
 
     virtual IxFont* create (
-      IxLoadContext& context,
-      Rk::StringRef  path,
-      uint           size,
-      FontSizeMode   mode,
-      uint           index = 0
+      IxLoadContext&   context,
+      Rk::StringRef    path,
+      uint             size,
+      FontSizeMode     mode,
+      const CodeRange* ranges,
+      const CodeRange* end,
+      uint             index = 0
     ) = 0;
 
   };

@@ -9,9 +9,6 @@
 // Implements
 #include <Co/IxResource.hpp>
 
-// Uses
-//#include <Co/IxGlyphPack.hpp>
-
 namespace Co
 {
   class IxTexImage;

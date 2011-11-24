@@ -4,9 +4,6 @@
     <Filter Include="API">
       <UniqueIdentifier>{ab71b72e-80cd-4839-a5f6-166e544db2d7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Packer">
-      <UniqueIdentifier>{e24813e0-3037-473d-8e34-618d181f3acf}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\IxFont.hpp">
@@ -15,14 +12,8 @@
     <ClInclude Include="..\Include\Co\IxFontFactory.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="Packer.hpp">
-      <Filter>Packer</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Packer.cpp">
-      <Filter>Packer</Filter>
-    </ClCompile>
     <ClCompile Include="Font.cpp" />
   </ItemGroup>
 </Project>
