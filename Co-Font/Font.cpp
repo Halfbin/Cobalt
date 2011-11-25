@@ -11,6 +11,7 @@
 #include <Co/IxRenderContext.hpp>
 #include <Co/IxLoadContext.hpp>
 #include <Co/IxTexImage.hpp>
+#include <Co/Profile.hpp>
 
 #include <Rk/ShortString.hpp>
 #include <Rk/Exception.hpp>
@@ -32,9 +33,12 @@ namespace Co
 {
   namespace
   {
+    // Log
+    Rk::VirtualLockedOutStream log;
+    
     // Freetype
     FT_Library ft = 0;
-    
+
     //
     // = Glyph =========================================================================================================
     // An individual character glyph, used for packing
@@ -71,7 +75,7 @@ namespace Co
         bitmap = other.bitmap;
         other.bitmap.buffer = 0;
 
-        metrics  = other.metrics;
+        metrics = other.metrics;
 
         index       = other.index;
         other.index = ~uint (0);
@@ -158,11 +162,12 @@ namespace Co
 
       friend void swap (Glyph& a, Glyph& b)
       {
-        std::swap (a.bitmap,   b.bitmap);
-        std::swap (a.metrics,  b.metrics);
-        std::swap (a.index,    b.index);
-        std::swap (a.max_side, b.max_side);
-        std::swap (a.area,     b.area);
+        using std::swap;
+        swap (a.bitmap,   b.bitmap);
+        swap (a.metrics,  b.metrics);
+        swap (a.index,    b.index);
+        swap (a.max_side, b.max_side);
+        swap (a.area,     b.area);
       }
 
       GlyphMetrics get_metrics () const
@@ -187,15 +192,16 @@ namespace Co
     struct Rect
     {
       uint x, y,
-           width, height;
+           width, height,
+           a;
 
       Rect () { }
 
       __forceinline Rect (uint x, uint y, uint w, uint h) :
-        x (x), y (y), width (w), height (h)
+        x (x), y (y), width (w), height (h), a (w * h)
       { }
       
-      uint area () const { return width * height; }
+      uint area () const { return a; }
 
       bool operator == (const Rect& other) const
       {
@@ -204,7 +210,7 @@ namespace Co
 
       bool operator < (const Rect& other) const
       {
-        return (x < other.x) ? (y < other.y) : false;
+        return a < other.a;
       }
 
     }; // Rect
@@ -219,6 +225,8 @@ namespace Co
     template <typename Iter>
     bool pack_glyphs (Iter first, Iter end, uint width, uint height)
     {
+      //Profiler prof ("Co-Font: pack_glyphs", log);
+
       typedef std::multiset <Rect> Rects;
       Rects rects;
       rects.insert (Rect (0, 0, width, height));
@@ -315,10 +323,12 @@ namespace Co
     // Tries to find a good packing solution for the glyphs [first, end).
     //
     template <typename Iter>
-    void make_atlas (Iter first, Iter end, float threshold, uint& best_width, uint& best_height)
+    float make_atlas (Iter first, Iter end, float threshold, uint& best_width, uint& best_height)
     {
+      //Profiler prof ("Co-Font: make_atlas", log);
+
       if (first == end)
-        throw Rk::Exception ("Co-Font: make_atlas - no glyphs to pack");
+        throw Rk::Exception ("X Co-Font: make_atlas - no glyphs to pack");
 
       Rk::clamp (threshold, 0.0f, 1.0f);
 
@@ -357,6 +367,8 @@ namespace Co
       }
       
       assert (best_width != ~uint (0));
+
+      return float (glyph_area) / float (best_width * best_height);
     } // make_atlas
 
     //
@@ -380,18 +392,18 @@ namespace Co
       {
         error = FT_Init_FreeType (&ft);
         if (error)
-          throw Rk::Exception ("Co-Font: make_font - FT_Init_FreeType failed");
+          throw Rk::Exception ("X Co-Font: create_font - FT_Init_FreeType failed");
       }
 
       FT_Face face;
       Rk::ShortString <512> path_buf = path;
       error = FT_New_Face (ft, path_buf.c_str (), 0, &face);
       if (error)
-        throw Rk::Exception ("Co-Font: make_font - FT_New_Face failed");
+        throw Rk::Exception ("X Co-Font: create_font - FT_New_Face failed");
 
       error = FT_Set_Char_Size (face, 0, size << 6, 96, 96);
       if (error)
-        throw Rk::Exception ("Co-Font: make_font - FT_Set_Char_Size failed");
+        throw Rk::Exception ("X Co-Font: create_font - FT_Set_Char_Size failed");
 
       std::map <uint, uint> glyph_remaps; // Remaps FreeType glyph indices to private glyph indices
     
@@ -399,13 +411,13 @@ namespace Co
 
       for (auto range = ranges; range != end; range++)
       {
-        for (uint cp = range -> begin; cp != range -> end; cp++)
+        for (char32 cp = range -> begin; cp != range -> end; cp++)
         {
           uint freetype_index = FT_Get_Char_Index (face, cp);
           if (freetype_index == 0)
           {
             // No glyph for this character
-            char_map [cp] = ~uint (0);
+            char_map [cp] = ~u32 (0);
             continue;
           }
           else
@@ -435,7 +447,7 @@ namespace Co
       {
         error = FT_Load_Glyph (face, remap -> first, FT_LOAD_RENDER | FT_LOAD_NO_AUTOHINT);
         if (error)
-          throw Rk::Exception ("Co-Font: make_font - FT_Load_Glyph failed");
+          throw Rk::Exception ("X Co-Font: create_font - FT_Load_Glyph failed");
 
         glyphs [remap -> second].init (face -> glyph, remap -> second);
       }
@@ -444,14 +456,16 @@ namespace Co
       std::sort (
         glyphs.begin (),
         glyphs.end   (),
-        [] (const Glyph& a, const Glyph& b) -> bool
+        [] (const Glyph& a, const Glyph& b)
         {
           return a.max_side > b.max_side;
         }
       );
 
       // Pack
-      make_atlas (glyphs.begin (), glyphs.end (), threshold, image.width, image.height);
+      float efficiency = make_atlas (glyphs.begin (), glyphs.end (), threshold, image.width, image.height);
+      log.set_precision (2);
+      log << "- Co-Font: " << path << " packed to " << efficiency * 100.0f << "% efficiency\n";
 
       // Render the packed glyphs to an image
       image.pixel_type   = image.i8;
@@ -468,7 +482,7 @@ namespace Co
       std::sort (
         glyphs.begin (),
         glyphs.end   (),
-        [] (const Glyph& a, const Glyph& b) -> bool
+        [] (const Glyph& a, const Glyph& b)
         {
           return a.index < b.index;
         }
@@ -554,16 +568,16 @@ namespace Co
       image_ptr -> load_map (0, image.data, tex_i8, image.width, image.height, image.size ());
       tex = image_ptr.get ();
 
-      ready = true;
+      IxResource::ready = true;
     }
 
     void Font::translate_codepoints (const char32* begin, const char32* end, u32* indices)
     {
       if (!begin || !end || !indices)
-        throw Rk::Exception ("Co-Font: IxFont::translate_codepoints - null pointer");
+        throw Rk::Exception ("X Co-Font: IxFont::translate_codepoints - null pointer");
 
-      if (end > begin)
-        throw Rk::Exception ("Co-Font: IxFont::translate_codepoints - invalid range");
+      if (end < begin)
+        throw Rk::Exception ("X Co-Font: IxFont::translate_codepoints - invalid range");
 
       while (begin != end)
       {
@@ -612,6 +626,8 @@ namespace Co
       typedef std::unordered_map <Rk::ShortString <512>, IxFont*> CacheType;
       CacheType cache;
 
+      virtual void init (Rk::IxLockedOutStreamImpl* log_impl);
+      
       virtual IxFont* create (
         IxLoadContext&   context,
         Rk::StringRef    path,
@@ -627,6 +643,11 @@ namespace Co
 
     } factory;
 
+    void FontFactory::init (Rk::IxLockedOutStreamImpl* log_impl)
+    {
+      log.set_impl (log_impl);
+    }
+
     IxFont* FontFactory::create (
       IxLoadContext&   context,
       Rk::StringRef    path,
@@ -636,6 +657,9 @@ namespace Co
       const CodeRange* end,
       uint             index)
     {
+      if (!log.get_impl ())
+        throw Rk::Exception ("X Co-Font: IxFontFactory::create - Factory not initialized");
+
       IxFont* font;
 
       Rk::ShortStringOutStream <512> lookup (path);

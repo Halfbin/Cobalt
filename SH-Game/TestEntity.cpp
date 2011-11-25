@@ -17,6 +17,10 @@
 #include <Co/Spatial.hpp>
 #include <Co/IxFont.hpp>
 
+#include <Rk/ShortString.hpp>
+
+#include <array>
+
 using namespace Co;
 
 extern IxModelFactory*   model_factory;
@@ -25,6 +29,39 @@ extern IxFontFactory*    font_factory;
 
 namespace
 {
+  void draw_ui_text (Frame& frame, int x, int y, IxFont* font, Rk::U16StringRef text)
+  {
+    if (!font -> ready ())
+      return;
+
+    Rk::ShortU32String <1024> buffer;
+    for (auto iter = text.begin (); iter != text.end (); iter++)
+      buffer.append (char32 (*iter));
+
+    u32 indices [1024];
+    font -> translate_codepoints (buffer.data (), text.length (), indices);
+
+    TexRect rects [1024];
+
+    for (uint glyph = 0; glyph != text.length (); glyph++)
+    {
+      const GlyphMetrics& metrics = font -> get_metrics (indices [glyph]);
+      TexRect rect;
+      rect.x = x + metrics.bearing_x;
+      rect.y = y + metrics.bearing_y;
+      rect.w = metrics.width;
+      rect.h = metrics.height;
+      rect.s = metrics.x;
+      rect.t = metrics.y;
+      rect.tw = metrics.width;
+      rect.th = metrics.height;
+      rects [glyph] = rect;
+      x += metrics.advance;
+    }
+
+    frame.add_ui_batch (font -> get_image (), rects, rects + text.length ());
+  }
+
   class TestEntity :
     public IxEntity
   {
@@ -59,6 +96,8 @@ namespace
         mat.diffuse_tex = tex -> get ();
       model -> draw (frame, spatial, next, &mat, 1);
 
+      draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
+
       spatial = next;
     }
 
@@ -71,7 +110,7 @@ namespace
       {
         model = model_factory   -> create (loadcontext, "cube.rkmodel");
         tex   = texture_factory -> create (loadcontext, "derp.cotexture");
-        CodeRange codepoints = { 0x0000, 0x0180 };
+        CodeRange codepoints = { 0x0020, 0x007f }; // ASCII printable
         font  = font_factory    -> create (loadcontext, "DejaVuSans.ttf", 32, fontsize_points, &codepoints, &codepoints + 1);
       }
     }

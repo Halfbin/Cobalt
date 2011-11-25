@@ -77,6 +77,11 @@ namespace Co
       return tex;
     }
 
+    bool ready () const
+    {
+      return IxResource::ready;
+    }
+
   }; // class IxFont
 
 } // namespace Co

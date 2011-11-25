@@ -29,11 +29,11 @@ namespace Co
   {
     u64   start;
     float ticks_per_second;
-    
+
     #ifndef _WIN64
       static __forceinline u64 rdtsc ()
       {
-        u32 hi, lo;
+        register u32 hi, lo;
         __asm
         {
           lfence
@@ -46,7 +46,7 @@ namespace Co
     #else
       static __forceinline u64 rdtsc ()
       {
-        u64 result;
+        register u64 result;
         __asm
         {
           lfence
@@ -60,27 +60,35 @@ namespace Co
   public:
     Clock ()
     {
-      timeBeginPeriod (1);
-    
       u32 mhz;
       u32 size = 4;
-      /*i32 fail =*/RegGetValueA (hkey_local_machine, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "~MHz", rrf_rt_reg_dword, 0, &mhz, &size);
-      //if (fail) throw Rk::Exception ("Error retrieving processor frequency");
-    
-      ticks_per_second = float (mhz * 1000000);
+      RegGetValueA (hkey_local_machine, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "~MHz", rrf_rt_reg_dword, 0, &mhz, &size);
+      
+      ticks_per_second = float (u64 (mhz) * 1000000ull);
       start = rdtsc ();
     }
-    
-    ~Clock ()
-    {
-      timeEndPeriod (1);
-    }
-    
+
     __forceinline float time () const
     {
       return float (rdtsc () - start) / ticks_per_second;
     }
+
+  };
+
+  class MasterClock :
+    public Clock
+  {
+  public:
+    MasterClock ()
+    {
+      timeBeginPeriod (1);
+    }
     
+    ~MasterClock ()
+    {
+      timeEndPeriod (1);
+    }
+
   };
 
 } // namespace Co

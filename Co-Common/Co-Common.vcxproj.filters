@@ -7,6 +7,7 @@
     <ClInclude Include="..\Include\Co\Config.hpp">
       <Filter>Config</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\Profile.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Config">

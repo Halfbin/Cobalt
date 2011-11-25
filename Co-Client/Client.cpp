@@ -102,7 +102,7 @@ namespace Co
     renderer -> init (window.get_handle (), clock, log);
     loader   -> init (*render_device, log, game_path);
     engine   -> init (*renderer, *loader, clock);
-    game     -> init (*engine);
+    game     -> init (*engine, &log);
 
     engine -> register_classes (library -> classes, library -> class_count);
   }

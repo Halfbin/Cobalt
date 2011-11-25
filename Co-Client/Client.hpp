@@ -26,8 +26,8 @@ namespace Co
   
   class Client
   {
-    GLWindow window;
-    Clock    clock;
+    GLWindow    window;
+    MasterClock clock;
 
     Rk::Module renderer_module,
                loader_module,

@@ -56,8 +56,11 @@ namespace Co
         }
         else
         {
-          glActiveTexture (texunit_diffuse);
+          glActiveTexture (GL_TEXTURE0 + texunit_diffuse);
+          check_gl ("glActiveTexture");
+
           glBindTexture (GL_TEXTURE_2D, 0);
+          check_gl ("glBindTexture");
         }
 
         static const GLenum gl_prim_types [7] = {
@@ -290,7 +293,7 @@ namespace Co
 
     point_geoms_back_index = 0;
     meshes_back_index      = 0;
-    ui_rects_back_index    = 0;
+    ui_batches_back_index  = 0;
     lights_back_index      = 0;
     materials_back_index   = 0;
     garbage_vao_back_index = 0;

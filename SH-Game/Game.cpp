@@ -29,7 +29,7 @@ namespace
     Co::IxModule* texture_module;
     Co::IxModule* font_module;
 
-    virtual void init (Co::IxEngine& engine);
+    virtual void init (Co::IxEngine& engine, Rk::IxLockedOutStreamImpl* log_impl);
     
     virtual void start (Co::IxEngine& engine);
     virtual void stop  ();
@@ -37,9 +37,12 @@ namespace
     virtual void tick      (float time, float prev_time);
     virtual void update_ui (Co::IxUI* ui);
 
+  public:
+    void expose (void** out, u64 ixid);
+
   } game;
 
-  void Game::init (Co::IxEngine& engine)
+  void Game::init (Co::IxEngine& engine, Rk::IxLockedOutStreamImpl* log_impl)
   {
     model_module = engine.load_module ("Co-Model");
     model_module -> expose (model_factory);
@@ -49,6 +52,7 @@ namespace
 
     font_module = engine.load_module ("Co-Font");
     font_module -> expose (font_factory);
+    font_factory -> init (log_impl);
   }
 
   void Game::start (Co::IxEngine& engine)
@@ -71,9 +75,14 @@ namespace
 
   }
 
+  void Game::expose (void** out, u64 ixid)
+  {
+    Rk::expose <Co::IxGame> (&game, ixid, out);
+  }
+
 } // namespace
 
 void expose_game (u64 ixid, void** out)
 {
-  Rk::expose <Co::IxGame> (&game, ixid, out);
+  return game.expose (out, ixid);
 }

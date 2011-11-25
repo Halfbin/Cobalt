@@ -14,7 +14,6 @@
     <ClInclude Include="..\Include\Co\Frame.hpp" />
     <ClInclude Include="..\Include\Co\IxGeomCompilation.hpp" />
     <ClInclude Include="..\Include\Co\IxGeomBuffer.hpp" />
-    <ClInclude Include="..\Include\Co\IxGlyphPack.hpp" />
     <ClInclude Include="..\Include\Co\IxRenderContext.hpp" />
     <ClInclude Include="..\Include\Co\IxRenderDevice.hpp" />
     <ClInclude Include="..\Include\Co\IxRenderer.hpp" />
@@ -24,7 +23,6 @@
     <ClInclude Include="GLCompilation.hpp" />
     <ClInclude Include="GLContext.hpp" />
     <ClInclude Include="GLFrame.hpp" />
-    <ClInclude Include="GLGlyphPack.hpp" />
     <ClInclude Include="GLRenderer.hpp" />
     <ClInclude Include="GLTexImage.hpp" />
   </ItemGroup>
@@ -33,7 +31,6 @@
     <ClCompile Include="GLCompilation.cpp" />
     <ClCompile Include="GLContext.cpp" />
     <ClCompile Include="GLFrame.cpp" />
-    <ClCompile Include="GLGlyphPack.cpp" />
     <ClCompile Include="GLTexImage.cpp" />
     <ClCompile Include="GLRenderer.cpp" />
     <ClCompile Include="Module.cpp" />

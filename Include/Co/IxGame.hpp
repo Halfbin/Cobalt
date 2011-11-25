@@ -6,6 +6,7 @@
 #ifndef CO_H_IXGAME
 #define CO_H_IXGAME
 
+#include <Rk/VirtualOutStream.hpp>
 #include <Rk/Types.hpp>
 
 namespace Co
@@ -16,9 +17,9 @@ namespace Co
   class IxGame
   {
   public:
-    enum : u64 { id = 0xb31a8a07f5fb1b71ull };
+    static const u64 id = 0xb31a8a07f5fb1b71ull;
 
-    virtual void init (IxEngine& engine) = 0;
+    virtual void init (IxEngine& engine, Rk::IxLockedOutStreamImpl* log) = 0;
     
     virtual void start (IxEngine& engine) = 0;
     virtual void stop  () = 0;

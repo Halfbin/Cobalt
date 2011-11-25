@@ -107,10 +107,8 @@ namespace Co
     struct UIBatch
     {
       IxTexImage* tex;   //  4  8
-      u32         x,     //  8 12
-                  y;     // 12 16
-      u32         first, // 16 20
-                  count; // 20 24
+      u32         first, //  8 12
+                  count; // 12 16
     };
 
     struct Label
@@ -140,7 +138,7 @@ namespace Co
     // UI rects
     enum { max_ui_batches = 1024 };
 		UIBatch ui_batches [max_ui_batches];
-    uint    ui_rects_back_index;
+    uint    ui_batches_back_index;
 
     // Labels
     enum { max_labels = 1024 };
@@ -221,15 +219,13 @@ namespace Co
     }
 
     template <typename Iter>
-    void add_ui_batch (IxTexImage* tex, uint x, uint y, Iter begin, Iter end)
+    void add_ui_batch (IxTexImage* tex, Iter begin, Iter end)
     {
       if (ui_batches_back_index = max_ui_batches)
         return;
 
       auto& batch = ui_batches [ui_batches_back_index];
       batch.tex = tex;
-      batch.x = x;
-      batch.y = y;
       batch.first = tex_rects_back_index;
 
       while (tex_rects_back_index != max_tex_rects && begin != end)
@@ -241,7 +237,7 @@ namespace Co
     }
 
     template <typename Iter>
-    void add_ui_batch (IxTexImage* tex, uint x, uint y, Iter begin, uint count)
+    void add_ui_batch (IxTexImage* tex, Iter begin, uint count)
     {
       add_ui_batch (tex, x, y, begin, begin + count);
     }
