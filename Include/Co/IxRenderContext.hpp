@@ -13,7 +13,6 @@ namespace Co
   class IxGeomBuffer;
   class IxGeomCompilation;
   class IxTexImage;
-  //class IxGlyphPack;
   struct GeomAttrib;
   struct GlyphMapping;
 
@@ -40,14 +39,6 @@ namespace Co
       bool wrap
     ) = 0;
     
-    /*virtual IxGlyphPack* create_glyph_pack (
-      const u8*           atlas,
-      uint                width,
-      uint                height,
-      const GlyphMapping* mappings,
-      uint                glyph_count
-    ) = 0;*/
-
     virtual void flush () = 0;
 
   }; // class IxRenderContext

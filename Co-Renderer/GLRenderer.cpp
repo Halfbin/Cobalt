@@ -13,8 +13,10 @@
 #include <Rk/Expose.hpp>
 #include <Rk/File.hpp>
 
-#include "GL.hpp"
+#include "GeomProgram.hpp"
+#include "RectProgram.hpp"
 #include "GLTexImage.hpp"
+#include "GL.hpp"
 
 //
 // = WGL stuff =========================================================================================================
@@ -97,120 +99,42 @@ namespace Co
   //
   // Shader init
   //
-  u32 GLRenderer::load_shader (const char* path, uint type)
-  {
-    Rk::File file (path, Rk::File::open_read_existing);
-    u32 size = u32 (file.size ());
-    std::unique_ptr <char []> buffer (new char [size]);
-    file.read (buffer.get (), size);
-    
-    u32 shader = glCreateShader (type);
-    check_gl ("glCreateShader");
-
-    const char* data = buffer.get ();
-    u32 len = size;
-    glShaderSource (shader, 1, &data, (const i32*) &len);
-    check_gl ("glShaderSource");
-
-    glCompileShader (shader);
-    check_gl ("glCompileShader");
-
-    glGetShaderiv (shader, GL_INFO_LOG_LENGTH, (i32*) &len);
-    check_gl ("glGetShaderiv (GL_INFO_LOG_LENGTH)");
-
-    if (len > 1)
-    {
-      if (len > size)
-        buffer.reset (new char [len]);
-      glGetShaderInfoLog (shader, len, (i32*) &len, buffer.get ());
-      check_gl ("glGetShaderInfoLog");
-      
-      log () << "- Infolog from shader compiler:\n"
-             << Rk::StringRef (buffer.get (), len - 1)
-             << '\n';
-    }
-
-    int ok;
-    glGetShaderiv (shader, GL_COMPILE_STATUS, &ok);
-    check_gl ("glGetShaderiv (GL_COMPILE_STATUS)");
-
-    if (!ok)
-      throw Rk::Exception ("Error compiling shader");
-
-    return shader;
-  }
-
-  static void link_attrib (u32 program, const char* name, u32 index)
-  {
-    glBindAttribLocation (program, index, name);
-    check_gl ("glBindAttribLocation");
-  }
-
-  static u32 link_uniform (u32 program, const char* name)
-  {
-    u32 uniform = glGetUniformLocation (program, name);
-    check_gl ("glGetUniformLocation");
-    if (uniform == 0xffffffff)
-      throw Rk::Exception ("Uniform not present or inactive");
-    return uniform;
-  }
-
-  void GLRenderer::load_program ()
+  /*void GLRenderer::load_shaders ()
   {
     log () << "- GLRenderer loading shaders\n";
 
-    u32 vertex_shader   = load_shader ("../Common/Shaders/Main-Vertex.glsl",   GL_VERTEX_SHADER  );
-    u32 fragment_shader = load_shader ("../Common/Shaders/Main-Fragment.glsl", GL_FRAGMENT_SHADER);
+    Attrib geom_attribs [] = {
+      { "attrib_position", attrib_position },
+      { "attrib_normal",   attrib_normal   },
+      { "attrib_tcoords",  attrib_tcoords  }
+    };
 
-    program = glCreateProgram ();
-    check_gl ("glCreateProgram");
+    Uniform geom_uniforms [] = {
+      { "model_to_world", model_to_world },
+      { "world_to_clip",  world_to_clip  },
+      { "world_to_eye",   world_to_eye   }
+    };
 
-    glAttachShader (program, vertex_shader);
-    check_gl ("glAttachShader (vertex_shader)");
+    geom_program = load_program (
+      "../Common/Shaders/Geom",
+      std::begin (geom_attribs),  std::end (geom_attribs),
+      std::begin (geom_uniforms), std::end (geom_uniforms)
+    );
 
-    glAttachShader (program, fragment_shader);
-    check_gl ("glAttachShader (fragment_shader)");
+    Attrib rect_attribs [] = {
+      { "attrib_rect", attrib_rect }
+    };
 
-    link_attrib  (program, "attrib_position", attrib_position);
-    link_attrib  (program, "attrib_normal",   attrib_normal  );
-    link_attrib  (program, "attrib_tcoords",  attrib_tcoords );
+    Uniform rect_uniforms [] = {
+      { "ui_to_clip",  ui_to_clip }
+    };
 
-    glLinkProgram (program);
-    check_gl ("glLinkProgram");
-
-    u32 len;
-    glGetProgramiv (program, GL_INFO_LOG_LENGTH, (i32*) &len);
-    check_gl ("glGetProgramiv (GL_INFO_LOG_LENGTH)");
-
-    if (len > 1)
-    {
-      std::unique_ptr <char []> buffer (new char [len]);
-      glGetProgramInfoLog (program, len, (i32*) &len, buffer.get ());
-      check_gl ("glGetProgramInfoLog");
-
-      log () << "- Infolog from program linker:\n"
-             << Rk::StringRef (buffer.get (), len - 1)
-             << '\n';
-    }
-
-    int ok;
-    glGetProgramiv (program, GL_LINK_STATUS, &ok);
-    check_gl ("glGetProgramiv (GL_LINK_STATUS)");
-
-    model_to_world = link_uniform (program, "model_to_world");
-    world_to_clip  = link_uniform (program, "world_to_clip" );
-    world_to_eye   = link_uniform (program, "world_to_eye"  );
-
-    glUseProgram (program);
-    check_gl ("glUseProgram");
-
-    u32 tex_diffuse = link_uniform (program, "tex_diffuse");
-    glUniform1i (tex_diffuse, texunit_diffuse);
-    check_gl ("glUniform1i");
-
-    if (!ok)
-      throw Rk::Exception ("Error linking shader program");
-  }
+    rect_program = load_program (
+      "../Common/Shaders/Rect",
+      std::begin (rect_attribs),  std::end (rect_attribs),
+      std::begin (rect_uniforms), std::end (rect_uniforms)
+    );
+  }*/
 
   //
   // Rendering loop
@@ -227,9 +151,9 @@ namespace Co
 
     GLContext::Ptr context = create_context_impl ();
 
-    // Set up shader
-    if (!opengl_compat)
-      load_program ();
+    // Set up shaders
+    GeomProgram geom_program;
+    RectProgram rect_program;
 
     SetThreadPriority (GetCurrentThread (), 31); // THREAD_PRIORITY_TIME_CRITICAL
 
@@ -279,7 +203,7 @@ namespace Co
       if (now >= frame -> prev_time)
         alpha = (now - frame -> prev_time) / (frame -> time - frame -> prev_time);
       
-      frame -> render (alpha, model_to_world, world_to_clip, world_to_eye);
+      frame -> render (alpha, geom_program, rect_program);
       
       context -> present ();
       frames++;
@@ -392,8 +316,10 @@ namespace Co
     int attribs [] = {
       WGL_CONTEXT_MAJOR_VERSION, opengl_major,
       WGL_CONTEXT_MINOR_VERSION, opengl_minor,
-      WGL_CONTEXT_PROFILE_MASK,  (opengl_compat ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT : WGL_CONTEXT_CORE_PROFILE_BIT), // Ignored for 3.1 and earlier
+      WGL_CONTEXT_PROFILE_MASK,  WGL_CONTEXT_CORE_PROFILE_BIT, // Ignored for 3.1 and earlier
+    #ifndef NDEBUG
       WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
+    #endif
       0, 0
     };
     

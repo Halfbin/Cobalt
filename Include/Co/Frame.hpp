@@ -69,10 +69,21 @@ namespace Co
   //
   struct TexRect
   {
-    u32 x,  y,
+    i32 x,  y,
         w,  h,
         s,  t,
         tw, th;
+
+    TexRect (const Nil& n = nil) :
+      x (0), y (0), w  (0), h  (0),
+      s (0), t (0), tw (0), th (0)
+    { }
+    
+    TexRect (i32 x, i32 y, i32 w, i32 h, i32 s, i32 t, i32 tw, i32 th) :
+      x (x), y (y), w  (w),  h  (h),
+      s (s), t (t), tw (tw), th (th)
+    { }
+    
   };
 
   //

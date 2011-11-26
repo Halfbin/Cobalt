@@ -19,11 +19,20 @@
     <Filter Include="GLFrame">
       <UniqueIdentifier>{7392d953-9b1a-4e3b-b32c-e4963278decd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Main Shader">
-      <UniqueIdentifier>{2f72dc42-6d1e-41df-8bda-77dddeb3e074}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GLTexImage">
       <UniqueIdentifier>{cd7ecfb6-3f61-4cd1-88e4-a764e4731360}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{2f72dc42-6d1e-41df-8bda-77dddeb3e074}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLShader">
+      <UniqueIdentifier>{907bc77a-89bb-4850-b0df-30ba4036a10a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Geom">
+      <UniqueIdentifier>{fc72e7e9-1ece-4952-94ce-54d325be8c38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Rect">
+      <UniqueIdentifier>{4ab2c60a-7d81-47b3-bc20-f3831e134c1e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +76,15 @@
     <ClInclude Include="GLTexImage.hpp">
       <Filter>GLTexImage</Filter>
     </ClInclude>
+    <ClInclude Include="GLShader.hpp">
+      <Filter>GLShader</Filter>
+    </ClInclude>
+    <ClInclude Include="GeomProgram.hpp">
+      <Filter>Shaders\Geom</Filter>
+    </ClInclude>
+    <ClInclude Include="RectProgram.hpp">
+      <Filter>Shaders\Rect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GLCompilation.cpp">
@@ -88,13 +106,30 @@
     <ClCompile Include="GLTexImage.cpp">
       <Filter>GLTexImage</Filter>
     </ClCompile>
+    <ClCompile Include="GLShader.cpp">
+      <Filter>GLShader</Filter>
+    </ClCompile>
+    <ClCompile Include="GeomProgram.cpp">
+      <Filter>Shaders\Geom</Filter>
+    </ClCompile>
+    <ClCompile Include="RectProgram.cpp">
+      <Filter>Shaders\Rect</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="Main-Fragment.glsl">
-      <Filter>Main Shader</Filter>
+    <CustomBuild Include="Geom-Fragment.glsl">
+      <Filter>Shaders\Geom</Filter>
     </CustomBuild>
-    <CustomBuild Include="Main-Vertex.glsl">
-      <Filter>Main Shader</Filter>
+    <CustomBuild Include="Geom-Vertex.glsl">
+      <Filter>Shaders\Geom</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Rect-Fragment.glsl">
+      <Filter>Shaders\Rect</Filter>
+    </None>
+    <None Include="Rect-Vertex.glsl">
+      <Filter>Shaders\Rect</Filter>
+    </None>
   </ItemGroup>
 </Project>

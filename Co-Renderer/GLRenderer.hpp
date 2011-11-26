@@ -55,19 +55,14 @@ namespace Co
     Clock* clock;
     Log*   logger;
 
-    // Shader
-    u32 program,
-        model_to_world,
-        world_to_clip,
-        world_to_eye;
-
     Log& log () { return *logger; }
 
     // Setup and teardown
-    virtual void init         (void* new_target, Clock& new_clock, Log& new_logger);
-    u32          load_shader  (const char* path, uint type);
-    void         load_program ();
-    void         cleanup      ();
+    virtual void init    (void* new_target, Clock& new_clock, Log& new_logger);
+    void         cleanup ();
+
+    // Shader setup
+    //void load_shaders ();
 
     // Rendering control
     void         loop  ();

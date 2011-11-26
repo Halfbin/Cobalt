@@ -9,6 +9,10 @@
 // Implements
 #include <Co/Frame.hpp>
 
+// Uses
+#include "GeomProgram.hpp"
+#include "RectProgram.hpp"
+
 namespace Co
 {
   //
@@ -17,9 +21,9 @@ namespace Co
   class GLFrame :
     public Frame
   {
-    void render_point_geoms (u32 model_to_world_loc, float alpha);
+    void render_point_geoms (GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
-    void render_glyph_runs  ();
+    void render_ui_batches  ();
 
   public:
     uint id;
@@ -29,7 +33,7 @@ namespace Co
     u32 garbage_vaos [max_garbage_vaos];
     uint garbage_vao_back_index;
 
-    void render (float alpha, u32 model_to_world_loc, u32 world_to_clip_loc, u32 world_to_eye_loc);
+    void render (float alpha, GeomProgram& geom_program, RectProgram& rect_program);
     
     u32 reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id);
 

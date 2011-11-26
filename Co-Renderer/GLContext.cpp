@@ -37,7 +37,7 @@ namespace Co
     int attribs [] = {
       WGL_CONTEXT_MAJOR_VERSION, opengl_major,
       WGL_CONTEXT_MINOR_VERSION, opengl_minor,
-      WGL_CONTEXT_PROFILE_MASK,  (opengl_compat ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT : WGL_CONTEXT_CORE_PROFILE_BIT), // Ignored for 3.1 and earlier
+      WGL_CONTEXT_PROFILE_MASK,  WGL_CONTEXT_CORE_PROFILE_BIT, // Ignored for 3.1 and earlier
     #ifndef NDEBUG
       WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
     #endif

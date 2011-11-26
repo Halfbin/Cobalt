@@ -38,7 +38,6 @@ namespace Co
   //
   static const uint opengl_major  = 3,
                     opengl_minor  = 3;
-#define opengl_compat 0
 
   //
   // Error handling

@@ -54,26 +54,15 @@ namespace Co
       static const uint types [4] = { GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT, GL_FLOAT };
       uint type = types [attrib.type];
 
-      if (opengl_compat)
-      {
-        if (attrib.index == attrib_position)
-        {
-          glVertexPointer (3, type, attrib.stride, (void*) uptr (attrib.offset));
-          check_gl ("glVertexPointer");
-        }
-      }
-      else
-      {
-			  glVertexAttribPointer (
-				  attrib.index,
-				  ((attrib.index == attrib_tcoords) ? 2 : 3),
-				  type,
-				  false,
-				  attrib.stride,
-				  (void*) uptr (attrib.offset)
-			  );
-        check_gl ("glVertexAttribPointer");
-      }
+      glVertexAttribPointer (
+				attrib.index,
+				((attrib.index == attrib_tcoords) ? 2 : 3),
+				type,
+				false,
+				attrib.stride,
+				(void*) uptr (attrib.offset)
+			);
+      check_gl ("glVertexAttribPointer");
 		}
   }
 	
