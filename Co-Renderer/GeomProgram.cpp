@@ -28,16 +28,10 @@ namespace Co
   void GeomProgram::use ()
   {
     program.use ();
-    glEnableVertexAttribArray (attrib_position);
-    glEnableVertexAttribArray (attrib_normal);
-    glEnableVertexAttribArray (attrib_tcoords);
   }
 
   void GeomProgram::done ()
   {
-    glDisableVertexAttribArray (attrib_position);
-    glDisableVertexAttribArray (attrib_normal);
-    glDisableVertexAttribArray (attrib_tcoords);
     program.done ();
   }
 

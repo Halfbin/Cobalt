@@ -158,7 +158,7 @@ namespace Co
     uint         labels_back_index;
     
     // Tex rects
-    enum { max_tex_rects = 2048 };
+    enum { max_tex_rects = 16384 };
     TexRect tex_rects [max_tex_rects];
     uint    tex_rects_back_index;
     
@@ -306,6 +306,8 @@ namespace Co
     }
 
   }; // class Frame
+
+  enum { frame_size = sizeof (Frame) };
 
 } // namespace Co
 

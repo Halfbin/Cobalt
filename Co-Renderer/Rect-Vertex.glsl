@@ -5,18 +5,13 @@
 
 #version 330 core
 
-uniform mat3x2 ui_to_world;
+uniform mat3x2 ui_to_clip;
 
-struct Rect
-{
-  int x, y, x2, y2,
-      s, t, s2, t2;
-};
+in ivec4 attrib_rect;
+in ivec4 attrib_tcoords;
 
-in Rect attrib_position;
-
-out vec4 xformed_position;
-out vec2 xformed_tcoords;
+out vec4  xformed_position;
+out ivec2 xformed_tcoords;
 
 //  |  /|
 //  | / |
@@ -24,7 +19,18 @@ out vec2 xformed_tcoords;
 
 void main ()
 {
-  
+  int x, y, s, t;
+
+  switch (gl_VertexID)
+  {
+    case 0: x = attrib_rect.x; y = attrib_rect.y; s = attrib_tcoords.s; t = attrib_tcoords.t; break;
+    case 1: x = attrib_rect.x; y = attrib_rect.w; s = attrib_tcoords.s; t = attrib_tcoords.q; break;
+    case 2: x = attrib_rect.z; y = attrib_rect.y; s = attrib_tcoords.p; t = attrib_tcoords.t; break;
+    case 3: x = attrib_rect.z; y = attrib_rect.w; s = attrib_tcoords.p; t = attrib_tcoords.q; break;
+  }
+
+  xformed_position = vec4 (ui_to_clip * vec3 (x, y, 1), 0, 1);
+  xformed_tcoords  = ivec2 (s, t);
 
   gl_Position = xformed_position;
 }

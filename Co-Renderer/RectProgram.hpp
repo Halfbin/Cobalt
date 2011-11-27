@@ -21,21 +21,46 @@ namespace Co
 
     u32 ui_to_clip;
 
+    u32 buffer,
+        buffer_size,
+        vao;
+
   public:
     enum
     {
-      attrib_rect = 0
+      attrib_rect    = 0,
+      attrib_tcoords = 1,
+
+      texunit_tex = 0
     };
 
     RectProgram ();
-    
+    ~RectProgram ();
+
     void use  ();
     void done ();
 
     void set_ui_to_clip (Rk::Matrix2x3f xform)
     {
-      glUniformMatrix4fv (ui_to_clip, 1, true, xform.raw ());
-      check_gl ("glUniformMatrix4fv");
+      glUniformMatrix3x2fv (ui_to_clip, 1, true, xform.raw ());
+      check_gl ("glUniformMatrix3x2fv");
+    }
+
+    void upload_rects (const TexRect* rects, u32 count)
+    {
+      u32 size = count * sizeof (TexRect);
+
+      if (size > buffer_size)
+      {
+        buffer_size = size;
+        glBufferData (GL_ARRAY_BUFFER, size, rects, GL_STREAM_DRAW);
+        check_gl ("glBufferData");
+      }
+      else
+      {
+        glBufferSubData (GL_ARRAY_BUFFER, 0, size, rects);
+        check_gl ("glBufferSubData");
+      }
     }
     
   };

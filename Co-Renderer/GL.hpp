@@ -42,6 +42,8 @@ namespace Co
   //
   // Error handling
   //
+  #ifndef NDEBUG
+
   __declspec(noreturn) static void throw_gl (GLenum err, const char* last_call)
   {
     switch (err)
@@ -54,11 +56,15 @@ namespace Co
     }
   }
 
+  #endif
+
   static __forceinline void check_gl (const char* last_call = "gl<unknown>")
   {
+  #ifndef NDEBUG
     GLenum err = glGetError ();
     if (err)
       throw_gl (err, last_call);
+  #endif
   }
 
 } // namespace Co

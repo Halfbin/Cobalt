@@ -16,7 +16,11 @@ namespace Co
   GLShader::GLShader (Rk::StringRef path, u32 type)
   {
     Rk::File file (path, Rk::File::open_read_existing);
+
     u32 size = u32 (file.size ());
+    if (size == 0)
+      throw Rk::Exception () << "Co-GLRenderer: GLShader::GLShader - " << path << " is empty";
+
     std::unique_ptr <char []> buffer (new char [size]);
     file.read (buffer.get (), size);
     

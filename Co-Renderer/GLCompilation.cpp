@@ -63,6 +63,9 @@ namespace Co
 				(void*) uptr (attrib.offset)
 			);
       check_gl ("glVertexAttribPointer");
+
+      glEnableVertexAttribArray (attrib.index);
+      check_gl ("glEnableVertexAttribArray");
 		}
   }
 	

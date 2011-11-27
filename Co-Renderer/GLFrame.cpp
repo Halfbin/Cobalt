@@ -28,11 +28,6 @@ namespace Co
     uint cur_mesh = 0,
          cur_mat  = 0;
 
-    geom_program.use ();
-    /*glEnableVertexAttribArray (attrib_position);
-    glEnableVertexAttribArray (attrib_tcoords);
-    glEnableVertexAttribArray (attrib_normal);*/
-
     for (uint geom_index = 0; geom_index != point_geoms_back_index; geom_index++)
     {
       auto comp = static_cast <GLCompilation*> (point_comps [geom_index]);
@@ -94,8 +89,6 @@ namespace Co
       
       cur_mat += point_geoms [geom_index].material_count;
     } // for (point_geoms)
-
-    geom_program.done ();
   }
 
   //
@@ -115,9 +108,15 @@ namespace Co
   //
   // render_ui_batches
   //
-  void GLFrame::render_ui_batches ()
+  void GLFrame::render_ui_batches (RectProgram& rect_program)
   {
-
+    /*for (uint index = 0; index != ui_batches_back_index; index++)
+    {
+      auto batch = ui_batches [index];
+      // How the fuck do i base this
+      glDrawArraysInstanced (GL_TRIANGLE_STRIP, 0, 4, tex_rects_back_index);
+      check_gl ("glDrawArraysInstanced");
+    }*/
   }
 
   //
@@ -151,15 +150,14 @@ namespace Co
       float (height)
     );
     
+    geom_program.use ();
     geom_program.set_world_to_clip (world_to_clip);
     geom_program.set_world_to_eye  (world_to_eye);
 
     // Render point geometries
     render_point_geoms (geom_program, alpha);
 
-    // Clean up old VAOs
-    glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
-    check_gl ("glDeleteVertexArrays");
+    geom_program.done ();
 
     // Render textured rectangles
     for (uint index = 0; index != tex_rects_back_index; index++)
@@ -171,8 +169,19 @@ namespace Co
       rect.th += rect.t;
     }
 
-    render_labels (alpha);
-    render_ui_batches ();
+    rect_program.use ();
+    rect_program.set_ui_to_clip (ui_to_clip);
+    if (tex_rects_back_index != 0)
+      rect_program.upload_rects (tex_rects, tex_rects_back_index);
+
+    //render_labels (alpha);
+    render_ui_batches (rect_program);
+
+    rect_program.done ();
+
+    // Clean up old VAOs
+    glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
+    check_gl ("glDeleteVertexArrays");
   } // GLFrame::render
 
   u32 GLFrame::reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id)

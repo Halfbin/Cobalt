@@ -23,7 +23,7 @@ namespace Co
   {
     void render_point_geoms (GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
-    void render_ui_batches  ();
+    void render_ui_batches  (RectProgram& rect_program);
 
   public:
     uint id;

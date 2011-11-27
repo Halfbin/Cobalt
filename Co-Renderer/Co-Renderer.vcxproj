@@ -61,8 +61,18 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Rect-Fragment.glsl" />
-    <None Include="Rect-Vertex.glsl" />
+    <CustomBuild Include="Rect-Fragment.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\$(Filename)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying Shader source</Message>
+    </CustomBuild>
+    <CustomBuild Include="Rect-Vertex.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\$(Filename)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying Shader source</Message>
+    </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2830D43B-B50C-4CFC-82BA-52B412DCAFD1}</ProjectGuid>
