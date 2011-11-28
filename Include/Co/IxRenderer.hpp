@@ -6,20 +6,20 @@
 #ifndef CO_H_IXRENDERER
 #define CO_H_IXRENDERER
 
+#include <Rk/StreamForward.hpp>
 #include <Rk/Types.hpp>
 
 namespace Co
 {
   class Clock;
   class Frame;
-  class Log;
-
+  
   class IxRenderer
   {
   public:
     static const u64 id = 0x98c54ca97b88cd35ull;
 
-    virtual void init (void* target, Clock& clock, Log& log) = 0;
+    virtual void init (void* target, Clock* clock, Rk::IxLockedOutStreamImpl* log) = 0;
     
     virtual void start () = 0;
     virtual void stop  () = 0;

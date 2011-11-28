@@ -97,46 +97,6 @@ namespace Co
   }
 
   //
-  // Shader init
-  //
-  /*void GLRenderer::load_shaders ()
-  {
-    log () << "- GLRenderer loading shaders\n";
-
-    Attrib geom_attribs [] = {
-      { "attrib_position", attrib_position },
-      { "attrib_normal",   attrib_normal   },
-      { "attrib_tcoords",  attrib_tcoords  }
-    };
-
-    Uniform geom_uniforms [] = {
-      { "model_to_world", model_to_world },
-      { "world_to_clip",  world_to_clip  },
-      { "world_to_eye",   world_to_eye   }
-    };
-
-    geom_program = load_program (
-      "../Common/Shaders/Geom",
-      std::begin (geom_attribs),  std::end (geom_attribs),
-      std::begin (geom_uniforms), std::end (geom_uniforms)
-    );
-
-    Attrib rect_attribs [] = {
-      { "attrib_rect", attrib_rect }
-    };
-
-    Uniform rect_uniforms [] = {
-      { "ui_to_clip",  ui_to_clip }
-    };
-
-    rect_program = load_program (
-      "../Common/Shaders/Rect",
-      std::begin (rect_attribs),  std::end (rect_attribs),
-      std::begin (rect_uniforms), std::end (rect_uniforms)
-    );
-  }*/
-
-  //
   // Rendering loop
   //
   extern "C"
@@ -147,7 +107,7 @@ namespace Co
 
   void GLRenderer::loop () try
   {
-    log () << "- GLRenderer running\n";
+    log << "- GLRenderer running\n";
 
     GLContext::Ptr context = create_context_impl ();
 
@@ -172,7 +132,7 @@ namespace Co
     // The real loop
     for (;;)
     {
-      float now = clock -> time () - 0.1f;
+      float now = clock -> time () - 0.15f;
       
       // Perhaps it's time to grab a new frame
       while (!frame || now >= frame -> time)
@@ -211,27 +171,27 @@ namespace Co
   }
   catch (const std::exception& e)
   {
-    log () << e.what () << '\n'
-           << "from Co::GLRenderer::loop\n";
+    log << e.what () << '\n'
+        << "from Co::GLRenderer::loop\n";
   }
   catch (...)
   {
-    log () << "Exception from Co::GLRenderer::loop\n";
+    log << "Exception from Co::GLRenderer::loop\n";
   }
 
   //
   // Initialization
   //
-  void GLRenderer::init (void* new_target, Clock& new_clock, Log& new_logger) try
+  void GLRenderer::init (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger) try
   {
     Rk::require (!target, "Renderer already initialized");
     Rk::require (new_target != 0, "target is null");
-
+    
     target = new_target;
-    clock  = &new_clock;
-    logger = &new_logger;
+    clock  = new_clock;
+    log.set_impl (new_logger);
 
-    log () << "- GLRenderer initializing\n";
+    log << "- GLRenderer initializing\n";
 
     shared_dc = GetDC (target);
     if (!shared_dc)
@@ -355,7 +315,7 @@ namespace Co
       shared_dc = 0;
     }
 
-    logger = 0;
+    log    = nil;
     clock  = 0;
     target = 0;
     format = 0;
@@ -377,7 +337,7 @@ namespace Co
   //
   GLContext* GLRenderer::create_context_impl ()
   {
-    log () << "- Creating render context on GLRenderer\n";
+    log << "- Creating render context on GLRenderer\n";
     return new GLContext (device_mutex, wglCreateContextAttribs, shared_dc, shared_rc, target);
   }
 
@@ -402,7 +362,7 @@ namespace Co
       free_frames.push_back (&frames [i]);
     }
 
-    log () << "- GLRenderer starting\n";
+    log << "- GLRenderer starting\n";
 
     thread.execute (
       [this] { loop (); }
@@ -420,7 +380,7 @@ namespace Co
     ready_frames.push_back (0);
     lock = nil;
     
-    log () << "- GLRenderer stopping\n";
+    log << "- GLRenderer stopping\n";
 
     thread.join ();
   }

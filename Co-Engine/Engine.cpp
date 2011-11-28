@@ -22,7 +22,8 @@
 #include <Rk/Mutex.hpp>
 
 #include <unordered_map>
-#include <deque>
+#include <algorithm>
+#include <vector>
 
 extern "C"
 {
@@ -85,16 +86,16 @@ namespace
     Registry registry;
 
     // Entities
-    typedef std::deque <IxEntity*> EntityList;
+    typedef std::vector <IxEntity*> EntityList;
     EntityList entities;
 
     // Initialization and cleanup
-    virtual void init (IxRenderer& renderer_in, IxLoader& loader_in, Clock& clock_in);
+    virtual void init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in);
     void cleanup ();
 
     // Type registration
-    virtual void register_classes   (IxEntityClass** classes_in, uint count);
-    virtual void unregister_classes (IxEntityClass** classes_in, uint count);
+    virtual void register_classes   (IxEntityClass** classes_in, IxEntityClass** end);
+    virtual void unregister_classes (IxEntityClass** classes_in, IxEntityClass** end);
 
     // Module loading
     virtual IxModule* load_module (Rk::StringRef name);
@@ -114,16 +115,17 @@ namespace
 
   } engine;
 
-  const float Engine::frame_rate     = 50.0f,
+  const float Engine::frame_rate     = 75.0f,
               Engine::frame_interval = 1.0f / frame_rate;
 
-  void Engine::init (IxRenderer& renderer_in, IxLoader& loader_in, Clock& clock_in)
+  void Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in)
   {
-    Rk::require (!running, "Attempt to initialize engine while it is running");
+    if (running)
+      throw Rk::Exception ("Co-Engine: IxEngine::init - engine is running");
     
-    renderer   = &renderer_in;
-    loader     = &loader_in;
-    clock      = &clock_in;
+    renderer   = renderer_in;
+    loader     = loader_in;
+    clock      = clock_in;
     input_sink = 0;
     running    = false;
   }
@@ -133,26 +135,53 @@ namespace
 
   }
 
-  void Engine::register_classes (IxEntityClass** classes_in, uint count)
+  void Engine::register_classes (IxEntityClass** classes_in, IxEntityClass** end)
   {
-    Rk::require (classes_in != 0, "register_classes: classes is null");
-    Rk::require (count != 0,      "register_classes: count is 0");
+    if (!classes_in || !end)
+      throw Rk::Exception ("Co-Engine: IxEngine::register_classes - null pointer");
+
+    if (end < classes_in)
+      throw Rk::Exception ("Co-Engine: IxEngine::register_classes - invalid range");
     
-    for (auto p = classes_in; p != classes_in + count; p++)
-      registry.insert (Registry::value_type ((*p) -> name, *p));
+    std::for_each (
+      classes_in,
+      end,
+      [this] (IxEntityClass* cl)
+      {
+        registry.insert (std::make_pair (cl -> name, cl));
+      }
+    );
+
+    /*while (classes_in != end)
+      registry.insert (Registry::value_type ((*classes_in) -> name, *classes_in));*/
   }
 
-  void Engine::unregister_classes (IxEntityClass** classes_in, uint count)
+  void Engine::unregister_classes (IxEntityClass** classes_in, IxEntityClass** end)
   {
-    Rk::require (classes_in != 0, "unregister_classes: classes is null");
-    Rk::require (count != 0,      "unregister_classes: count is 0");
+    if (!classes_in || !end)
+      throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - null pointer");
 
-    for (auto p = classes_in; p != classes_in + count; p++)
-      registry.erase ((*p) -> name);
+    if (end < classes_in)
+      throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - invalid range");
+
+    std::for_each (
+      classes_in,
+      end,
+      [this] (IxEntityClass* cl)
+      {
+        registry.erase (cl -> name);
+      }
+    );
+
+    /*while (classes_in != end)
+      registry.erase ((*classes_in) -> name);*/
   }
 
   IxModule* Engine::load_module (Rk::StringRef name)
   {
+    if (!name)
+      throw Rk::Exception ("Co-Engine: IxEngine::load_module - name is nil");
+
     Rk::ShortString <512> tagged_name (name);
     tagged_name += CO_SUFFIX ".dll";
     return new Module (tagged_name);
@@ -160,11 +189,12 @@ namespace
 
   IxEntity* Engine::create_entity (Rk::StringRef type, IxPropMap* props)
   {
-    Rk::require (type, "type is nil");
+    if (!type)
+      throw Rk::Exception ("Co-Engine: IxEngine::create_entity - type is nil");
 
     auto iter = registry.find (type);
     if (iter == registry.end ())
-      throw Rk::Exception ("No such entity class");
+      throw Rk::Exception () << "Co-Engine: IxEngine::create_entity - no such entity class \"" << type << "\"";
 
     auto ent = iter -> second -> create (*loader, props);
     entities.push_back (ent);
@@ -178,6 +208,9 @@ namespace
 
   float Engine::start ()
   {
+    if (running)
+      throw Rk::Exception ("Co-Engine: IxEngine::start - engine already running");
+
     running = true;
     prev_time = clock -> time ();
     time = prev_time + frame_interval;

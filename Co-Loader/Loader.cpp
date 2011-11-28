@@ -71,16 +71,14 @@ namespace
     Rk::ShortString <512> game_path;
 
     // Subsystems
-    IxRenderDevice* device;
-    Log*            logger;
-
-    Log& log () { return *logger; }
+    IxRenderDevice*            device;
+    Rk::VirtualLockedOutStream log;
 
     // Thread function
     void loop ();
     
     // Initialization
-    virtual void init (IxRenderDevice& device, Log& new_logger, Rk::StringRef new_game_path);
+    virtual void init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* logger, Rk::StringRef new_game_path);
 
     // Control
     virtual void start ();
@@ -112,20 +110,20 @@ namespace
     
   }*/
 
-  void Loader::init (IxRenderDevice& rd, Log& new_logger, Rk::StringRef new_game_path)
+  void Loader::init (IxRenderDevice* rd, Rk::IxLockedOutStreamImpl* new_logger, Rk::StringRef new_game_path)
   {
     Rk::require (!device, "Loader already initialized");
 
     game_path = new_game_path;
-    device = &rd;
-    logger = &new_logger;
+    device = rd;
+    log.set_impl (new_logger);
 
-    log () << "- Loader initialized\n";
+    log << "- Loader initialized\n";
   }
 
   void Loader::loop ()
   {
-    log () << "- Loader running\n";
+    log << "- Loader running\n";
 
     IxRenderContext::Ptr rc = device -> create_context ();
 
@@ -171,13 +169,13 @@ namespace
       }
       catch (const std::exception& e)
       {
-        log () << e.what () << '\n'
-               << "X Caught in Loader\n";
+        log << e.what () << '\n'
+            << "X Caught in Loader\n";
       }
       catch (...)
       {
-        log () << "X Unknown exception\n"
-               << "X Caught in Loader\n";
+        log << "X Exception\n"
+            << "X Caught in Loader\n";
       }
 
       for (auto g = temp_garbage_queue.begin (); g != temp_garbage_queue.end (); g++)
@@ -199,7 +197,7 @@ namespace
 
     run = true;
 
-    log () << "- Loader starting\n";
+    log << "- Loader starting\n";
 
     thread.execute (
       [this] { loop (); }
@@ -219,7 +217,7 @@ namespace
       pending.notify_all ();
     }
 
-    log () << "- Loader stopping\n";
+    log << "- Loader stopping\n";
 
     thread.join ();
   }

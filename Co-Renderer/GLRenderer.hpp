@@ -11,8 +11,7 @@
 #include <Co/IxRenderer.hpp>
 
 // Uses
-#include <Co/Log.hpp>
-
+#include <Rk/VirtualOutStream.hpp>
 #include <Rk/FixedQueue.hpp>
 #include <Rk/Thread.hpp>
 #include <Rk/Mutex.hpp>
@@ -52,13 +51,11 @@ namespace Co
               height;
 
     // Subsystems
-    Clock* clock;
-    Log*   logger;
-
-    Log& log () { return *logger; }
+    Clock*                     clock;
+    Rk::VirtualLockedOutStream log;
 
     // Setup and teardown
-    virtual void init    (void* new_target, Clock& new_clock, Log& new_logger);
+    virtual void init    (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger);
     void         cleanup ();
 
     // Shader setup

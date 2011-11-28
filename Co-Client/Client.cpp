@@ -82,29 +82,34 @@ namespace Co
     game_path += "SH/";//config ["Client.Game"].as_string ("SH");
 
     // Load subsystem modules
-    renderer_module.load ("Co-GLRenderer" CO_SUFFIX ".dll");
-    renderer      = renderer_module.expose <IxRenderer>     ();
-    render_device = renderer_module.expose <IxRenderDevice> ();
+    renderer_module
+      .load ("Co-GLRenderer" CO_SUFFIX ".dll")
+      .expose (renderer)
+      .expose (render_device);
+    
+    loader_module
+      .load ("Co-Loader" CO_SUFFIX ".dll")
+      .expose (loader);
 
-    loader_module.load ("Co-Loader" CO_SUFFIX ".dll");
-    loader = loader_module.expose <IxLoader> ();
+    engine_module
+      .load ("Co-Engine" CO_SUFFIX ".dll")
+      .expose (engine);
 
-    engine_module.load ("Co-Engine" CO_SUFFIX ".dll");
-    engine = engine_module.expose <IxEngine> ();
-
-    game_module.load (game_path + "Binaries/Co-Game" CO_SUFFIX ".dll");
-    game    = game_module.expose <IxGame>  ();
-    library = game_module.expose <Library> ();
+    game_module
+      .load (game_path + "Binaries/Co-Game" CO_SUFFIX ".dll")
+      .expose (game)
+      .expose (library);
 
     // Initialize subsystems
     window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
     
-    renderer -> init (window.get_handle (), clock, log);
-    loader   -> init (*render_device, log, game_path);
-    engine   -> init (*renderer, *loader, clock);
-    game     -> init (*engine, &log);
+    renderer -> init (window.get_handle (), &clock, &log);
+    loader   -> init (render_device, &log, game_path);
+    engine   -> init (renderer, loader, &clock);
+    game     -> init (engine, &log);
 
-    engine -> register_classes (library -> classes, library -> class_count);
+    if (library)
+      engine -> register_classes (library);
   }
 
   Client::~Client ()
@@ -113,13 +118,16 @@ namespace Co
     game     -> stop ();
     renderer -> stop ();
     loader   -> stop ();
+    
+    if (library)
+      engine -> unregister_classes (library);
   }
 
   void Client::run ()
   {
     loader   -> start ();
     renderer -> start ();
-    game     -> start (*engine);
+    game     -> start (engine);
 
     window.show ();
 

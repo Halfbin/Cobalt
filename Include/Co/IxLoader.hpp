@@ -8,21 +8,21 @@
 
 #include <Co/IxLoadContext.hpp>
 
+#include <Rk/StreamForward.hpp>
 #include <Rk/StringRef.hpp>
 #include <Rk/Types.hpp>
 
 namespace Co
 {
   class IxRenderDevice;
-  class Log;
-
+  
   class IxLoader :
     public IxLoadContext
   {
   public:
     static const u64 id = 0x93e68db4d3a71fddull;
 
-    virtual void init (IxRenderDevice& device, Log& log, Rk::StringRef game_path) = 0;
+    virtual void init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* log, Rk::StringRef game_path) = 0;
 
     virtual void start () = 0;
     virtual void stop  () = 0;
