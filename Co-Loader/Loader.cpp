@@ -10,8 +10,8 @@
 #include <Co/IxRenderContext.hpp>
 #include <Co/IxRenderDevice.hpp>
 #include <Co/IxResource.hpp>
-#include <Co/Log.hpp>
 
+#include <Rk/VirtualOutStream.hpp>
 #include <Rk/Condition.hpp>
 #include <Rk/Expose.hpp>
 #include <Rk/Thread.hpp>

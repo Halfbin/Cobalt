@@ -103,10 +103,10 @@ namespace Co
     // Initialize subsystems
     window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
     
-    renderer -> init (window.get_handle (), &clock, &log);
-    loader   -> init (render_device, &log, game_path);
+    renderer -> init (window.get_handle (), &clock, log.get_impl ());
+    loader   -> init (render_device, log.get_impl (), game_path);
     engine   -> init (renderer, loader, &clock);
-    game     -> init (engine, &log);
+    game     -> init (engine, log.get_impl ());
 
     if (library)
       engine -> register_classes (library);

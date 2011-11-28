@@ -3,12 +3,13 @@
 // All Rights Reserved.
 //
 
-#include <Co/Log.hpp>
+#include <Co/IxLog.hpp>
 #include "Client.hpp"
 
 namespace Co
 {
-  Log log ("Co-Client" CO_SUFFIX ".log");
+  IxLog::Ptr log_ptr = create_log ("Co-Client" CO_SUFFIX ".log");
+  Rk::VirtualLockedOutStream log (log_ptr.get ());
 
   extern "C" int __stdcall WinMain (void*, void*, char*, int)
   {
