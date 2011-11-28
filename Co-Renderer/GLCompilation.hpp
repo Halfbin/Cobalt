@@ -47,6 +47,12 @@ namespace Co
       }
 		}
 		
+    static void done ()
+    {
+      glBindVertexArray (0);
+      check_gl ("glBindVertexArray");
+    }
+
   }; // class GLCompilation
 
 } // namespace Co

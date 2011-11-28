@@ -10,23 +10,17 @@
 #include <Co/IxTexImage.hpp>
 
 // Uses
+#include <Co/IxRenderContext.hpp>
+
 #include "GL.hpp"
 
 namespace Co
 {
-  enum TexUnit
-  {
-    texunit_diffuse  = 0,
-    texunit_specular = 1,
-    texunit_emission = 2,
-    texunit_exponent = 3,
-    texunit_normal   = 4
-  };
-
   class GLTexImage :
     public IxTexImage
   {
-    u32 name;
+    u32 name,
+        target;
 
     virtual void destroy ();
 
@@ -35,14 +29,23 @@ namespace Co
     ~GLTexImage ();
     
   public:
-    GLTexImage (uint level_count, bool wrap);
+    GLTexImage (uint level_count, TexImageWrap wrap, TexImageType type);
 
-    void bind (TexUnit unit)
+    void bind (u32 unit)
     {
       glActiveTexture (GL_TEXTURE0 + unit);
       check_gl ("glActiveTexture");
 
-      glBindTexture (GL_TEXTURE_2D, name);
+      glBindTexture (target, name);
+      check_gl ("glBindTexture");
+    }
+
+    static void unbind (u32 unit)
+    {
+      glActiveTexture (GL_TEXTURE0 + unit);
+      check_gl ("glActiveTexture");
+      
+      glBindTexture (GL_TEXTURE_2D, 0);
       check_gl ("glBindTexture");
     }
 

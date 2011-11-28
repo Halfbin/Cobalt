@@ -16,6 +16,20 @@ namespace Co
   struct GeomAttrib;
   struct GlyphMapping;
 
+  enum TexImageWrap :
+    u32
+  {
+    teximage_clamp = 0,
+    teximage_wrap  = 1
+  };
+
+  enum TexImageType :
+    u32
+  {
+    teximage_normal = 0,
+    teximage_rect   = 1
+  };
+
   class IxRenderContext :
     public Rk::IxUnique
   {
@@ -35,8 +49,9 @@ namespace Co
     ) = 0;
 
     virtual IxTexImage* create_tex_image (
-      uint level_count,
-      bool wrap
+      uint         level_count,
+      TexImageWrap wrap,
+      TexImageType type = teximage_normal
     ) = 0;
     
     virtual void flush () = 0;

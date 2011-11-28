@@ -17,6 +17,7 @@
 #include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
 #include <Rk/Image.hpp>
+#include <Rk/File.hpp>
 
 #include <unordered_map>
 #include <algorithm>
@@ -59,6 +60,8 @@ namespace Co
       Glyph (Glyph&& other) :
         bitmap   (other.bitmap),
         metrics  (other.metrics),
+        best_x   (other.best_x),
+        best_y   (other.best_y),
         index    (other.index),
         max_side (other.max_side),
         area     (other.area)
@@ -76,6 +79,9 @@ namespace Co
         other.bitmap.buffer = 0;
 
         metrics = other.metrics;
+
+        best_x = other.best_x;
+        best_y = other.best_y;
 
         index       = other.index;
         other.index = ~uint (0);
@@ -165,6 +171,8 @@ namespace Co
         using std::swap;
         swap (a.bitmap,   b.bitmap);
         swap (a.metrics,  b.metrics);
+        swap (a.best_x,   b.best_x);
+        swap (a.best_y,   b.best_y);
         swap (a.index,    b.index);
         swap (a.max_side, b.max_side);
         swap (a.area,     b.area);
@@ -192,16 +200,18 @@ namespace Co
     struct Rect
     {
       uint x, y,
-           width, height,
-           a;
+           width, height;
 
       Rect () { }
 
       __forceinline Rect (uint x, uint y, uint w, uint h) :
-        x (x), y (y), width (w), height (h), a (w * h)
+        x (x), y (y), width (w), height (h)
       { }
       
-      uint area () const { return a; }
+      uint area () const
+      {
+        return width * height;
+      }
 
       bool operator == (const Rect& other) const
       {
@@ -210,7 +220,7 @@ namespace Co
 
       bool operator < (const Rect& other) const
       {
-        return a < other.a;
+        return area () < other.area ();
       }
 
     }; // Rect
@@ -451,7 +461,7 @@ namespace Co
 
         glyphs [remap -> second].init (face -> glyph, remap -> second);
       }
-    
+      
       // Sort glyphs by longest side for packing
       std::sort (
         glyphs.begin (),
@@ -478,6 +488,54 @@ namespace Co
       for (auto iter = glyphs.begin (); iter != glyphs.end (); iter++)
         iter -> blit (image);
 
+      #pragma pack (push)
+      #pragma pack (1)
+
+      struct TGAHeader
+      {
+        u8  id_length,
+            palette_type,
+            image_type;
+        u16 palette_offset,
+            palette_entries;
+        u8  palette_bpp;
+        u16 x_orig, y_orig,
+            width, height;
+        u8  bpp,
+            flags;
+      };
+
+      static_assert (sizeof (TGAHeader) == 18, "TGAHeader miscompiled");
+
+      #pragma pack (pop)
+
+      // DEBUG: Dump image 
+      TGAHeader head = {
+        0,
+        1,
+        1,
+        0, 256, 24,
+        0,
+        0,
+        image.width,
+        image.height,
+        8,
+        0x20
+      };
+
+      u8 palette [256 * 3];
+      for (uint i = 0; i != 256; i++)
+      {
+        palette [i * 3 + 0] = u8 (i);
+        palette [i * 3 + 1] = u8 (i);
+        palette [i * 3 + 2] = u8 (i);
+      }
+
+      Rk::File dump ("font-dump.tga", Rk::File::open_replace_or_create);
+      dump.put (head)
+          .put (palette)
+          .write (image.data, image.size ());
+
       // Re-sort glyphs by private index for use and caching
       std::sort (
         glyphs.begin (),
@@ -491,7 +549,11 @@ namespace Co
       std::unique_ptr <GlyphMetrics []> metrics (new GlyphMetrics [glyph_count]);
       uint dest_index = 0;
       for (auto source = glyphs.begin (); source != glyphs.end (); source++)
-        metrics [dest_index++] = source -> get_metrics ();
+      {
+        metrics [dest_index] = source -> get_metrics ();
+        //metrics [dest_index].y = image.height - metrics [dest_index].y;
+        dest_index++;
+      }
       
       FT_Done_Face (face);
 
@@ -564,8 +626,8 @@ namespace Co
       metrics_ptr = create_font (char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
       metrics = metrics_ptr.get ();
 
-      image_ptr = rc.create_tex_image (1, false);
-      image_ptr -> load_map (0, image.data, tex_i8, image.width, image.height, image.size ());
+      image_ptr = rc.create_tex_image (1, teximage_clamp, teximage_rect);
+      image_ptr -> load_map (0, image.data, tex_r8, image.width, image.height, image.size ());
       tex = image_ptr.get ();
 
       IxResource::ready = true;

@@ -19,10 +19,10 @@ namespace Co
               fragment_shader;
     GLProgram program;
 
-    u32 ui_to_clip;
+    u32 ui_to_clip,
+        tex_to_colour;
 
     u32 buffer,
-        buffer_size,
         vao;
 
   public:
@@ -46,20 +46,32 @@ namespace Co
       check_gl ("glUniformMatrix3x2fv");
     }
 
+    void set_tex_to_colour (Rk::Matrix4f xform)
+    {
+      glUniformMatrix4fv (tex_to_colour, 1, true, xform.raw ());
+      check_gl ("glUniformMatrix4fv");
+    }
+
     void upload_rects (const TexRect* rects, u32 count)
     {
-      u32 size = count * sizeof (TexRect);
+      if (!count)
+        return;
 
-      if (size > buffer_size)
+      /*glBufferSubData (GL_ARRAY_BUFFER, 0, count * sizeof (TexRect), rects);
+      check_gl ("glBufferData");*/
+
+      for (;;)
       {
-        buffer_size = size;
-        glBufferData (GL_ARRAY_BUFFER, size, rects, GL_STREAM_DRAW);
-        check_gl ("glBufferData");
-      }
-      else
-      {
-        glBufferSubData (GL_ARRAY_BUFFER, 0, size, rects);
-        check_gl ("glBufferSubData");
+        void* mapping = glMapBufferRange (GL_ARRAY_BUFFER, 0, 1024 * sizeof (TexRect), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        check_gl ("glMapBuffer");
+
+        std::copy (rects, rects + count, (TexRect*) mapping);
+
+        auto ok = glUnmapBuffer (GL_ARRAY_BUFFER);
+        check_gl ("glUnmapBuffer");
+
+        if (ok)
+          break;
       }
     }
     

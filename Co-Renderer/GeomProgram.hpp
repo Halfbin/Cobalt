@@ -30,7 +30,13 @@ namespace Co
     {
       attrib_position = Co::attrib_position,
       attrib_tcoords  = Co::attrib_tcoords,
-      attrib_normal   = Co::attrib_normal
+      attrib_normal   = Co::attrib_normal,
+
+      texunit_diffuse  = 0,
+      texunit_specular = 1,
+      texunit_emission = 2,
+      texunit_exponent = 3,
+      texunit_normal   = 4
     };
 
     GeomProgram ();

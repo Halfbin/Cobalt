@@ -232,7 +232,7 @@ namespace Co
     template <typename Iter>
     void add_ui_batch (IxTexImage* tex, Iter begin, Iter end)
     {
-      if (ui_batches_back_index = max_ui_batches)
+      if (ui_batches_back_index == max_ui_batches)
         return;
 
       auto& batch = ui_batches [ui_batches_back_index];
@@ -256,7 +256,7 @@ namespace Co
     template <typename Iter>
     void add_label (IxTexImage* tex, Spatial prev, Spatial cur, Iter begin, Iter end)
     {
-      if (labels_back_index = max_labels)
+      if (labels_back_index == max_labels)
         return;
 
       auto& label = labels [labels_back_index];

@@ -10,7 +10,6 @@
 namespace Co
 {
   RectProgram::RectProgram () :
-    buffer_size     (0),
     vertex_shader   ("../Common/Shaders/Rect-Vertex.glsl",   GL_VERTEX_SHADER),
     fragment_shader ("../Common/Shaders/Rect-Fragment.glsl", GL_FRAGMENT_SHADER)
   {
@@ -22,7 +21,8 @@ namespace Co
 
     program.link ();
 
-    ui_to_clip = program.link_uniform ("ui_to_clip");
+    ui_to_clip    = program.link_uniform ("ui_to_clip");
+    tex_to_colour = program.link_uniform ("tex_to_colour");
 
     program.use ();
 
@@ -45,8 +45,8 @@ namespace Co
     glBindBuffer (GL_ARRAY_BUFFER, buffer);
     check_gl ("glBindBuffer");
 
-    // Reserve some space
-    upload_rects (0, 1024 * sizeof (TexRect));
+    glBufferData (GL_ARRAY_BUFFER, 1024 * sizeof (TexRect), 0, GL_STREAM_DRAW);
+    check_gl ("glBufferData");
 
     // Attribute format
     glVertexAttribIPointer (attrib_rect, 4, GL_INT, 32, (void*) uptr (0));
@@ -72,6 +72,9 @@ namespace Co
     // Done with VAO
     glBindVertexArray (0);
     check_gl ("glBindVertexArray");
+
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
+    check_gl ("glBindBuffer");
   }
   
   RectProgram::~RectProgram ()
@@ -89,6 +92,9 @@ namespace Co
 
     glBindVertexArray (vao);
     check_gl ("glBindVertexArray");
+
+    glBindBuffer (GL_ARRAY_BUFFER, buffer);
+    check_gl ("glBindBuffer");
   }
 
   void RectProgram::done ()
@@ -96,6 +102,9 @@ namespace Co
     glBindVertexArray (0);
     check_gl ("glBindVertexArray");
 
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
+    check_gl ("glBindBuffer");
+    
     program.done ();
   }
 

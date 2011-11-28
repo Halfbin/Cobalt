@@ -10,8 +10,8 @@ uniform mat3x2 ui_to_clip;
 in ivec4 attrib_rect;
 in ivec4 attrib_tcoords;
 
-out vec4  xformed_position;
-out ivec2 xformed_tcoords;
+smooth out vec4 xformed_position;
+smooth out vec2 xformed_tcoords;
 
 //  |  /|
 //  | / |
@@ -19,18 +19,17 @@ out ivec2 xformed_tcoords;
 
 void main ()
 {
-  int x, y, s, t;
+  ivec4 permute [4] = ivec4 [4] (
+    ivec4 (attrib_rect.x, attrib_rect.y, attrib_tcoords.s, attrib_tcoords.t),
+    ivec4 (attrib_rect.x, attrib_rect.w, attrib_tcoords.s, attrib_tcoords.q),
+    ivec4 (attrib_rect.z, attrib_rect.y, attrib_tcoords.p, attrib_tcoords.t),
+    ivec4 (attrib_rect.z, attrib_rect.w, attrib_tcoords.p, attrib_tcoords.q)
+  );
 
-  switch (gl_VertexID)
-  {
-    case 0: x = attrib_rect.x; y = attrib_rect.y; s = attrib_tcoords.s; t = attrib_tcoords.t; break;
-    case 1: x = attrib_rect.x; y = attrib_rect.w; s = attrib_tcoords.s; t = attrib_tcoords.q; break;
-    case 2: x = attrib_rect.z; y = attrib_rect.y; s = attrib_tcoords.p; t = attrib_tcoords.t; break;
-    case 3: x = attrib_rect.z; y = attrib_rect.w; s = attrib_tcoords.p; t = attrib_tcoords.q; break;
-  }
+  ivec4 rect = permute [gl_VertexID];
 
-  xformed_position = vec4 (ui_to_clip * vec3 (x, y, 1), 0, 1);
-  xformed_tcoords  = ivec2 (s, t);
+  xformed_position = vec4 (ui_to_clip * vec3 (rect.xy, 1), 0, 1);
+  xformed_tcoords  = rect.zw;
 
   gl_Position = xformed_position;
 }

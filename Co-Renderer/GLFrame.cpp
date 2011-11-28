@@ -47,17 +47,9 @@ namespace Co
 
         auto tex = static_cast <GLTexImage*> (materials [cur_mat + mesh.material].diffuse_tex);
         if (tex)
-        {
-          tex -> bind (texunit_diffuse);
-        }
+          tex -> bind (geom_program.texunit_diffuse);
         else
-        {
-          glActiveTexture (GL_TEXTURE0 + texunit_diffuse);
-          check_gl ("glActiveTexture");
-
-          glBindTexture (GL_TEXTURE_2D, 0);
-          check_gl ("glBindTexture");
-        }
+          GLTexImage::unbind (geom_program.texunit_diffuse);
 
         static const GLenum gl_prim_types [7] = {
           GL_POINTS,
@@ -89,6 +81,8 @@ namespace Co
       
       cur_mat += point_geoms [geom_index].material_count;
     } // for (point_geoms)
+
+    GLCompilation::done ();
   }
 
   //
@@ -110,13 +104,43 @@ namespace Co
   //
   void GLFrame::render_ui_batches (RectProgram& rect_program)
   {
-    /*for (uint index = 0; index != ui_batches_back_index; index++)
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glDrawArraysInstancedBaseInstance ( // DAMNIT
+    for (uint index = 0; index != ui_batches_back_index; index++)
     {
       auto batch = ui_batches [index];
-      // How the fuck do i base this
-      glDrawArraysInstanced (GL_TRIANGLE_STRIP, 0, 4, tex_rects_back_index);
+
+      if (batch.tex)
+        static_cast <GLTexImage*> (batch.tex) -> bind (rect_program.texunit_tex);
+      else
+        GLTexImage::unbind (rect_program.texunit_tex);
+
+      float mat [4][4] = {
+        { 0.0f, 0.0f, 0.0f, -1.0f },
+        { 0.0f, 0.0f, 0.0f, -1.0f },
+        { 0.0f, 0.0f, 0.0f, -1.0f },
+        { 1.0f, 0.0f, 0.0f,  0.0f }
+      };
+
+      Rk::Matrix4f colour_trans (mat);
+
+      rect_program.set_tex_to_colour (colour_trans);
+
+      uptr offset = batch.first * 32;
+
+      glVertexAttribIPointer (rect_program.attrib_rect, 4, GL_INT, 32, (void*) uptr (offset + 0));
+      check_gl ("glVertexAttribIPointer");
+
+      glVertexAttribIPointer (rect_program.attrib_tcoords, 4, GL_INT, 32, (void*) uptr (offset + 16));
+      check_gl ("glVertexAttribIPointer");
+
+      glDrawArraysInstanced (GL_TRIANGLE_STRIP, 0, 4, batch.count);
       check_gl ("glDrawArraysInstanced");
-    }*/
+    }
+
+    glDisable (GL_BLEND);
   }
 
   //
@@ -125,7 +149,7 @@ namespace Co
   //
   void GLFrame::render (float alpha, GeomProgram& geom_program, RectProgram& rect_program)
   {
-    glClearColor (0.0f, 0.03f, 0.2f, 1.0f);
+    glClearColor (1.0f, 1.0f, 1.0f, 1.0f);
     glViewport (0, 0, width, height);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -160,19 +184,17 @@ namespace Co
     geom_program.done ();
 
     // Render textured rectangles
+    TexRect adjusted_rects [max_tex_rects];
+
     for (uint index = 0; index != tex_rects_back_index; index++)
     {
       auto& rect = tex_rects [index];
-      rect.w  += rect.x;
-      rect.h  += rect.y;
-      rect.tw += rect.s;
-      rect.th += rect.t;
+      adjusted_rects [index] = TexRect (rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, rect.s, rect.t, rect.s + rect.tw, rect.t + rect.th);
     }
 
     rect_program.use ();
     rect_program.set_ui_to_clip (ui_to_clip);
-    if (tex_rects_back_index != 0)
-      rect_program.upload_rects (tex_rects, tex_rects_back_index);
+    rect_program.upload_rects (adjusted_rects, tex_rects_back_index);
 
     //render_labels (alpha);
     render_ui_batches (rect_program);
@@ -191,10 +213,12 @@ namespace Co
 
     point_geoms_back_index = 0;
     meshes_back_index      = 0;
+    labels_back_index      = 0;
     ui_batches_back_index  = 0;
     lights_back_index      = 0;
     materials_back_index   = 0;
     garbage_vao_back_index = 0;
+    tex_rects_back_index   = 0;
 
     u32 old_id = id;
     new_id = (id += id_advance);

@@ -48,7 +48,7 @@ namespace
       const GlyphMetrics& metrics = font -> get_metrics (indices [glyph]);
       TexRect rect;
       rect.x = x + metrics.bearing_x;
-      rect.y = y + metrics.bearing_y;
+      rect.y = y - metrics.bearing_y;
       rect.w = metrics.width;
       rect.h = metrics.height;
       rect.s = metrics.x;
@@ -97,6 +97,13 @@ namespace
       model -> draw (frame, spatial, next, &mat, 1);
 
       draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
+      draw_ui_text (frame, 100, 200, font, Rk::u16_string (L"This is a test!"));
+      draw_ui_text (frame, 100, 300, font,
+        Rk::u16_string (L"abcdefghujklmnopqrstuvwxyzABCDEFGHUJKLMNOPQRSTUVWXYZ")
+      );
+      draw_ui_text (frame, 100, 400, font,
+        Rk::u16_string (L"0123456789!\"£$%^&*()-=_+[]{};'#:@~,./<>?\\|`¬¦")
+      );
 
       spatial = next;
     }
@@ -110,8 +117,12 @@ namespace
       {
         model = model_factory   -> create (loadcontext, "cube.rkmodel");
         tex   = texture_factory -> create (loadcontext, "derp.cotexture");
-        CodeRange codepoints = { 0x0020, 0x007f }; // ASCII printable
-        font  = font_factory    -> create (loadcontext, "DejaVuSans.ttf", 32, fontsize_points, &codepoints, &codepoints + 1);
+
+        CodeRange ranges [] = {
+          { 0x0020, 0x007f }, // ASCII
+          { 0x00a1, 0x0100 }  // Latin-1 Supplement
+        };
+        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 24, fontsize_points, std::begin (ranges), std::end (ranges));
       }
     }
 

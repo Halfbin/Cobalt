@@ -5,13 +5,14 @@
 
 #version 330 core
 
-in vec4  xformed_position;
-in ivec2 xformed_tcoords;
+smooth in vec4 xformed_position;
+smooth in vec2 xformed_tcoords;
 
 uniform sampler2DRect tex;
+uniform mat4          tex_to_colour;
 
 void main ()
 {
-  vec4 colour = texelFetch (tex, xformed_tcoords);
-  gl_FragColor = vec4 (colour.rrr, 1);
+  vec4 sample = texelFetch (tex, ivec2 (xformed_tcoords));
+  gl_FragColor = tex_to_colour * sample;
 }

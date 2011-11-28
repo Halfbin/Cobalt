@@ -67,7 +67,7 @@ namespace Co
   //
   void GLContext::present ()
   {
-    glFinish ();
+    //glFinish ();
     SwapBuffers (dc);
   }
 
@@ -96,9 +96,9 @@ namespace Co
   //
   // Texture creation
   //
-  IxTexImage* GLContext::create_tex_image (uint level_count, bool wrap)
+  IxTexImage* GLContext::create_tex_image (uint level_count, TexImageWrap wrap, TexImageType type)
   {
-    return new GLTexImage (level_count, wrap);
+    return new GLTexImage (level_count, wrap, type);
   }
 
   //

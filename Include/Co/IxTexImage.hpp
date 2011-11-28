@@ -27,7 +27,7 @@ namespace Co
     tex_dxt5,
     tex_dxtn,
 
-    tex_i8,
+    tex_r8,
 
     texformat_count
   };

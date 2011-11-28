@@ -106,7 +106,7 @@ namespace Co
       if (!buffer)
         throw Rk::Exception ("Texture has no DATA");
       
-      image = rc.create_tex_image (header.map_count, false);
+      image = rc.create_tex_image (header.map_count, teximage_clamp);
 
       u32 offset = 0;
       u32 size = header.width / 4 * header.height / 4 * 8;
