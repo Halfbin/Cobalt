@@ -13,6 +13,6 @@ uniform mat4          tex_to_colour;
 
 void main ()
 {
-  vec4 sample = texelFetch (tex, ivec2 (xformed_tcoords));
+  vec4 sample = vec4 (texelFetch (tex, ivec2 (xformed_tcoords)).rgb, 1);
   gl_FragColor = tex_to_colour * sample;
 }

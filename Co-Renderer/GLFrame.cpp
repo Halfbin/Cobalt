@@ -21,6 +21,8 @@ namespace Co
   //
   void GLFrame::render_point_geoms (GeomProgram& geom_program, float alpha)
   {
+    glEnable (GL_DEPTH_TEST);
+
     Spatial point_interps [max_point_geoms];
     for (uint i = 0; i != point_geoms_back_index; i++)
       point_interps [i] = lerp (point_spats [i].prev, point_spats [i].cur, alpha);
@@ -104,10 +106,10 @@ namespace Co
   //
   void GLFrame::render_ui_batches (RectProgram& rect_program)
   {
+    glDisable (GL_DEPTH_TEST);
     glEnable (GL_BLEND);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    //glDrawArraysInstancedBaseInstance ( // DAMNIT
+    
     for (uint index = 0; index != ui_batches_back_index; index++)
     {
       auto batch = ui_batches [index];
@@ -118,10 +120,10 @@ namespace Co
         GLTexImage::unbind (rect_program.texunit_tex);
 
       float mat [4][4] = {
-        { 0.0f, 0.0f, 0.0f, -1.0f },
-        { 0.0f, 0.0f, 0.0f, -1.0f },
-        { 0.0f, 0.0f, 0.0f, -1.0f },
-        { 1.0f, 0.0f, 0.0f,  0.0f }
+        { 0.0f, 0.0f, 0.0f, 0.0f },
+        { 0.0f, 0.0f, 0.0f, 0.0f },
+        { 0.0f, 0.0f, 0.0f, 0.0f },
+        { 1.0f, 0.0f, 0.0f, 0.0f }
       };
 
       Rk::Matrix4f colour_trans (mat);
@@ -129,6 +131,8 @@ namespace Co
       rect_program.set_tex_to_colour (colour_trans);
 
       uptr offset = batch.first * 32;
+
+      //glDrawArraysInstancedBaseInstance ( // DAMNIT
 
       glVertexAttribIPointer (rect_program.attrib_rect, 4, GL_INT, 32, (void*) uptr (offset + 0));
       check_gl ("glVertexAttribIPointer");

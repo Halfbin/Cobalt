@@ -38,15 +38,18 @@ namespace
     for (auto iter = text.begin (); iter != text.end (); iter++)
       buffer.append (char32 (*iter));
 
-    u32 indices [1024];
-    font -> translate_codepoints (buffer.data (), text.length (), indices);
+    Character chars [1024];
+    font -> translate_codepoints (buffer.data (), text.length (), chars);
 
     TexRect rects [1024];
 
-    for (uint glyph = 0; glyph != text.length (); glyph++)
+    for (uint i = 0; i != text.length (); i++)
     {
-      const GlyphMetrics& metrics = font -> get_metrics (indices [glyph]);
-      TexRect rect;
+      const auto& character = chars [i];
+      const auto& metrics   = font -> get_metrics (character.index);
+      auto&       rect      = rects [i];
+
+      x += character.kerning;
       rect.x = x + metrics.bearing_x;
       rect.y = y - metrics.bearing_y;
       rect.w = metrics.width;
@@ -55,7 +58,6 @@ namespace
       rect.t = metrics.y;
       rect.tw = metrics.width;
       rect.th = metrics.height;
-      rects [glyph] = rect;
       x += metrics.advance;
     }
 
@@ -96,13 +98,17 @@ namespace
         mat.diffuse_tex = tex -> get ();
       model -> draw (frame, spatial, next, &mat, 1);
 
-      draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
+      /*draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
       draw_ui_text (frame, 100, 200, font, Rk::u16_string (L"This is a test!"));
       draw_ui_text (frame, 100, 300, font,
-        Rk::u16_string (L"abcdefghujklmnopqrstuvwxyzABCDEFGHUJKLMNOPQRSTUVWXYZ")
+        Rk::u16_string (L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
       );
       draw_ui_text (frame, 100, 400, font,
         Rk::u16_string (L"0123456789!\"£$%^&*()-=_+[]{};'#:@~,./<>?\\|`¬¦")
+      );*/
+
+      draw_ui_text (frame, 500, 500, font,
+        Rk::u16_string (L"AVAVAVAV")
       );
 
       spatial = next;

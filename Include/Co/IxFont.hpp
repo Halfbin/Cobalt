@@ -45,6 +45,23 @@ namespace Co
     
   };
 
+  struct Character
+  {
+    u32 index;
+    i32 kerning;
+
+    Character (const Nil& n = nil) :
+      index   (0),
+      kerning (0)
+    { }
+    
+    Character (u32 index, i32 kerning) :
+      index   (index),
+      kerning (kerning)
+    { }
+    
+  };
+
   class IxFont : 
     public IxResource
   {
@@ -60,11 +77,11 @@ namespace Co
   public:
     typedef Rk::IxSharedPtr <IxFont> Ptr;
 
-    virtual void translate_codepoints (const char32* codepoints, const char32* end, u32* indices) = 0;
+    virtual void translate_codepoints (const char32* codepoints, const char32* end, Character* chars) = 0;
     
-    void translate_codepoints (const char32* codepoints, uint count, u32* indices)
+    void translate_codepoints (const char32* codepoints, uint count, Character* chars)
     {
-      translate_codepoints (codepoints, codepoints + count, indices);
+      translate_codepoints (codepoints, codepoints + count, chars);
     }
 
     const GlyphMetrics& get_metrics (uint index)

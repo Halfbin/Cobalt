@@ -386,6 +386,7 @@ namespace Co
     //
     template <typename CharMap, typename Iter>
     std::unique_ptr <GlyphMetrics []> create_font (
+      FT_Face&      face,
       CharMap&      char_map,
       Rk::Image&    image,
       Rk::StringRef path,
@@ -405,7 +406,6 @@ namespace Co
           throw Rk::Exception ("X Co-Font: create_font - FT_Init_FreeType failed");
       }
 
-      FT_Face face;
       Rk::ShortString <512> path_buf = path;
       error = FT_New_Face (ft, path_buf.c_str (), 0, &face);
       if (error)
@@ -555,8 +555,6 @@ namespace Co
         dest_index++;
       }
       
-      FT_Done_Face (face);
-
       return std::move (metrics);
     }
 
@@ -574,6 +572,7 @@ namespace Co
       std::vector <CodeRange> code_ranges;
 
       // Data
+      FT_Face                           face;
       std::unordered_map <char32, u32>  char_map;
       std::unique_ptr <GlyphMetrics []> metrics_ptr;
       IxTexImage::Ptr                   image_ptr;
@@ -587,7 +586,9 @@ namespace Co
 
       virtual void load (IxRenderContext& rc);
 
-      virtual void translate_codepoints (const char32* begin, const char32* end, u32* indices);
+      virtual void translate_codepoints (const char32* begin, const char32* end, Character* chars);
+
+      ~Font ();
 
     public:
       template <typename Iter>
@@ -623,7 +624,7 @@ namespace Co
     void Font::load (IxRenderContext& rc)
     {
       Rk::Image image;
-      metrics_ptr = create_font (char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
+      metrics_ptr = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
       metrics = metrics_ptr.get ();
 
       image_ptr = rc.create_tex_image (1, teximage_clamp, teximage_rect);
@@ -633,21 +634,35 @@ namespace Co
       IxResource::ready = true;
     }
 
-    void Font::translate_codepoints (const char32* begin, const char32* end, u32* indices)
+    void Font::translate_codepoints (const char32* begin, const char32* end, Character* chars)
     {
-      if (!begin || !end || !indices)
+      if (!begin || !end || !chars)
         throw Rk::Exception ("X Co-Font: IxFont::translate_codepoints - null pointer");
 
       if (end < begin)
         throw Rk::Exception ("X Co-Font: IxFont::translate_codepoints - invalid range");
 
+      u32 prev_ft_index = 0;
+
       while (begin != end)
       {
         auto iter = char_map.find (*begin++);
         if (iter != char_map.end ())
-          *indices++ = iter -> second;
+        {
+          u32 ft_index = FT_Get_Char_Index (face, iter -> first);
+
+          FT_Vector kerning = { 0, 0 };
+          if (prev_ft_index && iter -> first)
+            FT_Get_Kerning (face, prev_ft_index, ft_index, 0, &kerning);
+
+          *chars++ = Character (iter -> second, kerning.x >> 6);
+
+          prev_ft_index = ft_index;
+        }
         else
-          *indices++ = 0;
+        {
+          *chars++ = Character (0, 0);
+        }
       }
     }
 
@@ -672,6 +687,11 @@ namespace Co
       path += new_path;
 
       context.load (this);
+    }
+    
+    Font::~Font ()
+    {
+      FT_Done_Face (face);
     }
 
     bool Font::dead () const
