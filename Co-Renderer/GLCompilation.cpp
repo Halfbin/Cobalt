@@ -26,16 +26,16 @@ namespace Co
   }
 
   GLCompilation::GLCompilation (
-    const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices)
-  {
-    vao          = 0;
-    attribs      = new_attribs;
-    attrib_count = new_attrib_count;
-    elements     = static_cast <GLBuffer*> (new_elements);
-    indices      = static_cast <GLBuffer*> (new_indices);
-  }
-
-  void GLCompilation::first_use ()
+    const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices, IndexType new_index_type
+  ) :
+    vao        (0),
+    attribs    (new_attribs, new_attribs + new_attrib_count),
+    elements   (static_cast <GLBuffer*> (new_elements)),
+    indices    (static_cast <GLBuffer*> (new_indices)),
+    index_type (new_index_type)
+  { }
+  
+  bool GLCompilation::first_use ()
   {
     glGenVertexArrays (1, &vao);
 		check_gl ("glGenVertexArrays");
@@ -43,30 +43,41 @@ namespace Co
 		glBindVertexArray (vao);
     check_gl ("glBindVertexArray");
     
-		elements -> bind (GL_ARRAY_BUFFER);
+		if (!elements -> bind (GL_ARRAY_BUFFER))
+    {
+      done ();
+      return false;
+    }
+
 		if (indices)
-			indices  -> bind (GL_ELEMENT_ARRAY_BUFFER);
+    {
+      if (!indices -> bind (GL_ELEMENT_ARRAY_BUFFER))
+      {
+        done ();
+        return false;
+      }
+    }
 
-		for (uint i = 0; i != attrib_count; i++)
+    for (auto attrib = attribs.begin (); attrib != attribs.end (); attrib++)
 		{
-			const GeomAttrib& attrib = attribs [i];
-
       static const uint types [4] = { GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT, GL_FLOAT };
-      uint type = types [attrib.type];
+      uint type = types [attrib -> type];
 
       glVertexAttribPointer (
-				attrib.index,
-				((attrib.index == attrib_tcoords) ? 2 : 3),
+				attrib -> index,
+				((attrib -> index == attrib_tcoords) ? 2 : 3),
 				type,
 				false,
-				attrib.stride,
-				(void*) uptr (attrib.offset)
+				attrib -> stride,
+				(void*) uptr (attrib -> offset)
 			);
       check_gl ("glVertexAttribPointer");
 
-      glEnableVertexAttribArray (attrib.index);
+      glEnableVertexAttribArray (attrib -> index);
       check_gl ("glEnableVertexAttribArray");
 		}
+
+    return true;
   }
 	
 } // namespace Co

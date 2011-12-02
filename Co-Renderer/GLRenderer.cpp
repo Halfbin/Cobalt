@@ -120,7 +120,7 @@ namespace Co
     if (wglewIsSupported ("WGL_EXT_swap_control"))
     {
       auto wglSwapInterval = (i32 (__stdcall*) (i32)) wglGetProcAddress ("wglSwapIntervalEXT");
-      wglSwapInterval (1);
+      wglSwapInterval (0);
     }
 
     glEnable (GL_DEPTH_TEST);
@@ -132,7 +132,7 @@ namespace Co
     // The real loop
     for (;;)
     {
-      float now = clock -> time () - 0.15f;
+      float now = clock -> time () - 0.1f;
       
       // Perhaps it's time to grab a new frame
       while (!frame || now >= frame -> time)
@@ -184,9 +184,12 @@ namespace Co
   //
   void GLRenderer::init (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger) try
   {
-    Rk::require (!target, "Renderer already initialized");
-    Rk::require (new_target != 0, "target is null");
-    
+    if (!new_target || !new_clock || !new_logger)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - null pointer");
+
+    if (target)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - renderer already initialized");
+
     target = new_target;
     clock  = new_clock;
     log.set_impl (new_logger);
@@ -195,7 +198,7 @@ namespace Co
 
     shared_dc = GetDC (target);
     if (!shared_dc)
-      throw Rk::Exception ("Error retrieving shared device context");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error retrieving shared device context");
 
     PixelFormatDescriptor pfd = { 0 };
     pfd.size       = sizeof (PixelFormatDescriptor);
@@ -208,11 +211,11 @@ namespace Co
 
     format = ChoosePixelFormat (shared_dc, &pfd);
     if (!format)
-      throw Rk::Exception ("No adequate pixel format supported");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - no adequate pixel format supported");
     
     int ok = DescribePixelFormat (shared_dc, format, sizeof (pfd), &pfd);
     if (!ok)
-      throw Rk::Exception ("DescribePixelFormat () failed");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - DescribePixelFormat failed");
     
     enum
     {
@@ -232,23 +235,23 @@ namespace Co
       pfd.depth_bits < 16                    ||
       pfd.layer_type != pfd_main_plane)
     {
-      throw Rk::Exception ("ChoosePixelFormat () chose bogus format");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - ChoosePixelFormat chose bogus format");
     }
     
     ok = SetPixelFormat (shared_dc, format, &pfd);
     if (!ok)
-      throw Rk::Exception ("Error setting pixel format");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error setting pixel format");
     
     // Get wglCreateContextAttribs
     void* temp_rc = wglCreateContext (shared_dc);
     if (!temp_rc)
-      throw Rk::Exception ("Error creating temporary render context");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error creating temporary render context");
     
     void* temp_dc = GetDC (target);
     if (!temp_dc)
     {
       wglDeleteContext (temp_rc);
-      throw Rk::Exception ("Error retrieving temporary device context");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error retrieving temporary device context");
     }
 
     ok = wglMakeCurrent (temp_dc, temp_rc);
@@ -256,21 +259,21 @@ namespace Co
     {
       wglDeleteContext (temp_rc);
       ReleaseDC (target, temp_dc);
-      throw Rk::Exception ("Error making temporary render context current");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error making temporary render context current");
     }
     
     wglCreateContextAttribs = (WGLCCA) wglGetProcAddress ("wglCreateContextAttribsARB");
     if (!wglCreateContextAttribs)
     {
       wglMakeCurrent (0, 0);
-      throw Rk::Exception ("wglCreateContextAttribsARB () not supported");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - wglCreateContextAttribsARB not supported");
     }
     
     bool fail = glewInit () != GLEW_OK;
     if (fail)
     {
       wglMakeCurrent (0, 0);
-      throw Rk::Exception ("Error initializing GLEW");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error initializing GLEW");
     }
     
     int attribs [] = {
@@ -288,7 +291,7 @@ namespace Co
     wglMakeCurrent (0, 0);
 
     if (!shared_rc)
-      throw Rk::Exception ("Error creating shared render context");
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error creating shared render context");
 
     prepping_frame = 0;
   }
@@ -351,7 +354,8 @@ namespace Co
   //
   void GLRenderer::start ()
   {
-    Rk::require (!thread, "Renderer already running");
+    if (thread)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::start - renderer already running");
 
     ready_frames.clear ();
     free_frames.clear ();
@@ -374,7 +378,8 @@ namespace Co
     if (!thread)
       return;
 
-    Rk::require (!prepping_frame, "Attempt to stop renderer while preparing frame");
+    if (prepping_frame)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::stop - attempt to stop renderer while preparing frame");
 
     auto lock = ready_frames_mutex.get_lock ();
     ready_frames.push_back (0);
@@ -390,7 +395,8 @@ namespace Co
   //
   Frame* GLRenderer::begin_frame (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id)
   {
-    Rk::require (!prepping_frame, "Current frame must be submitted before requesting a new one");
+    if (prepping_frame)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::begin_frame - current frame must be submitted before requesting a new one");
 
     while (!prepping_frame)
     {
@@ -407,7 +413,8 @@ namespace Co
   {
     auto gl_frame = static_cast <GLFrame*> (frame);
 
-    Rk::require (prepping_frame == gl_frame, "Submitted frame does not match with tracked current frame");
+    if (prepping_frame != gl_frame)
+      throw Rk::Exception ("Co-GLRenderer: IxRenderer::submit_frame - submitted frame does not match with tracked current frame");
 
     prepping_frame -> set_size (width, height);
 
@@ -419,7 +426,8 @@ namespace Co
 
   void GLRenderer::add_garbage_vao (u32 vao)
   {
-    Rk::require (prepping_frame != 0, "VAO disposal request with no current frame");
+    if (!prepping_frame)
+      throw Rk::Exception ("Co-GLRenderer: GLRenderer::add_garbage_vao - VAO disposal request with no current frame");
     prepping_frame -> garbage_vaos [prepping_frame -> garbage_vao_back_index++] = vao;
   }
 

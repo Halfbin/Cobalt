@@ -46,10 +46,4 @@ namespace Co
     load_data (data, size);
   }
 
-  void GLBuffer::bind (uint target)
-  {
-    glBindBuffer (target, name);
-    check_gl ("glBindBuffer");
-  }
-
 } // namespace Co

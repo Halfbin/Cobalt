@@ -16,8 +16,14 @@ namespace Co
   //
   void GLTexImage::load_map (uint level, const void* data, TexFormat format, uint width, uint height, uptr size)
   {
-    Rk::require (data != 0, "data is null");
-    Rk::require (format < texformat_count, "format not valid");
+    if (!data)
+      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - data is null");
+
+    if (format >= texformat_count)
+      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - invalid format");
+
+    if (width == 0 || height == 0)
+      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - invalid dimensions");
 
     glBindTexture (target, name);
     check_gl ("glBindTexture");
@@ -82,42 +88,64 @@ namespace Co
   //
   // Constructor
   //
-  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, TexImageType type)
+  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type)
   {
     if (level_count == 0)
       throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count is zero");
 
-    u32 min_filter,
-        mag_filter;
+    GLenum min_filter,
+           mag_filter;
 
-    switch (type)
+    if (type == textype_rectangle)
     {
-      case teximage_rect:
-        if (level_count != 1)
-          throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count must be 1 for rectangular textures");
-        target = GL_TEXTURE_RECTANGLE;
-        min_filter = GL_NEAREST;
-        mag_filter = GL_NEAREST;
-      break;
+      if (level_count != 1)
+        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count must be 1 for rectangular textures");
 
-      case teximage_normal:
-        target = GL_TEXTURE_2D;
-        min_filter = GL_LINEAR_MIPMAP_LINEAR;
-        mag_filter = GL_LINEAR;
-      break;
+      if (filter == texfilter_trilinear)
+        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - filter cannot be trilinear for rectangular textures");
 
-      default:
-        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid type");
+      target = GL_TEXTURE_RECTANGLE;
+      min_filter = GL_NEAREST;
+      mag_filter = GL_NEAREST;
+    }
+    else if (type == textype_2d)
+    {
+      target = GL_TEXTURE_2D;
+
+      switch (filter)
+      {
+        case texfilter_none:
+          min_filter = GL_NEAREST;
+          mag_filter = GL_NEAREST;
+        break;
+
+        case texfilter_linear:
+          min_filter = GL_LINEAR;
+          mag_filter = GL_LINEAR;
+        break;
+
+        case texfilter_trilinear:
+          min_filter = GL_LINEAR_MIPMAP_LINEAR;
+          mag_filter = GL_LINEAR;
+        break;
+
+        default:
+          throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid filter");
+      }
+    }
+    else
+    {
+      throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid type");
     }
 
-    u32 gl_wrap = 0;
+    GLenum gl_wrap;
     switch (wrap)
     {
-      case teximage_wrap:
+      case texwrap_wrap:
         gl_wrap = GL_REPEAT;
       break;
 
-      case teximage_clamp:
+      case texwrap_clamp:
         gl_wrap = GL_CLAMP_TO_EDGE;
       break;
 
@@ -131,9 +159,9 @@ namespace Co
     glBindTexture (target, name);
     check_gl ("glBindTexture");
 
-    glTexParameteri (target, GL_TEXTURE_MAX_LEVEL, level_count - 1);
-    glTexParameteri (target, GL_TEXTURE_WRAP_S, gl_wrap);
-    glTexParameteri (target, GL_TEXTURE_WRAP_T, gl_wrap);
+    glTexParameteri (target, GL_TEXTURE_MAX_LEVEL,  level_count - 1);
+    glTexParameteri (target, GL_TEXTURE_WRAP_S,     gl_wrap);
+    glTexParameteri (target, GL_TEXTURE_WRAP_T,     gl_wrap);
     glTexParameteri (target, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri (target, GL_TEXTURE_MAG_FILTER, mag_filter);
 

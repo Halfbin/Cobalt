@@ -83,22 +83,24 @@ namespace Co
   // Compilation creation
   //
   IxGeomCompilation* GLContext::create_compilation (
-    const GeomAttrib* attribs, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices)
+    const GeomAttrib* attribs, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices, IndexType index_type)
   {
     return new GLCompilation (
       attribs,
       attrib_count,
       static_cast <GLBuffer*> (elements),
-      static_cast <GLBuffer*> (indices )
+      static_cast <GLBuffer*> (indices),
+      index_type
     );
   }
 
   //
   // Texture creation
   //
-  IxTexImage* GLContext::create_tex_image (uint level_count, TexImageWrap wrap, TexImageType type)
+  IxTexImage* GLContext::create_tex_image (
+    uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type)
   {
-    return new GLTexImage (level_count, wrap, type);
+    return new GLTexImage (level_count, wrap, filter, type);
   }
 
   //

@@ -29,7 +29,7 @@ namespace Co
     ~GLTexImage ();
     
   public:
-    GLTexImage (uint level_count, TexImageWrap wrap, TexImageType type);
+    GLTexImage (uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type);
 
     void bind (u32 unit)
     {

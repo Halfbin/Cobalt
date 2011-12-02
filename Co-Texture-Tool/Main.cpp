@@ -12,6 +12,10 @@
 #include <Rk/Console.hpp>
 #include <Rk/File.hpp>
 
+#include <memory>
+
+using namespace Co;
+
 static void box_filter (u8* dest, const u8* src_in, uint src_row_stride, uint factor)
 {
   const u8* src = src_in;
@@ -91,7 +95,7 @@ static void build_mipmap (Rk::Image& in, u8*& out, uint level)
   }
 }
 
-static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbose/*, bool compress, bool mipmap*/)
+static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbose, /*bool compress,*/ bool mipmap)
 {
   static const char* format_strings [11] = {
     "unknown",
@@ -119,31 +123,57 @@ static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbo
   if (in_image.width % 4 || in_image.height % 4)
     throw Rk::Exception ("Dimensions of source image must be multiples of 4");
   
-  u32 mipmap_count = 0,
-      data_size = 0,
-      mipmap_blocks_w = in_image.width  / 4,
-      mipmap_blocks_h = in_image.height / 4,
-      limit = Rk::minimum (mipmap_blocks_w, mipmap_blocks_h),
-      mipmap_size = mipmap_blocks_w * mipmap_blocks_h * 8;
+  u32                  mipmap_count = 0,
+                       data_size    = 0;
+  std::shared_ptr <u8> data_source;
+  TexFormat            format;
 
-  while (limit)
+  if (mipmap)
   {
-    data_size += mipmap_size;
-    mipmap_count++;
-    mipmap_size /= 4;
-    limit /= 2;
+    u32 mipmap_blocks_w = in_image.width  / 4,
+        mipmap_blocks_h = in_image.height / 4,
+        limit = Rk::minimum (mipmap_blocks_w, mipmap_blocks_h),
+        mipmap_size = mipmap_blocks_w * mipmap_blocks_h * 8;
+    
+    while (limit)
+    {
+      data_size += mipmap_size;
+      mipmap_count++;
+      mipmap_size /= 4;
+      limit /= 2;
+    }
+
+    Rk::std_err << "Generating " << mipmap_count << " mipmaps\n";
+
+    data_source.reset (
+      new u8 [data_size],
+      [] (u8* p) { delete [] p; }
+    );
+
+    u8* data = data_source.get ();
+    for (uint level = 0; level != mipmap_count; level++)
+      build_mipmap (in_image, data, level);
+
+    format = texformat_dxt1;
+  }
+  else
+  {
+    mipmap_count = 1;
+    data_size = in_image.size ();
+    data_source.reset (
+      in_image.data,
+      [] (u8*) { }
+    );
+
+    format = texformat_bgr888;
   }
 
-  std::unique_ptr <u8 []> data_buf (new u8 [data_size]);
+  Rk::std_err << "Output format is " << tex_format_strings [format] << '\n';
 
-  u8* data = data_buf.get ();
-  for (uint level = 0; level != mipmap_count; level++)
-    build_mipmap (in_image, data, level);
-
-  Co::TextureHeader header = {
-    0x20110829,
+  TextureHeader header = {
+    0x20111202,
     mipmap_count,
-    6, // TODO: Where do I lay out this shit
+    format,
     u16 (in_image.width  & 0xffff), //
     u16 (in_image.height & 0xffff)  // 0 => 65536
   };
@@ -156,7 +186,7 @@ static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbo
 
   out_file.write ("DATA", 4);
   out_file.put (u32 (data_size));
-  out_file.write (data_buf.get (), data_size);
+  out_file.write (data_source.get (), data_size);
 
   out_file.write ("END.", 4);
   out_file.put (u32 (0));
@@ -166,9 +196,9 @@ int main (int arg_count, const char** args) try
 {
   Rk::StringRef         in_path;
   Rk::ShortString <512> out_path;
-  bool                  verbose  = false/*,
-                        compress = false,
-                        mipmap   = false*/;
+  bool                  verbose  = false,
+                        //compress = false,
+                        mipmap   = false;
 
   for (uint arg_index = 1; arg_index != arg_count; arg_index++)
   {
@@ -186,10 +216,10 @@ int main (int arg_count, const char** args) try
     {
       compress = true;
     }*/
-    /*else if (arg == "-m")
+    else if (arg == "-m")
     {
       mipmap = true;
-    }*/
+    }
     else if (arg == "-v" || arg == "--verbose")
     {
       verbose = true;
@@ -213,7 +243,7 @@ int main (int arg_count, const char** args) try
                   << "                      then a file with a name similar to the source file in\n"
                   << "                      the current directory is used.\n"
                 /*<< "  -c                  Compresses the texture with DXT as appropriate.\n"*/
-                /*<< "  -m                  Generates mipmaps using a box filter.\n"*/
+                  << "  -m                  Generates mipmaps using a box filter.\n"
                   << "  -v                  Verbose mode. Prints conversion information to the\n"
                   << "                      standard error stream.\n";
       return 0;
@@ -256,7 +286,7 @@ int main (int arg_count, const char** args) try
   Rk::ImageFile in_file  (in_path);
   Rk::File      out_file (out_path, Rk::File::open_replace_or_create);
 
-  convert_texture (in_file, out_file, verbose/*, compress, mipmap*/);
+  convert_texture (in_file, out_file, verbose, /* compress, */ mipmap);
 
   return 0;
 }

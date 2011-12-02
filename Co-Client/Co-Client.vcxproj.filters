@@ -18,12 +18,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Client.hpp">
-      <Filter>Client</Filter>
-    </ClInclude>
     <ClInclude Include="GLWindow.hpp">
       <Filter>GLWindow</Filter>
     </ClInclude>
     <ClInclude Include="Common.hpp" />
+    <ClInclude Include="Client.hpp">
+      <Filter>Client</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

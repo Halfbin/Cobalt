@@ -58,6 +58,8 @@ namespace
   void Game::start (Co::IxEngine* engine)
   {
     engine -> create_entity ("TestEntity", 0);
+    engine -> create_entity ("BlockWorld", 0);
+    engine -> create_entity ("Spectator", 0);
   }
 
   void Game::stop ()

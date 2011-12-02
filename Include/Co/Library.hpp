@@ -6,6 +6,7 @@
 #ifndef CO_H_LIBRARY
 #define CO_H_LIBRARY
 
+#include <Rk/Expose.hpp>
 #include <Rk/Types.hpp>
 
 namespace Co
@@ -34,6 +35,11 @@ namespace Co
     IxEntityClass** end () const
     {
       return classes_end;
+    }
+
+    void expose (void** out, u64 ixid)
+    {
+      Rk::expose <Library> (this, ixid, out);
     }
 
   };

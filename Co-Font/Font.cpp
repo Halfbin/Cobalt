@@ -627,7 +627,7 @@ namespace Co
       metrics_ptr = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
       metrics = metrics_ptr.get ();
 
-      image_ptr = rc.create_tex_image (1, teximage_clamp, teximage_rect);
+      image_ptr = rc.create_tex_image (1, texwrap_clamp, texfilter_none, textype_rectangle);
       image_ptr -> load_map (0, image.data, tex_r8, image.width, image.height, image.size ());
       tex = image_ptr.get ();
 

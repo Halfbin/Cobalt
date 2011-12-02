@@ -10,6 +10,8 @@
 #include <Co/Frame.hpp>
 
 // Uses
+#include <Rk/MatrixForward.hpp>
+
 #include "GeomProgram.hpp"
 #include "RectProgram.hpp"
 
@@ -21,7 +23,7 @@ namespace Co
   class GLFrame :
     public Frame
   {
-    void render_point_geoms (GeomProgram& geom_program, float alpha);
+    void render_point_geoms (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
     void render_ui_batches  (RectProgram& rect_program);
 

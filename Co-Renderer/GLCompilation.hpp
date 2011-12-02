@@ -10,7 +10,11 @@
 #include <Co/IxGeomCompilation.hpp>
 
 // Uses
+#include <Co/IxRenderContext.hpp>
+
 #include "GL.hpp"
+
+#include <vector>
 
 namespace Co
 {
@@ -20,30 +24,38 @@ namespace Co
   class GLCompilation :
     public IxGeomCompilation
   {
-    u32               vao;
-    const GeomAttrib* attribs;
-    uint              attrib_count;
-    GLBuffer*         elements;
-    GLBuffer*         indices;
+    u32                      vao;
+    std::vector <GeomAttrib> attribs;
+    GLBuffer*                elements;
+    GLBuffer*                indices;
+    IndexType                index_type;
 
     ~GLCompilation ();
     virtual void destroy ();
 
-		void first_use ();
+		bool first_use ();
 
   public:
-    GLCompilation (const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices);
+    GLCompilation (
+      const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices, IndexType index_type
+    );
 
-    void use ()
+    IndexType get_index_type () const
+    {
+      return index_type;
+    }
+
+    bool use ()
 		{
 			if (vao)
       {
 				glBindVertexArray (vao);
         check_gl ("glBindVertexArray");
+        return true;
       }
 			else
       {
-				first_use ();
+				return first_use ();
       }
 		}
 		

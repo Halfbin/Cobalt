@@ -85,6 +85,9 @@
     <ClInclude Include="RectProgram.hpp">
       <Filter>Shaders\Rect</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\IxTexRectangle.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GLCompilation.cpp">

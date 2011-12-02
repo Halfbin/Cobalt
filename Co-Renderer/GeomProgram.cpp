@@ -15,14 +15,15 @@ namespace Co
     program.add_shader (fragment_shader);
 
     program.fix_attrib ("attrib_position", attrib_position);
-    program.fix_attrib ("attrib_normal",   attrib_normal);
+    //program.fix_attrib ("attrib_normal",   attrib_normal);
     program.fix_attrib ("attrib_tcoords",  attrib_tcoords);
 
     program.link ();
 
-    world_to_clip  = program.link_uniform ("world_to_clip");
+    /*world_to_clip  = program.link_uniform ("world_to_clip");
     world_to_eye   = program.link_uniform ("world_to_eye");
-    model_to_world = program.link_uniform ("model_to_world");
+    model_to_world = program.link_uniform ("model_to_world");*/
+    model_to_clip  = program.link_uniform ("model_to_clip");
   }
   
   void GeomProgram::use ()

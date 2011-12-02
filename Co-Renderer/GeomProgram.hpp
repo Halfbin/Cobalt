@@ -21,22 +21,23 @@ namespace Co
               fragment_shader;
     GLProgram program;
 
-    u32 world_to_clip,
+    u32 /*world_to_clip,
         world_to_eye,
-        model_to_world;
+        model_to_world,*/
+        model_to_clip;
 
   public:
     enum
     {
       attrib_position = Co::attrib_position,
       attrib_tcoords  = Co::attrib_tcoords,
-      attrib_normal   = Co::attrib_normal,
+      //attrib_normal   = Co::attrib_normal,
 
-      texunit_diffuse  = 0,
+      texunit_diffuse  = 0/*,
       texunit_specular = 1,
       texunit_emission = 2,
       texunit_exponent = 3,
-      texunit_normal   = 4
+      texunit_normal   = 4*/
     };
 
     GeomProgram ();
@@ -44,7 +45,7 @@ namespace Co
     void use  ();
     void done ();
 
-    void set_world_to_clip (Rk::Matrix4f xform)
+    /*void set_world_to_clip (Rk::Matrix4f xform)
     {
       glUniformMatrix4fv (world_to_clip, 1, true, xform.raw ());
       check_gl ("glUniformMatrix4fv");
@@ -59,6 +60,12 @@ namespace Co
     void set_model_to_world (Rk::Matrix4f xform)
     {
       glUniformMatrix4fv (model_to_world, 1, true, xform.raw ());
+      check_gl ("glUniformMatrix4fv");
+    }*/
+
+    void set_model_to_clip (Rk::Matrix4f xform)
+    {
+      glUniformMatrix4fv (model_to_clip, 1, true, xform.raw ());
       check_gl ("glUniformMatrix4fv");
     }
 

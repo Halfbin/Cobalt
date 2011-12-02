@@ -29,6 +29,9 @@ namespace Co
     public IxTexture
   {
     Rk::ShortString <512> path;
+    bool                  wrap,
+                          filter;
+
     long ref_count;
 
     virtual void acquire ()
@@ -62,7 +65,7 @@ namespace Co
       if (Rk::StringRef (magic, 8) != "COTEXTR1")
         throw Rk::Exception ("Source file corrupt or not a texture");
 
-      TextureHeader header = { 0, 0, 0, 0, 0 };
+      TextureHeader header = { 0 };
       u32 width, height;
       std::unique_ptr <u8 []> buffer;
       
@@ -76,7 +79,7 @@ namespace Co
             if (header.version)
               throw Rk::Exception ("Texture has more than one HEAD");
             file.read (&header, Rk::minimum (loader.size, sizeof (header)));
-            if (header.version != 0x20110829)
+            if (header.version != 0x20111202)
               throw Rk::Exception ("Texture is of an unsupported version");
             if (header.map_count == 0)
               throw Rk::Exception ("Texture contains no maps");
@@ -106,10 +109,21 @@ namespace Co
       if (!buffer)
         throw Rk::Exception ("Texture has no DATA");
       
-      image = rc.create_tex_image (header.map_count, teximage_clamp);
+      TexImageFilter filter_type;
+      if (filter)
+        filter_type = (header.map_count > 1) ? texfilter_trilinear : texfilter_linear;
+      else
+        filter_type = texfilter_none;
+
+      image = rc.create_tex_image (header.map_count, wrap ? texwrap_wrap : texwrap_clamp, filter_type, textype_2d);
 
       u32 offset = 0;
-      u32 size = header.width / 4 * header.height / 4 * 8;
+      u32 size;
+
+      if (header.format == texformat_dxt1)
+        size = header.width / 4 * header.height / 4 * 8;
+      else if (header.format == texformat_bgr888)
+        size = Rk::align (header.width * 3, 4) * header.height;
 
       for (uint level = 0; level != header.map_count; level++)
       {
@@ -124,12 +138,14 @@ namespace Co
     }
 
   public:
-    Texture (IxLoadContext& context, Rk::StringRef new_path)
+    Texture (IxLoadContext& context, Rk::StringRef new_path, bool new_wrap, bool new_filter)
     {
       ref_count = 1;
       path = context.get_game_path ();
       path += "Textures/";
       path += new_path;
+      wrap = new_wrap;
+      filter = new_filter;
       image = 0;
       context.load (this);
     }
@@ -150,7 +166,7 @@ namespace Co
     typedef std::unordered_map <Rk::ShortString <512>, IxTexture*> CacheType;
     CacheType cache;
 
-    virtual IxTexture* create (IxLoadContext& context, Rk::StringRef path)
+    virtual IxTexture* create (IxLoadContext& context, Rk::StringRef path, bool wrap, bool filter)
     {
       IxTexture* tex;
 
@@ -163,7 +179,7 @@ namespace Co
       }
       else
       {
-        tex = new Texture (context, path);
+        tex = new Texture (context, path, wrap, filter);
         cache.insert (CacheType::value_type (path, tex));
       }
       

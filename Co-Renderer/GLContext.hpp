@@ -36,9 +36,22 @@ namespace Co
 
     void present ();
 
-    virtual IxGeomBuffer*      create_buffer      (uptr size, const void* data);
-    virtual IxGeomCompilation* create_compilation (const GeomAttrib*, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices);
-    virtual IxTexImage*        create_tex_image   (uint level_count, TexImageWrap wrap, TexImageType type);
+    virtual IxGeomBuffer* create_buffer (uptr size, const void* data);
+
+    virtual IxGeomCompilation* create_compilation (
+      const GeomAttrib* attribs,
+      uint              attrib_count,
+      IxGeomBuffer*     elements,
+      IxGeomBuffer*     indices,
+      IndexType         index_type
+    );
+
+    virtual IxTexImage* create_tex_image (
+      uint           level_count,
+      TexImageWrap   wrap,
+      TexImageFilter filter,
+      TexImageType   type
+    );
     
     virtual void flush ();
 

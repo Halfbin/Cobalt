@@ -9,6 +9,9 @@
 // Implements
 #include <Co/IxGeomBuffer.hpp>
 
+// Uses
+#include "GL.hpp"
+
 namespace Co
 {
   class GLBuffer :
@@ -24,7 +27,19 @@ namespace Co
   public:
     GLBuffer (uptr size, const void* data);
 
-    void bind (uint target);
+    bool bind (uint target)
+    {
+      if (glIsBuffer (name))
+      {
+        glBindBuffer (target, name);
+        check_gl ("glBindBuffer");
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
 
   }; // class GLBuffer
 

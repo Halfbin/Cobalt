@@ -18,7 +18,7 @@ namespace Co
   // = Meshes ==========================================================================================================
   //
   enum PrimType :
-    u32
+    u16
   {
     prim_points = 0,
     prim_lines,
@@ -29,22 +29,13 @@ namespace Co
     prim_triangle_fan
   };
   
-  enum IndexType :
-    u16
-  {
-    index_none = 0,
-    index_u8,
-    index_u16,
-    index_u32
-  };
-  
   struct Mesh
   {
-    u32 prim_type,     // 4
-        first_item,    // 8
-        element_count; // 12
-    u16 index_type,    // 14
-        material;      // 16
+    PrimType prim_type;     // 2
+    u16      material;      // 4
+    u32      base_element,  // 8
+             base_index,    // 12
+             element_count; // 16
   };
 
   //
@@ -130,29 +121,29 @@ namespace Co
     };
 
     // Point geometry data
-    enum { max_point_geoms = 256 };
+    enum { max_point_geoms = 2048 };
     PointSpatial       point_spats [max_point_geoms];
     PointGeom          point_geoms [max_point_geoms];
     IxGeomCompilation* point_comps [max_point_geoms];
     uint               point_geoms_back_index;
 
     // Meshes
-    enum { max_meshes = 1024 };
+    enum { max_meshes = 2048 };
     Mesh meshes [max_meshes];
     uint meshes_back_index;
 
     // Materials
-    enum { max_materials = 1024 };
+    enum { max_materials = 2048 };
     Material materials [max_materials];
     uint     materials_back_index;
 
     // UI rects
-    enum { max_ui_batches = 1024 };
+    enum { max_ui_batches = 2048 };
 		UIBatch ui_batches [max_ui_batches];
     uint    ui_batches_back_index;
 
     // Labels
-    enum { max_labels = 1024 };
+    enum { max_labels = 2048 };
     Label        labels      [max_labels];
     PointSpatial label_spats [max_labels];
     uint         labels_back_index;
@@ -179,8 +170,11 @@ namespace Co
          height;
 
   public:
-    void begin_point_geom (IxGeomCompilation* comp, Spatial prev, Spatial cur)
+    bool begin_point_geom (IxGeomCompilation* comp, Spatial prev, Spatial cur)
     {
+      if (point_geoms_back_index == max_point_geoms)
+        return false;
+
       PointSpatial spat = { prev, cur };
       point_spats [point_geoms_back_index] = spat;
       
@@ -188,6 +182,8 @@ namespace Co
       point_geoms [point_geoms_back_index] = geom;
       
       point_comps [point_geoms_back_index] = comp;
+
+      return true;
     }
 
     void end_point_geom ()
@@ -220,7 +216,7 @@ namespace Co
       while (materials_back_index != max_materials && in != end)
         materials [materials_back_index++] = *in++;
       
-      point_geoms [point_geoms_back_index].material_count += old_materials_back_index - materials_back_index;
+      point_geoms [point_geoms_back_index].material_count += materials_back_index - old_materials_back_index;
     }
     
     template <typename Iter>

@@ -5,22 +5,25 @@
 
 #version 330 core
 
-uniform mat4 model_to_world;
+/*uniform mat4 model_to_world;
 uniform mat4 world_to_clip;
-uniform mat4 world_to_eye;
+uniform mat4 world_to_eye;*/
+
+uniform mat4 model_to_clip;
+//uniform mat4 model_to_eye;
 
 in vec3 attrib_position;
-in vec3 attrib_normal;
+//in vec3 attrib_normal;
 in vec2 attrib_tcoords;
 
 out vec4 xformed_position;
-out vec4 xformed_normal;
+//out vec4 xformed_normal;
 out vec2 xformed_tcoords;
 
 void main ()
 {
-  xformed_position = world_to_clip * model_to_world * vec4 (attrib_position, 1);
-  xformed_normal   = world_to_eye  * model_to_world * vec4 (attrib_normal,   0);
+  xformed_position = model_to_clip * vec4 (attrib_position, 1);
+  //xformed_normal   = world_to_eye  * model_to_world * vec4 (attrib_normal,   0);
   xformed_tcoords  = attrib_tcoords;
 
   gl_Position = xformed_position;

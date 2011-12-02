@@ -81,22 +81,12 @@ namespace
 
     virtual void tick (float time, float prev_time, Frame& frame)
     {
-      Spatial cam_a = spatial,
-              cam_b = spatial;
-
-      cam_a.orientation = Quaternion (prev_time, Vector3 (1, 0, 0));
-      cam_a.position.x -= 8.5f + 6.0f * std::sin (prev_time * 2.0f);
-      cam_b.orientation = Quaternion (time, Vector3 (1, 0, 0));
-      cam_b.position.x -= 8.5f + 6.0f * std::sin (time * 2.0f);
-
-      frame.set_camera (cam_a, cam_b, 75.0f, 75.0f, 0.1f, 1000.0f);
-
       Spatial next = spatial;
       next.orientation = Quaternion (time * 2.0f, Vector3 (0.0f, 0.0f, 1.0f));
 
       if (!mat.diffuse_tex)
         mat.diffuse_tex = tex -> get ();
-      model -> draw (frame, spatial, next, &mat, 1);
+      //model -> draw (frame, spatial, next, &mat, 1);
 
       /*draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
       draw_ui_text (frame, 100, 200, font, Rk::u16_string (L"This is a test!"));
@@ -107,9 +97,9 @@ namespace
         Rk::u16_string (L"0123456789!\"£$%^&*()-=_+[]{};'#:@~,./<>?\\|`¬¦")
       );*/
 
-      draw_ui_text (frame, 500, 500, font,
-        Rk::u16_string (L"AVAVAVAV")
-      );
+      /*draw_ui_text (frame, 200, 600, font,
+        Rk::u16_string (L"Testing Testing 123")
+      );*/
 
       spatial = next;
     }
@@ -122,13 +112,13 @@ namespace
       if (!model)
       {
         model = model_factory   -> create (loadcontext, "cube.rkmodel");
-        tex   = texture_factory -> create (loadcontext, "derp.cotexture");
+        tex   = texture_factory -> create (loadcontext, "derp.cotexture", false, true);
 
         CodeRange ranges [] = {
           { 0x0020, 0x007f }, // ASCII
           { 0x00a1, 0x0100 }  // Latin-1 Supplement
         };
-        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 24, fontsize_points, std::begin (ranges), std::end (ranges));
+        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 14, fontsize_points, std::begin (ranges), std::end (ranges));
       }
     }
 

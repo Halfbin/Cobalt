@@ -139,10 +139,10 @@ namespace Co
             for (uint i = 0; i != mesh_count; i++)
             {
               meshes [i].prim_type     = prim_triangles;
-              meshes [i].first_item    = vis_meshes [i].first_index;
-              meshes [i].element_count = vis_meshes [i].element_count;
-              meshes [i].index_type    = index_u16;
               meshes [i].material      = vis_meshes [i].material;
+              meshes [i].base_element  = 0;
+              meshes [i].base_index    = vis_meshes [i].first_index;
+              meshes [i].element_count = vis_meshes [i].element_count;
             }
           }
           break;
@@ -158,7 +158,7 @@ namespace Co
         { attrib_normal,   attrib_f32, 32, 20 }
       };
 
-      comp = rc.create_compilation (attribs, 3, element_buffer, index_buffer);
+      comp = rc.create_compilation (attribs, 3, element_buffer, index_buffer, index_u16);
 
       ready = true;
     }

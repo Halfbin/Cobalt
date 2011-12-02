@@ -5,5 +5,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Library.cpp" />
     <ClCompile Include="TestEntity.cpp" />
+    <ClCompile Include="BlockWorld.cpp" />
+    <ClCompile Include="Spectator.cpp" />
   </ItemGroup>
 </Project>

@@ -19,9 +19,10 @@ namespace Co
   //
   // render_point_geoms
   //
-  void GLFrame::render_point_geoms (GeomProgram& geom_program, float alpha)
+  void GLFrame::render_point_geoms (Rk::Matrix4f world_to_clip, GeomProgram& geom_program, float alpha)
   {
     glEnable (GL_DEPTH_TEST);
+    //glDisable (GL_CULL_FACE);
 
     Spatial point_interps [max_point_geoms];
     for (uint i = 0; i != point_geoms_back_index; i++)
@@ -30,12 +31,29 @@ namespace Co
     uint cur_mesh = 0,
          cur_mat  = 0;
 
+    GLCompilation* prev_comp = 0;
+
     for (uint geom_index = 0; geom_index != point_geoms_back_index; geom_index++)
     {
-      auto comp = static_cast <GLCompilation*> (point_comps [geom_index]);
-      comp -> use ();
+      GLCompilation* comp = static_cast <GLCompilation*> (point_comps [geom_index]);
 
-      geom_program.set_model_to_world (
+      if (comp != prev_comp)
+      {
+        if (prev_comp)
+          prev_comp -> done ();
+        comp -> use ();
+        prev_comp = comp;
+      }
+
+      static const GLenum index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
+      static const uptr   index_sizes [4] = { 0, 1, 2, 4 };
+      
+      IndexType comp_index_type = comp -> get_index_type ();
+      GLenum index_type = index_types [comp_index_type];
+      uptr   index_size = index_sizes [comp_index_type];
+
+      geom_program.set_model_to_clip (
+        world_to_clip *
         Rk::affine_xform (
           point_interps [geom_index].position,
           point_interps [geom_index].orientation
@@ -53,7 +71,7 @@ namespace Co
         else
           GLTexImage::unbind (geom_program.texunit_diffuse);
 
-        static const GLenum gl_prim_types [7] = {
+        static const GLenum prim_types [7] = {
           GL_POINTS,
           GL_LINES,
           GL_LINE_LOOP,
@@ -62,21 +80,17 @@ namespace Co
           GL_TRIANGLE_STRIP,
           GL_TRIANGLE_FAN
         };
-        GLenum prim_type = gl_prim_types [mesh.prim_type];
+        GLenum prim_type = prim_types [mesh.prim_type];
 
-        if (mesh.index_type)
+        if (index_type)
         {
-          static const GLenum gl_index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
-          GLenum index_type = gl_index_types [mesh.index_type];
-          
-          uptr offset = uptr (mesh.first_item) << uint (mesh.index_type - 1);
-          
-          glDrawElements (prim_type, mesh.element_count, index_type, (void*) offset);
+          uptr offset = index_size * mesh.base_index;
+          glDrawElementsBaseVertex (prim_type, mesh.element_count, index_type, (void*) offset, mesh.base_element);
           check_gl ("glDrawElements");
         }
         else
         {
-          glDrawArrays (prim_type, mesh.first_item, mesh.element_count);
+          glDrawArrays (prim_type, mesh.base_element, mesh.element_count);
           check_gl ("glDrawArrays");
         }
       } // while (meshes)
@@ -165,9 +179,11 @@ namespace Co
       camera_sp.orientation
     );
     
+    float aspect = float (width) / float (height);
+
     auto eye_to_clip = Rk::eye_to_clip_xform (
-      Rk::lerp (camera_prev_fov, camera_cur_fov, alpha),
-      float (width) / float (height),
+      Rk::lerp (camera_prev_fov / aspect, camera_cur_fov / aspect, alpha),
+      aspect,
       camera_near, camera_far
     );
     
@@ -179,11 +195,11 @@ namespace Co
     );
     
     geom_program.use ();
-    geom_program.set_world_to_clip (world_to_clip);
-    geom_program.set_world_to_eye  (world_to_eye);
+    //geom_program.set_world_to_clip (world_to_clip);
+    //geom_program.set_world_to_eye  (world_to_eye);
 
     // Render point geometries
-    render_point_geoms (geom_program, alpha);
+    render_point_geoms (world_to_clip, geom_program, alpha);
 
     geom_program.done ();
 
