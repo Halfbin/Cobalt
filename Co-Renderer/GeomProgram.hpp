@@ -32,6 +32,7 @@ namespace Co
       attrib_position = Co::attrib_position,
       attrib_tcoords  = Co::attrib_tcoords,
       //attrib_normal   = Co::attrib_normal,
+      attrib_colour   = Co::attrib_colour,
 
       texunit_diffuse  = 0/*,
       texunit_specular = 1,

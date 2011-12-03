@@ -15,7 +15,8 @@ namespace Co
   {
     attrib_position = 0,
     attrib_tcoords,
-    attrib_normal
+    attrib_normal,
+    attrib_colour
   };
   
   enum AttribType : u8

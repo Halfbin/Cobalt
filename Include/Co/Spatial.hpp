@@ -11,6 +11,7 @@
 
 namespace Co
 {
+  typedef Rk::Vector2f    Vector2;
   typedef Rk::Vector3f    Vector3;
   typedef Rk::Vector4f    Vector4;
   typedef Rk::Quaternionf Quaternion;

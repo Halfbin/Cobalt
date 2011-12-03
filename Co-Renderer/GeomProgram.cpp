@@ -17,6 +17,7 @@ namespace Co
     program.fix_attrib ("attrib_position", attrib_position);
     //program.fix_attrib ("attrib_normal",   attrib_normal);
     program.fix_attrib ("attrib_tcoords",  attrib_tcoords);
+    program.fix_attrib ("attrib_colour",   attrib_colour);
 
     program.link ();
 

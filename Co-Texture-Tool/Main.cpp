@@ -12,7 +12,7 @@
 #include <Rk/Console.hpp>
 #include <Rk/File.hpp>
 
-#include <memory>
+#include <vector>
 
 using namespace Co;
 
@@ -95,6 +95,32 @@ static void build_mipmap (Rk::Image& in, u8*& out, uint level)
   }
 }
 
+static void write_texture (Rk::File& out_file, u16 mipmap_count, TexFormat format, u16 width, u16 height, const u8* data, u32 data_size)
+{
+  Rk::std_err << "Output format is " << tex_format_strings [format] << '\n';
+
+  TextureHeader header = {
+    0x20111202,
+    mipmap_count,
+    format,
+    width,
+    height
+  };
+
+  out_file.write (Co::texture_magic, 8);
+
+  out_file.write ("HEAD", 4);
+  out_file.put (u32 (sizeof (header)));
+  out_file.put (header);
+
+  out_file.write ("DATA", 4);
+  out_file.put (u32 (data_size));
+  out_file.write (data, data_size);
+
+  out_file.write ("END.", 4);
+  out_file.put (u32 (0));
+}
+
 static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbose, /*bool compress,*/ bool mipmap)
 {
   static const char* format_strings [11] = {
@@ -123,17 +149,14 @@ static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbo
   if (in_image.width % 4 || in_image.height % 4)
     throw Rk::Exception ("Dimensions of source image must be multiples of 4");
   
-  u32                  mipmap_count = 0,
-                       data_size    = 0;
-  std::shared_ptr <u8> data_source;
-  TexFormat            format;
-
   if (mipmap)
   {
     u32 mipmap_blocks_w = in_image.width  / 4,
         mipmap_blocks_h = in_image.height / 4,
         limit = Rk::minimum (mipmap_blocks_w, mipmap_blocks_h),
-        mipmap_size = mipmap_blocks_w * mipmap_blocks_h * 8;
+        mipmap_size = mipmap_blocks_w * mipmap_blocks_h * 8,
+        data_size = 0;
+    u16 mipmap_count = 0;
     
     while (limit)
     {
@@ -145,51 +168,30 @@ static void convert_texture (Rk::Image& in_image, Rk::File& out_file, bool verbo
 
     Rk::std_err << "Generating " << mipmap_count << " mipmaps\n";
 
-    data_source.reset (
-      new u8 [data_size],
-      [] (u8* p) { delete [] p; }
-    );
+    std::vector <u8> buffer (data_size);
 
-    u8* data = data_source.get ();
+    u8* ptr = buffer.data ();
     for (uint level = 0; level != mipmap_count; level++)
-      build_mipmap (in_image, data, level);
+      build_mipmap (in_image, ptr, level);
 
-    format = texformat_dxt1;
+    write_texture (out_file, mipmap_count, texformat_dxt1, in_image.width & 0xffff, in_image.height & 0xffff, buffer.data (), data_size);
   }
   else
   {
-    mipmap_count = 1;
-    data_size = in_image.size ();
-    data_source.reset (
-      in_image.data,
-      [] (u8*) { }
-    );
+    /*if (in_image.bottom_up)
+    {
+      // Flip image
+      for (uint y = 0; y != in_image.height / 2; y++)
+      {
+        u8* high = in_image.data + in_image.row_stride * y;
+        u8* low  = in_image.data + in_image.row_stride * (in_image.height - y - 1);
+        for (uint x = 0; x != in_image.width * in_image.pixel_stride; x++)
+          std::swap (*high++, *low++);
+      }
+    }*/
 
-    format = texformat_bgr888;
+    write_texture (out_file, 1, texformat_bgr888, in_image.width & 0xffff, in_image.height & 0xffff, in_image.data, in_image.size ());
   }
-
-  Rk::std_err << "Output format is " << tex_format_strings [format] << '\n';
-
-  TextureHeader header = {
-    0x20111202,
-    mipmap_count,
-    format,
-    u16 (in_image.width  & 0xffff), //
-    u16 (in_image.height & 0xffff)  // 0 => 65536
-  };
-
-  out_file.write (Co::texture_magic, 8);
-
-  out_file.write ("HEAD", 4);
-  out_file.put (u32 (sizeof (header)));
-  out_file.put (header);
-
-  out_file.write ("DATA", 4);
-  out_file.put (u32 (data_size));
-  out_file.write (data_source.get (), data_size);
-
-  out_file.write ("END.", 4);
-  out_file.put (u32 (0));
 }
 
 int main (int arg_count, const char** args) try

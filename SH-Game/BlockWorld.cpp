@@ -27,9 +27,49 @@ namespace
     u8
   {
     blocktype_air   = 0x00,
-    blocktype_solid = 0x01
+    blocktype_soil  = 0x01,
+    blocktype_grass = 0x02
   };
   
+  struct BlockTCoords
+  {
+    static const float t;
+
+    Co::Vector2 top,
+                sides,
+                bottom;
+
+    BlockTCoords () { }
+
+    BlockTCoords (float ts, float tt, float ss, float st, float bs, float bt) :
+      top    (t * Co::Vector2 (ts, tt)),
+      sides  (t * Co::Vector2 (ss, st)),
+      bottom (t * Co::Vector2 (bs, bt))
+    { }
+    
+  };
+
+  const float BlockTCoords::t = 1.0f / 16.0f;
+
+  class BlockTCoordsSet
+  {
+    BlockTCoords tcoords [256];
+
+  public:
+    BlockTCoordsSet ()
+    {
+      tcoords [blocktype_air  ] = BlockTCoords (0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+      tcoords [blocktype_soil ] = BlockTCoords (3.0f, 0.0f, 3.0f, 0.0f, 3.0f, 0.0f);
+      tcoords [blocktype_grass] = BlockTCoords (2.0f, 0.0f, 1.0f, 0.0f, 3.0f, 0.0f);
+    }
+
+    const BlockTCoords& operator [] (u8 index) const
+    {
+      return tcoords [index];
+    }
+
+  } block_tcoords;
+
   class Block
   {
   public:
@@ -46,60 +86,64 @@ namespace
   {
     float x, y, z;
     float s, t;
+    float r, g, b;
 
     Vertex () { }
 
-    Vertex (int x, int y, int z, float s, float t) :
-      x (float (x)), y (float (y)), z (float (z)), s (s), t (t)
+    Vertex (int x, int y, int z, float s, float t, float r, float g, float b) :
+      x (float (x)), y (float (y)), z (float (z)),
+      s (s), t (t),
+      r (r), g (g), b (b)
     { }
       
   };
 
   class Noise
   {
-    u8          permute   [256];
-    Co::Vector3 gradients [256];
+    static const uint size = 65536,
+                      mask = size - 1;
+    uint        permute   [size];
+    Co::Vector3 gradients [size];
 
     static float ease_1 (float t)
     {
-      t = 1.0f - t;
+      //t = 1.0f - t;
       float t2 = t * t;
       return (3.0f * t2) - (2.0f * t2 * t);
     }
 
-    /*static float ease_3 (const Co::Vector3& t)
-    {
-      return ease_1 (std::abs (t.x)) * ease_1 (std::abs (t.y)) * ease_1 (std::abs (t.z));
-    }*/
-
     Co::Vector3 grad (int x, int y, int z) const
     {
       return gradients [
-        (x + permute [(y + permute [z & 0xff]) & 0xff]) & 0xff
+        (x + permute [(y + permute [z & mask]) & mask]) & mask
       ];
     }
 
   public:
-    void generate ()
+    void generate (u64 seed)
     {
-      std::srand (2112);
+      std::srand (seed & 0xffffffff);
 
-      for (uint i = 0; i != 256; i++)
+      for (uint i = 0; i != size; i++)
         permute [i] = i;
       
-      for (uint i = 0; i != 256; i++)
+      for (uint i = 0; i != size; i++)
       {
-        u8 other = std::rand () & 0xff;
+        uint other = std::rand () & mask;
         std::swap (permute [i], permute [other]);
       }
 
       // Non-uniform, but okay for now.
-      for (uint i = 0; i != 256; i++)
+      for (uint i = 0; i != size; i++)
       {
+        uint samples [6];
+        for (uint s = 0; s != 6; s++)
+          samples [s] = uint (std::rand ());
+
         auto vec = Co::Vector3 (
-          (float (std::rand ()) / float (RAND_MAX / 2)) - 1.0f,
-          (float (std::rand ()) / float (RAND_MAX / 2)) - 1.0f,
-          (float (std::rand ()) / float (RAND_MAX / 2)) - 1.0f
+          (float (samples [0] + samples [1]) / float (uint (RAND_MAX))) - 1.0f,
+          (float (samples [2] + samples [3]) / float (uint (RAND_MAX))) - 1.0f,
+          (float (samples [4] + samples [5]) / float (uint (RAND_MAX))) - 1.0f
         ).unit ();
         gradients [i] = vec;
         /*if (vec.magnitude () > 1.0f)
@@ -107,46 +151,52 @@ namespace
       }
     }
 
-    void get_gradients (int x, int y, int z, Co::Vector3 grads [8]) const
+    void get_gradients (int x, int y, int z, Co::Vector3 grads [2][2][2]) const
     {
-      for (uint i = 0; i != 8; i++)
+      for (uint k = 0; k != 2; k++)
       {
-        grads [i] = grad (
-          x + ((i >> 0) & 1),
-          y + ((i >> 1) & 1),
-          z + ((i >> 2) & 1)
-        );
-        /*if (grads [i].magnitude () > 1.0f)
-          return;*/
+        for (uint j = 0; j != 2; j++)
+        {
+          for (uint i = 0; i != 2; i++)
+          {
+            grads [i][j][k] = grad (x + i, y + j, z + k);
+          }
+        }
       }
     }
 
-    static float get (Co::Vector3 pos, const Co::Vector3 grads [8])
+    static float get (Co::Vector3 pos, const Co::Vector3 grads [2][2][2])
     {
-      float contribs [8];
-      for (uint i = 0; i != 8; i++)
+      float contribs [2][2][2];
+      for (uint k = 0; k != 2; k++)
       {
-        auto delta = pos - Co::Vector3 (float ((i >> 0) & 1), float ((i >> 1) & 1), float ((i >> 2) & 1));
-        contribs [i] = dot (grads [i], delta);
+        for (uint j = 0; j != 2; j++)
+        {
+          for (uint i = 0; i != 2; i++)
+          {
+            auto delta = pos - Co::Vector3 (i, j, k);
+            contribs [i][j][k] = dot (grads [i][j][k], delta);
+          }
+        }
       }
 
-      float alpha_x = ease_1 (std::abs (pos.x));
-      float xiy0z0 = Rk::lerp (contribs [0], contribs [1], alpha_x);
-      float xiy1z0 = Rk::lerp (contribs [2], contribs [3], alpha_x);
-      float xiy0z1 = Rk::lerp (contribs [4], contribs [5], alpha_x);
-      float xiy1z1 = Rk::lerp (contribs [6], contribs [7], alpha_x);
+      float alpha_x = ease_1 (1.0f - pos.x);
+      float xiy0z0 = Rk::lerp (contribs [0][0][0], contribs [1][0][0], alpha_x);
+      float xiy1z0 = Rk::lerp (contribs [0][1][0], contribs [1][1][0], alpha_x);
+      float xiy0z1 = Rk::lerp (contribs [0][0][1], contribs [1][0][1], alpha_x);
+      float xiy1z1 = Rk::lerp (contribs [0][1][1], contribs [1][1][1], alpha_x);
 
-      float alpha_y = ease_1 (std::abs (pos.y));
+      float alpha_y = ease_1 (1.0f - pos.y);
       float xiyiz0 = Rk::lerp (xiy0z0, xiy1z0, alpha_y);
       float xiyiz1 = Rk::lerp (xiy0z1, xiy1z1, alpha_y);
 
-      float alpha_z = ease_1 (std::abs (pos.z));
+      float alpha_z = ease_1 (1.0f - pos.z);
       float xiyizi = Rk::lerp (xiyiz0, xiyiz1, alpha_z);
 
       /*if (xiyizi > 1.0f)
         return xiyizi;*/
 
-      return xiyizi;
+      return std::abs (xiyizi);
     }
 
   };
@@ -202,69 +252,75 @@ namespace
 
             // 0, 0, 0, is the back right bottom
 
-            // Correct; these calculations must be integral
-            float s = float (block.type % 8) * tg,
-                  t = float (block.type / 8) * tg;
+            auto tcoords = block_tcoords [block.type];
+            float side_s = tcoords.sides.x,
+                  side_t = tcoords.sides.y,
+                  top_s  = tcoords.top.x,
+                  top_t  = tcoords.top.y,
+                  bot_s  = tcoords.bottom.x,
+                  bot_t  = tcoords.bottom.y;
+
+            //static const float eps = 0.0f;//1.0f / 1024.0f;
 
             uint faces_added = 0;
 
             if ((x == dim - 1) || at (x + 1, y, z).empty ())
             {
               // front
-              *v++ = Vertex (x + 1, y + 0, z + 1, s +  0, t + tg);
-              *v++ = Vertex (x + 1, y + 0, z + 0, s +  0, t +  0);
-              *v++ = Vertex (x + 1, y + 1, z + 1, s + tg, t + tg);
-              *v++ = Vertex (x + 1, y + 1, z + 0, s + tg, t +  0);
+              *v++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f);
               faces_added++;
             }
 
             if ((x == 0) || at (x - 1, y, z).empty ())
             {
               // back
-              *v++ = Vertex (x + 0, y + 1, z + 1, s +  0, t + tg);
-              *v++ = Vertex (x + 0, y + 1, z + 0, s +  0, t +  0);
-              *v++ = Vertex (x + 0, y + 0, z + 1, s + tg, t + tg);
-              *v++ = Vertex (x + 0, y + 0, z + 0, s + tg, t +  0);
+              *v++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f);
               faces_added++;
             }
             
             if ((y == dim - 1) || at (x, y + 1, z).empty ())
             {
               // left
-              *v++ = Vertex (x + 1, y + 1, z + 1, s +  0, t + tg);
-              *v++ = Vertex (x + 1, y + 1, z + 0, s +  0, t +  0);
-              *v++ = Vertex (x + 0, y + 1, z + 1, s + tg, t + tg);
-              *v++ = Vertex (x + 0, y + 1, z + 0, s + tg, t +  0);
+              *v++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f);
+              *v++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f);
               faces_added++;
             }
             
             if ((y == 0) || at (x, y - 1, z).empty ())
             {
               // right
-              *v++ = Vertex (x + 0, y + 0, z + 1, s +  0, t + tg);
-              *v++ = Vertex (x + 0, y + 0, z + 0, s +  0, t +  0);
-              *v++ = Vertex (x + 1, y + 0, z + 1, s + tg, t + tg);
-              *v++ = Vertex (x + 1, y + 0, z + 0, s + tg, t +  0);
+              *v++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f);
+              *v++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f);
               faces_added++;
             }
             
             if ((z == dim - 1) || at (x, y, z + 1).empty ())
             {
               // top
-              *v++ = Vertex (x + 1, y + 1, z + 1, s +  0, t + tg);
-              *v++ = Vertex (x + 0, y + 1, z + 1, s +  0, t +  0);
-              *v++ = Vertex (x + 1, y + 0, z + 1, s + tg, t + tg);
-              *v++ = Vertex (x + 0, y + 0, z + 1, s + tg, t +  0);
+              *v++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f);
+              *v++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 1.0f, 1.0f, 1.0f);
+              *v++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 1.0f, 1.0f, 1.0f);
+              *v++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f);
               faces_added++;
             }
             
             if ((z == 0) || at (x, y, z - 1).empty ())
             {
               // bottom
-              *v++ = Vertex (x + 0, y + 1, z + 0, s +  0, t + tg);
-              *v++ = Vertex (x + 1, y + 1, z + 0, s +  0, t +  0);
-              *v++ = Vertex (x + 0, y + 0, z + 0, s + tg, t + tg);
-              *v++ = Vertex (x + 1, y + 0, z + 0, s + tg, t +  0);
+              *v++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f);
+              *v++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 0.5f, 0.5f, 0.5f);
+              *v++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 0.5f, 0.5f, 0.5f);
+              *v++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 0.5f, 0.5f, 0.5f);
               faces_added++;
             }
 
@@ -288,7 +344,7 @@ namespace
 
     float generate (int cx, int cy, int cz, const Noise& noise)
     {
-      Co::Vector3 grads [8];
+      Co::Vector3 grads [2][2][2];
       noise.get_gradients (cx, cy, cz, grads);
       float max_value = 0.0f;
 
@@ -298,10 +354,22 @@ namespace
         {
           for (int x = 0; x != dim; x++)
           {
-            Co::Vector3 block_pos (float (x) / dim + 0.5f, float (y) / dim + 0.5f, float (z) / dim + 0.5f);
+            Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
             float value = noise.get (block_pos, grads);
             max_value = std::max (value, max_value);
-            blocks [x][y][z].type = (value > 0.2f) ? blocktype_solid : blocktype_air;
+            at (x, y, z).type = (value > 1.0f) ? blocktype_soil : blocktype_air;
+          }
+        }
+      }
+
+      for (int z = 0; z != dim; z++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          for (int x = 0; x != dim; x++)
+          {
+            if (((z == dim - 1) || at (x, y, z + 1).empty ()) && at (x, y, z).type == blocktype_soil)
+              at (x, y, z).type = blocktype_grass;
           }
         }
       }
@@ -317,10 +385,14 @@ namespace
   {
     enum
     {
-      world_dim    = 8,
+      world_dim    = 4,
       world_chunks = world_dim * world_dim * world_dim
     };
 
+    // Parameters
+    u64 seed;
+
+    // State
     Chunk                      chunks [world_dim][world_dim][world_dim];
     Co::IxGeomBuffer::Ptr      elements,
                                indices;
@@ -343,7 +415,7 @@ namespace
 
     virtual void load (Co::IxRenderContext& rc)
     {
-      noise.generate ();
+      noise.generate (seed);
 
       float max_value = 0.0f;
 
@@ -396,12 +468,13 @@ namespace
       elements = rc.create_buffer (vertex_buf_size, vertex_buf);
       indices  = rc.create_buffer (index_buf_size,  index_buf );
 
-      Co::GeomAttrib attribs [2] = {
+      Co::GeomAttrib attribs [3] = {
         { Co::attrib_position, Co::attrib_f32, sizeof (Vertex),  0 },
-        { Co::attrib_tcoords,  Co::attrib_f32, sizeof (Vertex), 12 }
+        { Co::attrib_tcoords,  Co::attrib_f32, sizeof (Vertex), 12 },
+        { Co::attrib_colour,   Co::attrib_f32, sizeof (Vertex), 20 },
       };
 
-      compilation = rc.create_compilation (attribs, 2, elements, indices, Co::index_u16);
+      compilation = rc.create_compilation (attribs, 3, elements, indices, Co::index_u16);
 
       delete [] vertex_buf;
       delete [] index_buf;
@@ -467,6 +540,7 @@ namespace
   public:
     BlockWorld (Co::IxLoadContext& load_context, Co::IxPropMap* props)
     {
+      seed = 6545;
       texture = texture_factory -> create (load_context, "Blocks.cotexture", false, false);
       load_context.load (this);
     }

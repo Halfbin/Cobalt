@@ -20,6 +20,7 @@ uniform float mat_exponent*/;
 in vec4 xformed_position;
 //in vec4 xformed_normal;
 in vec2 xformed_tcoords;
+in vec4 xformed_colour;
 
 void main ()
 {
@@ -37,5 +38,5 @@ void main ()
         ref_emissive = mat_emissive;
   float ref_exponent = mat_exponent;*/
 
-  gl_FragColor = texel_diffuse;
+  gl_FragColor = xformed_colour * texel_diffuse;
 }
