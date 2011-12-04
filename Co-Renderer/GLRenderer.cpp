@@ -129,11 +129,15 @@ namespace Co
     uint frames = 0;
     GLFrame* frame = 0;
     
+    float now = clock -> time () - 0.1f;
+    //float prev = now;
+
     // The real loop
     for (;;)
     {
-      float now = clock -> time () - 0.1f;
-      
+      /*if (now - prev > 0.1f)
+        __asm nop;*/
+
       // Perhaps it's time to grab a new frame
       while (!frame || now >= frame -> time)
       {
@@ -159,14 +163,32 @@ namespace Co
       }
       
       // Let's render it
-      float alpha = 0.0f;
+      float alpha ;
+
       if (now >= frame -> prev_time)
         alpha = (now - frame -> prev_time) / (frame -> time - frame -> prev_time);
-      
+      else
+        alpha = 0.0f;
+
+      float t = clock -> time ();
+
       frame -> render (alpha, geom_program, rect_program);
       
+      float t2 = clock -> time ();
+
+      if (t2 - t > 0.05f)
+        __asm nop;
+
       context -> present ();
       frames++;
+
+      float t3 = clock -> time ();
+
+      //prev = now;
+      now = t3 - 0.1f; //clock -> time () - 0.1f;
+
+      if (t3 - t2 > 0.05f)
+        __asm nop;
     }
   }
   catch (const std::exception& e)

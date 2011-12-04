@@ -195,9 +195,7 @@ namespace Co
     );
     
     geom_program.use ();
-    //geom_program.set_world_to_clip (world_to_clip);
-    //geom_program.set_world_to_eye  (world_to_eye);
-
+    
     // Render point geometries
     render_point_geoms (world_to_clip, geom_program, alpha);
 
@@ -220,10 +218,13 @@ namespace Co
     render_ui_batches (rect_program);
 
     rect_program.done ();
-
+    
     // Clean up old VAOs
-    glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
-    check_gl ("glDeleteVertexArrays");
+    if (garbage_vao_back_index != 0)
+    {
+      glDeleteVertexArrays (garbage_vao_back_index, garbage_vaos);
+      check_gl ("glDeleteVertexArrays");
+    }
   } // GLFrame::render
 
   u32 GLFrame::reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id)

@@ -136,14 +136,15 @@ namespace
       // Non-uniform, but okay for now.
       for (uint i = 0; i != size; i++)
       {
-        uint samples [6];
-        for (uint s = 0; s != 6; s++)
-          samples [s] = uint (std::rand ());
+        uint samples [3] = { 0, 0, 0 };
+        for (uint s = 0; s != 3; s++)
+          for (uint r = 0; r != 10; r++)
+            samples [s] += uint (std::rand ());
 
         auto vec = Co::Vector3 (
-          (float (samples [0] + samples [1]) / float (uint (RAND_MAX))) - 1.0f,
-          (float (samples [2] + samples [3]) / float (uint (RAND_MAX))) - 1.0f,
-          (float (samples [4] + samples [5]) / float (uint (RAND_MAX))) - 1.0f
+          (float (samples [0]) / float (RAND_MAX * 5)) - 1.0f,
+          (float (samples [1]) / float (RAND_MAX * 5)) - 1.0f,
+          (float (samples [2]) / float (RAND_MAX * 5)) - 1.0f
         ).unit ();
         gradients [i] = vec;
         /*if (vec.magnitude () > 1.0f)
@@ -357,7 +358,7 @@ namespace
             Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
             float value = noise.get (block_pos, grads);
             max_value = std::max (value, max_value);
-            at (x, y, z).type = (value > 1.0f) ? blocktype_soil : blocktype_air;
+            at (x, y, z).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
           }
         }
       }
@@ -540,7 +541,7 @@ namespace
   public:
     BlockWorld (Co::IxLoadContext& load_context, Co::IxPropMap* props)
     {
-      seed = 6545;
+      seed = 923;
       texture = texture_factory -> create (load_context, "Blocks.cotexture", false, false);
       load_context.load (this);
     }

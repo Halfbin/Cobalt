@@ -115,7 +115,7 @@ namespace
 
   } engine;
 
-  const float Engine::frame_rate     = 75.0f,
+  const float Engine::frame_rate     = 50.0f,
               Engine::frame_interval = 1.0f / frame_rate;
 
   void Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in)

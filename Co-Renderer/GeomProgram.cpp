@@ -21,6 +21,16 @@ namespace Co
 
     program.link ();
 
+    program.use ();
+
+    u32 tex_diffuse = program.link_uniform ("tex_diffuse");
+    glUniform1i (tex_diffuse, texunit_diffuse);
+
+    glVertexAttrib3f (attrib_colour, 1.0f, 1.0f, 1.0f);
+    check_gl ("glVertexAttrib3f");
+
+    program.done ();
+
     /*world_to_clip  = program.link_uniform ("world_to_clip");
     world_to_eye   = program.link_uniform ("world_to_eye");
     model_to_world = program.link_uniform ("model_to_world");*/
