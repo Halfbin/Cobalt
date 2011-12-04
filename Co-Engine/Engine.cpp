@@ -44,6 +44,18 @@ namespace
     private Rk::Module,
     public  IxModule
   {
+    long ref_count;
+
+    virtual void acquire ()
+    {
+      ref_count++;
+    }
+
+    virtual void release ()
+    {
+      ref_count--;
+    }
+
     virtual void* expose (u64 ixid)
     {
       return Rk::Module::expose (ixid);
@@ -90,7 +102,7 @@ namespace
     EntityList entities;
 
     // Initialization and cleanup
-    virtual void init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in);
+    virtual bool init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in);
     void cleanup ();
 
     // Type registration
@@ -118,7 +130,7 @@ namespace
   const float Engine::frame_rate     = 50.0f,
               Engine::frame_interval = 1.0f / frame_rate;
 
-  void Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in)
+  bool Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in) try
   {
     if (running)
       throw Rk::Exception ("Co-Engine: IxEngine::init - engine is running");
@@ -128,8 +140,14 @@ namespace
     clock      = clock_in;
     input_sink = 0;
     running    = false;
+
+    return true;
   }
-  
+  catch (...)
+  {
+    return false;
+  }
+
   void Engine::cleanup ()
   {
 

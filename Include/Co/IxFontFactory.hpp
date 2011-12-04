@@ -31,7 +31,7 @@ namespace Co
   public:
     static const u64 id = 0xee56399853afa81dull;
 
-    virtual void init (Rk::IxLockedOutStreamImpl* log_impl) = 0;
+    virtual bool init (Rk::IxLockedOutStreamImpl* log_impl) = 0;
 
     virtual IxFont* create (
       IxLoadContext&   context,

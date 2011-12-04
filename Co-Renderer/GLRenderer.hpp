@@ -55,7 +55,7 @@ namespace Co
     Rk::VirtualLockedOutStream log;
 
     // Setup and teardown
-    virtual void init    (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger);
+    virtual bool init    (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger);
     void         cleanup ();
 
     // Shader setup

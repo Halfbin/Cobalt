@@ -10,7 +10,7 @@
 #include <Co/EntityClass.hpp>
 #include <Co/Frame.hpp>
 
-namespace
+namespace SH
 {
   class Spectator :
     public Co::IxEntity
@@ -44,6 +44,6 @@ namespace
   };
 
   Co::EntityClass <Spectator> ent_class ("Spectator");
-}
+  Co::IxEntityClass* spectator_class = &ent_class;
 
-Co::IxEntityClass* spectator_class = &ent_class;
+}

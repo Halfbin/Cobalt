@@ -16,7 +16,7 @@ namespace
   class Game :
     public Co::IxGame
   {
-    virtual void init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual bool init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
     
     virtual void start (Co::IxEngine* engine);
     virtual void stop  ();
@@ -29,9 +29,14 @@ namespace
 
   } game;
 
-  void Game::init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl)
+  bool Game::init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl) try
   {
     
+    return true;
+  }
+  catch (...)
+  {
+    return false;
   }
 
   void Game::start (Co::IxEngine* engine)

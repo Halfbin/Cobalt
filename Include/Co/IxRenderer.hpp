@@ -19,7 +19,7 @@ namespace Co
   public:
     static const u64 id = 0x98c54ca97b88cd35ull;
 
-    virtual void init (void* target, Clock* clock, Rk::IxLockedOutStreamImpl* log) = 0;
+    virtual bool init (void* target, Clock* clock, Rk::IxLockedOutStreamImpl* log) = 0;
     
     virtual void start () = 0;
     virtual void stop  () = 0;

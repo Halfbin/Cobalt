@@ -78,7 +78,7 @@ namespace
     void loop ();
     
     // Initialization
-    virtual void init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* logger, Rk::StringRef new_game_path);
+    virtual bool init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* logger, Rk::StringRef new_game_path);
 
     // Control
     virtual void start ();
@@ -110,15 +110,32 @@ namespace
     
   }*/
 
-  void Loader::init (IxRenderDevice* rd, Rk::IxLockedOutStreamImpl* new_logger, Rk::StringRef new_game_path)
+  bool Loader::init (IxRenderDevice* rd, Rk::IxLockedOutStreamImpl* new_logger, Rk::StringRef new_game_path) try
   {
-    Rk::require (!device, "Loader already initialized");
+    if (!rd || !new_logger || !new_game_path)
+      throw Rk::Exception ("Co-Loader: IxLoader::init - null argument");
+
+    if (device)
+      throw Rk::Exception ("Co-Loader: IxLoader::init - loader already initialized");
 
     game_path = new_game_path;
     device = rd;
     log.set_impl (new_logger);
 
     log << "- Loader initialized\n";
+
+    return true;
+  }
+  catch (const std::exception& e)
+  {
+    if (log)
+      log << e.what () << '\n';
+
+    return false;
+  }
+  catch (...)
+  {
+    return false;
   }
 
   void Loader::loop ()

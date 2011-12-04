@@ -103,10 +103,21 @@ namespace Co
     // Initialize subsystems
     window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
     
-    renderer -> init (window.get_handle (), &clock, log.get_impl ());
-    loader   -> init (render_device, log.get_impl (), game_path);
-    engine   -> init (renderer, loader, &clock);
-    game     -> init (engine, log.get_impl ());
+    bool ok = renderer -> init (window.get_handle (), &clock, log.get_impl ());
+    if (!ok)
+      throw Rk::Exception ("Co-Client: IxRenderer::init - error initializing renderer");
+
+    ok = loader -> init (render_device, log.get_impl (), game_path);
+    if (!ok)
+      throw Rk::Exception ("Co-Client: IxLoader::init - error initializing loader");
+
+    ok = engine -> init (renderer, loader, &clock);
+    if (!ok)
+      throw Rk::Exception ("Co-Client: IxEngine::init - error initializing engine");
+
+    ok = game -> init (engine, log.get_impl ());
+    if (!ok)
+      throw Rk::Exception ("Co-Client: IxGame::init - error initializing game");
 
     if (library)
       engine -> register_classes (library);

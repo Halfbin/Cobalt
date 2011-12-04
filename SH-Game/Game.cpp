@@ -14,22 +14,25 @@
 //#include <Co/IxEntity.hpp>
 #include <Co/IxModule.hpp>
 
+#include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
 
-Co::IxModelFactory*   model_factory;
-Co::IxTextureFactory* texture_factory;
-Co::IxFontFactory*    font_factory;
-
-namespace
+namespace SH
 {
+  Co::IxModelFactory*   model_factory;
+  Co::IxTextureFactory* texture_factory;
+  Co::IxFontFactory*    font_factory;
+
+  Rk::VirtualLockedOutStream log;
+
   class Game :
     public Co::IxGame
   {
-    Co::IxModule* model_module;
-    Co::IxModule* texture_module;
-    Co::IxModule* font_module;
+    Co::IxModule::Ptr model_module;
+    Co::IxModule::Ptr texture_module;
+    Co::IxModule::Ptr font_module;
 
-    virtual void init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual bool init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
     
     virtual void start (Co::IxEngine* engine);
     virtual void stop  ();
@@ -42,8 +45,13 @@ namespace
 
   } game;
 
-  void Game::init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl)
+  bool Game::init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl) try
   {
+    if (!engine || !log_impl)
+      throw Rk::Exception ("null pointer");
+
+    log.set_impl (log_impl);
+
     model_module = engine -> load_module ("Co-Model");
     model_module -> expose (model_factory);
 
@@ -52,7 +60,22 @@ namespace
 
     font_module = engine -> load_module ("Co-Font");
     font_module -> expose (font_factory);
-    font_factory -> init (log_impl);
+    if (!font_factory -> init (log_impl))
+      throw Rk::Exception ("error initializing font factory");
+
+    return true;
+  }
+  catch (const std::exception& e)
+  {
+    if (log)
+      log << "SH-Game: IxGame::init - " << e.what () << '\n';
+    return false;
+  }
+  catch (...)
+  {
+    if (log)
+      log << "SH-Game: IxGame::init - exception\n";
+    return false;
   }
 
   void Game::start (Co::IxEngine* engine)
@@ -82,9 +105,9 @@ namespace
     Rk::expose <Co::IxGame> (&game, ixid, out);
   }
 
-} // namespace
+  void expose_game (u64 ixid, void** out)
+  {
+    return game.expose (out, ixid);
+  }
 
-void expose_game (u64 ixid, void** out)
-{
-  return game.expose (out, ixid);
-}
+} // namespace SH

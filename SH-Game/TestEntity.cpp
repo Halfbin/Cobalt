@@ -23,12 +23,12 @@
 
 using namespace Co;
 
-extern IxModelFactory*   model_factory;
-extern IxTextureFactory* texture_factory;
-extern IxFontFactory*    font_factory;
-
-namespace
+namespace SH
 {
+  extern IxModelFactory*   model_factory;
+  extern IxTextureFactory* texture_factory;
+  extern IxFontFactory*    font_factory;
+
   void draw_ui_text (Frame& frame, int x, int y, IxFont* font, Rk::U16StringRef text)
   {
     if (!font -> ready ())
@@ -130,7 +130,6 @@ namespace
   IxFont::Ptr    TestEntity::font;
 
   EntityClass <TestEntity> ent_class ("TestEntity");
+  IxEntityClass* test_class = &ent_class;
 
-} // namespace
-
-IxEntityClass* test_class = &ent_class;
+} // namespace SH

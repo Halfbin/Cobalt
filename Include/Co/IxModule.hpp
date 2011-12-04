@@ -6,11 +6,16 @@
 #ifndef CO_H_IXMODULE
 #define CO_H_IXMODULE
 
+#include <Rk/IxShared.hpp>
+
 namespace Co
 {
-  class IxModule
+  class IxModule :
+    public Rk::IxShared
   {
   public:
+    typedef Rk::IxSharedPtr <IxModule> Ptr;
+
     virtual void* expose (u64 ixid) = 0;
 
     template <typename Ix>

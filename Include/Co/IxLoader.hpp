@@ -22,7 +22,7 @@ namespace Co
   public:
     static const u64 id = 0x93e68db4d3a71fddull;
 
-    virtual void init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* log, Rk::StringRef game_path) = 0;
+    virtual bool init (IxRenderDevice* device, Rk::IxLockedOutStreamImpl* log, Rk::StringRef game_path) = 0;
 
     virtual void start () = 0;
     virtual void stop  () = 0;

@@ -474,8 +474,11 @@ namespace Co
 
       // Pack
       float efficiency = make_atlas (glyphs.begin (), glyphs.end (), threshold, image.width, image.height);
-      log.set_precision (2);
-      log << "- Co-Font: " << path << " packed to " << efficiency * 100.0f << "% efficiency\n";
+
+      auto lock = log.get_lock ();
+        lock.set_precision (2);
+        lock << "- Co-Font: " << path << " packed to " << efficiency * 100.0f << "% efficiency\n";
+      lock.clear ();
 
       // Render the packed glyphs to an image
       image.pixel_type   = image.i8;
@@ -708,7 +711,7 @@ namespace Co
       typedef std::unordered_map <Rk::ShortString <512>, IxFont*> CacheType;
       CacheType cache;
 
-      virtual void init (Rk::IxLockedOutStreamImpl* log_impl);
+      virtual bool init (Rk::IxLockedOutStreamImpl* log_impl);
       
       virtual IxFont* create (
         IxLoadContext&   context,
@@ -725,9 +728,10 @@ namespace Co
 
     } factory;
 
-    void FontFactory::init (Rk::IxLockedOutStreamImpl* log_impl)
+    bool FontFactory::init (Rk::IxLockedOutStreamImpl* log_impl)
     {
       log.set_impl (log_impl);
+      return true;
     }
 
     IxFont* FontFactory::create (

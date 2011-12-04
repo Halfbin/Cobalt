@@ -19,7 +19,7 @@ namespace Co
   public:
     static const u64 id = 0xb31a8a07f5fb1b71ull;
 
-    virtual void init (IxEngine* engine, Rk::IxLockedOutStreamImpl* log) = 0;
+    virtual bool init (IxEngine* engine, Rk::IxLockedOutStreamImpl* log) = 0;
     
     virtual void start (IxEngine* engine) = 0;
     virtual void stop  () = 0;

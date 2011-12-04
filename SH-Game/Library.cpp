@@ -8,23 +8,27 @@
 #include <Rk/Expose.hpp>
 #include <Rk/Memory.hpp>
 
-extern Co::IxEntityClass *test_class,
-                         *block_world_class,
-                         *spectator_class;
-
-namespace
+namespace SH
 {
-  Co::IxEntityClass* classes [] = {
-    test_class,
-    block_world_class,
-    spectator_class
-  };
+  extern Co::IxEntityClass *test_class,
+                           *block_world_class,
+                           *spectator_class;
 
-  Co::Library lib (classes);
+  namespace
+  {
+    Co::IxEntityClass* classes [] = {
+      test_class,
+      block_world_class,
+      spectator_class
+    };
 
-}
+    Co::Library lib (classes);
 
-void expose_lib (u64 ixid, void** out)
-{
-  lib.expose (out, ixid);
+  }
+
+  void expose_lib (u64 ixid, void** out)
+  {
+    lib.expose (out, ixid);
+  }
+
 }

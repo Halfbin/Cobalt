@@ -19,10 +19,10 @@
 
 #include <Rk/Lerp.hpp>
 
-extern Co::IxTextureFactory* texture_factory;
-
-namespace
+namespace SH
 {
+  extern Co::IxTextureFactory* texture_factory;
+
   enum BlockType :
     u8
   {
@@ -549,7 +549,6 @@ namespace
   };
 
   Co::EntityClass <BlockWorld> ent_class ("BlockWorld");
+  Co::IxEntityClass* block_world_class = &ent_class;
 
-}
-
-Co::IxEntityClass* block_world_class = &ent_class;
+} // namespace SH

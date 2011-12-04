@@ -204,13 +204,13 @@ namespace Co
   //
   // Initialization
   //
-  void GLRenderer::init (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger) try
+  bool GLRenderer::init (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger) try
   {
     if (!new_target || !new_clock || !new_logger)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - null pointer");
+      throw Rk::Exception ("null pointer");
 
     if (target)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - renderer already initialized");
+      throw Rk::Exception ("renderer already initialized");
 
     target = new_target;
     clock  = new_clock;
@@ -220,7 +220,7 @@ namespace Co
 
     shared_dc = GetDC (target);
     if (!shared_dc)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error retrieving shared device context");
+      throw Rk::Exception ("error retrieving shared device context");
 
     PixelFormatDescriptor pfd = { 0 };
     pfd.size       = sizeof (PixelFormatDescriptor);
@@ -233,11 +233,11 @@ namespace Co
 
     format = ChoosePixelFormat (shared_dc, &pfd);
     if (!format)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - no adequate pixel format supported");
+      throw Rk::Exception ("no adequate pixel format supported");
     
     int ok = DescribePixelFormat (shared_dc, format, sizeof (pfd), &pfd);
     if (!ok)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - DescribePixelFormat failed");
+      throw Rk::Exception ("DescribePixelFormat failed");
     
     enum
     {
@@ -257,23 +257,23 @@ namespace Co
       pfd.depth_bits < 16                    ||
       pfd.layer_type != pfd_main_plane)
     {
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - ChoosePixelFormat chose bogus format");
+      throw Rk::Exception ("ChoosePixelFormat chose bogus format");
     }
     
     ok = SetPixelFormat (shared_dc, format, &pfd);
     if (!ok)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error setting pixel format");
+      throw Rk::Exception ("error setting pixel format");
     
     // Get wglCreateContextAttribs
     void* temp_rc = wglCreateContext (shared_dc);
     if (!temp_rc)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error creating temporary render context");
+      throw Rk::Exception ("error creating temporary render context");
     
     void* temp_dc = GetDC (target);
     if (!temp_dc)
     {
       wglDeleteContext (temp_rc);
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error retrieving temporary device context");
+      throw Rk::Exception ("error retrieving temporary device context");
     }
 
     ok = wglMakeCurrent (temp_dc, temp_rc);
@@ -281,21 +281,21 @@ namespace Co
     {
       wglDeleteContext (temp_rc);
       ReleaseDC (target, temp_dc);
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error making temporary render context current");
+      throw Rk::Exception ("error making temporary render context current");
     }
     
     wglCreateContextAttribs = (WGLCCA) wglGetProcAddress ("wglCreateContextAttribsARB");
     if (!wglCreateContextAttribs)
     {
       wglMakeCurrent (0, 0);
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - wglCreateContextAttribsARB not supported");
+      throw Rk::Exception ("wglCreateContextAttribsARB not supported");
     }
     
     bool fail = glewInit () != GLEW_OK;
     if (fail)
     {
       wglMakeCurrent (0, 0);
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error initializing GLEW");
+      throw Rk::Exception ("error initializing GLEW");
     }
     
     int attribs [] = {
@@ -313,14 +313,25 @@ namespace Co
     wglMakeCurrent (0, 0);
 
     if (!shared_rc)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderer::init - error creating shared render context");
+      throw Rk::Exception ("error creating shared render context");
 
     prepping_frame = 0;
+
+    return true;
+  }
+  catch (const std::exception& e)
+  {
+    if (log)
+      log << "Co-GLRenderer: IxRenderer::init - " << e.what () << '\n';
+    cleanup ();
+    return false;
   }
   catch (...)
   {
+    if (log)
+      log << "Co-GLRenderer: IxRenderer::init - exception\n";
     cleanup ();
-    throw;
+    return false;
   }
 
   //

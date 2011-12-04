@@ -25,7 +25,7 @@ namespace Co
   public:
     static const u64 id = 0xbafa9de9d2a72156ull;
 
-    virtual void init (IxRenderer* renderer, IxLoader* loader, Clock* clock) = 0;
+    virtual bool init (IxRenderer* renderer, IxLoader* loader, Clock* clock) = 0;
 
     virtual IxModule* load_module (Rk::StringRef name) = 0;
 
