@@ -40,7 +40,7 @@ namespace Co
 
     virtual IxGeomCompilation* create_compilation (
       const GeomAttrib* attribs,
-      uint              attrib_count,
+      const GeomAttrib* attribs_end,
       IxGeomBuffer*     elements,
       IxGeomBuffer*     indices,
       IndexType         index_type

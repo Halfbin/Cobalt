@@ -163,7 +163,7 @@ namespace Co
       }
       
       // Let's render it
-      float alpha ;
+      float alpha;
 
       if (now >= frame -> prev_time)
         alpha = (now - frame -> prev_time) / (frame -> time - frame -> prev_time);

@@ -83,11 +83,15 @@ namespace Co
   // Compilation creation
   //
   IxGeomCompilation* GLContext::create_compilation (
-    const GeomAttrib* attribs, uint attrib_count, IxGeomBuffer* elements, IxGeomBuffer* indices, IndexType index_type)
+    const GeomAttrib* attribs,
+    const GeomAttrib* attribs_end,
+    IxGeomBuffer*     elements,
+    IxGeomBuffer*     indices,
+    IndexType         index_type)
   {
     return new GLCompilation (
       attribs,
-      attrib_count,
+      attribs_end,
       static_cast <GLBuffer*> (elements),
       static_cast <GLBuffer*> (indices),
       index_type

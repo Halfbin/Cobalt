@@ -86,7 +86,7 @@ namespace SH
 
       if (!mat.diffuse_tex)
         mat.diffuse_tex = tex -> get ();
-      //model -> draw (frame, spatial, next, &mat, 1);
+      model -> draw (frame, spatial, next, &mat, 1);
 
       /*draw_ui_text (frame, 100, 100, font, Rk::u16_string (L"Hello world"));
       draw_ui_text (frame, 100, 200, font, Rk::u16_string (L"This is a test!"));
@@ -107,7 +107,7 @@ namespace SH
   public:
     TestEntity (IxLoadContext& loadcontext, IxPropMap* props)
     {
-      spatial.position.x = 0.0f;
+      spatial.position = Vector3 (75.0f, 66.0f, 75.0f);
 
       if (!model)
       {
@@ -118,7 +118,7 @@ namespace SH
           { 0x0020, 0x007f }, // ASCII
           { 0x00a1, 0x0100 }  // Latin-1 Supplement
         };
-        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 14, fontsize_points, std::begin (ranges), std::end (ranges));
+        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 14, fontsize_points, ranges);
       }
     }
 

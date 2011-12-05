@@ -121,19 +121,19 @@ namespace Co
     };
 
     // Point geometry data
-    enum { max_point_geoms = 2048 };
+    enum { max_point_geoms = 5000 };
     PointSpatial       point_spats [max_point_geoms];
     PointGeom          point_geoms [max_point_geoms];
     IxGeomCompilation* point_comps [max_point_geoms];
     uint               point_geoms_back_index;
 
     // Meshes
-    enum { max_meshes = 2048 };
+    enum { max_meshes = 5000 };
     Mesh meshes [max_meshes];
     uint meshes_back_index;
 
     // Materials
-    enum { max_materials = 2048 };
+    enum { max_materials = 5000 };
     Material materials [max_materials];
     uint     materials_back_index;
 

@@ -24,20 +24,30 @@ namespace SH
 
     virtual void tick (float time, float prev_time, Co::Frame& frame)
     {
-      Co::Spatial new_spatial = spatial;
-      new_spatial.orientation *= Co::Quaternion (0.2f * (time - prev_time), Co::Vector3 (0.0f, 0.0f, 1.0f));
-      new_spatial.orientation.normalize ();
+      Co::Spatial old_spatial, new_spatial;
+
+      Co::Quaternion a (prev_time * 0.2f, Co::Vector3 (0, 0, 1)),
+                     b (time * 0.2f,      Co::Vector3 (0, 0, 1));
+
+      old_spatial.position    = spatial.position + a.forward () * -200.0f;
+      old_spatial.orientation = a;
+      new_spatial.position    = spatial.position + b.forward () * -200.0f;
+      new_spatial.orientation = b;
+
+      //Co::Spatial new_spatial = spatial;
+      /*new_spatial.orientation *= Co::Quaternion (0.2f * (time - prev_time), Co::Vector3 (0.0f, 0.0f, 1.0f));
+      new_spatial.orientation.normalize ();*/
       //new_spatial.position -= Co::Vector3 (2.0f * (time - prev_time), 0.0f, 0.0f);
 
-      frame.set_camera (spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
+      frame.set_camera (old_spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
 
-      spatial = new_spatial;
+      //spatial = new_spatial;
     }
 
   public:
     Spectator (Co::IxLoadContext& load_context, Co::IxPropMap* props)
     {
-      spatial.position = Co::Vector3 (66.0f, 66.0f, 75.0f);
+      spatial.position = Co::Vector3 (96.0f, 96.0f, 96.0f);
       //spatial.orientation = Co::Quaternion (1.57f, Co::Vector3 (0, 0, 1));
     }
 

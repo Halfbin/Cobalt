@@ -43,6 +43,18 @@ namespace Co
       uint             index = 0
     ) = 0;
 
+    template <typename Container>
+    IxFont* create (
+      IxLoadContext&   context,
+      Rk::StringRef    path,
+      uint             size,
+      FontSizeMode     mode,
+      const Container& ranges,
+      uint             index = 0)
+    {
+      return create (context, path, size, mode, std::begin (ranges), std::end (ranges), index);
+    }
+
   };
 
 } // namespace Co

@@ -79,7 +79,7 @@ namespace Co
     // Parse configuration
     //ConfigReader config (config_path);
     Rk::ShortString <512> game_path ("../");
-    game_path += "MMO/";//config ["Client.Game"].as_string ("SH");
+    game_path += "SH/";//config ["Client.Game"].as_string ("SH");
 
     // Load subsystem modules
     renderer_module

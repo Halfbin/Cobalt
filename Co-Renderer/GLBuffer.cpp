@@ -13,8 +13,8 @@ namespace Co
 {
   void GLBuffer::load_data (const void* data, uptr size)
   {
-    if (data)
-      Rk::require (size != 0, "data with zero size");
+    if (data && size == 0)
+      return;
 
     glBindBuffer (GL_ARRAY_BUFFER, name);
     check_gl ("glBindBuffer");

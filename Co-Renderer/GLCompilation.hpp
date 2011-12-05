@@ -37,7 +37,11 @@ namespace Co
 
   public:
     GLCompilation (
-      const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices, IndexType index_type
+      const GeomAttrib* new_attribs,
+      const GeomAttrib* new_attribs_end,
+      IxGeomBuffer*     new_elements,
+      IxGeomBuffer*     new_indices,
+      IndexType         new_index_type
     );
 
     IndexType get_index_type () const

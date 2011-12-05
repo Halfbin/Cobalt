@@ -26,10 +26,14 @@ namespace Co
   }
 
   GLCompilation::GLCompilation (
-    const GeomAttrib* new_attribs, uint new_attrib_count, IxGeomBuffer* new_elements, IxGeomBuffer* new_indices, IndexType new_index_type
+    const GeomAttrib* new_attribs,
+    const GeomAttrib* new_attribs_end,
+    IxGeomBuffer*     new_elements,
+    IxGeomBuffer*     new_indices,
+    IndexType         new_index_type
   ) :
     vao        (0),
-    attribs    (new_attribs, new_attribs + new_attrib_count),
+    attribs    (new_attribs, new_attribs_end),
     elements   (static_cast <GLBuffer*> (new_elements)),
     indices    (static_cast <GLBuffer*> (new_indices)),
     index_type (new_index_type)

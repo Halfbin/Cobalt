@@ -86,7 +86,7 @@ namespace Co
         {
           uptr offset = index_size * mesh.base_index;
           glDrawElementsBaseVertex (prim_type, mesh.element_count, index_type, (void*) offset, mesh.base_element);
-          check_gl ("glDrawElements");
+          check_gl ("glDrawElementsBaseVertex");
         }
         else
         {

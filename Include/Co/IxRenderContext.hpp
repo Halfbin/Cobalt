@@ -60,12 +60,22 @@ namespace Co
     ) = 0;
 
     virtual IxGeomCompilation* create_compilation (
-      const GeomAttrib* attributes,
-      uint              attrib_count,
+      const GeomAttrib* attribs,
+      const GeomAttrib* attribs_end,
       IxGeomBuffer*     elements,
       IxGeomBuffer*     indices,
       IndexType         index_type
     ) = 0;
+
+    template <typename Container>
+    IxGeomCompilation* create_compilation (
+      const Container& attribs,
+      IxGeomBuffer*    elements,
+      IxGeomBuffer*    indices,
+      IndexType        index_type)
+    {
+      return create_compilation (std::begin (attribs), std::end (attribs), elements, indices, index_type);
+    }
 
     virtual IxTexImage* create_tex_image (
       uint           level_count,
