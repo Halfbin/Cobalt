@@ -16,6 +16,106 @@
 
 namespace Co
 {
+  bool GLFrame::begin_point_geom (IxGeomCompilation* compilation, Spatial prev, Spatial current)
+  {
+    if (point_geoms_back_index == max_point_geoms)
+      return false;
+
+    PointSpatial spat = { prev, current };
+    point_spats [point_geoms_back_index] = spat;
+      
+    PointGeom geom = { 0, 0 };
+    point_geoms [point_geoms_back_index] = geom;
+      
+    point_comps [point_geoms_back_index] = compilation;
+
+    return true;
+  }
+
+  void GLFrame::end_point_geom ()
+  {
+    point_geoms_back_index++;
+  }
+
+  void GLFrame::add_meshes (const Mesh* begin, const Mesh* end)
+  {
+    uint old_meshes_back_index = meshes_back_index;
+
+    while (meshes_back_index != max_meshes && begin != end)
+      meshes [meshes_back_index++] = *begin++;
+    
+    point_geoms [point_geoms_back_index].mesh_count += meshes_back_index - old_meshes_back_index;
+  }
+
+  void GLFrame::add_materials (const Material* begin, const Material* end)
+  {
+    uint old_materials_back_index = materials_back_index;
+
+    while (materials_back_index != max_materials && begin != end)
+      materials [materials_back_index++] = *begin++;
+    
+    point_geoms [point_geoms_back_index].material_count += materials_back_index - old_materials_back_index;
+  }
+
+  void GLFrame::add_ui_batch (IxTexImage* texture, const TexRect* begin, const TexRect* end)
+  {
+    if (ui_batches_back_index == max_ui_batches)
+      return;
+
+    auto& batch = ui_batches [ui_batches_back_index];
+    batch.tex = texture;
+    batch.first = tex_rects_back_index;
+
+    while (tex_rects_back_index != max_tex_rects && begin != end)
+      tex_rects [tex_rects_back_index++] = *begin++;
+
+    batch.count = tex_rects_back_index - batch.first;
+
+    ui_batches_back_index++;
+  }
+
+  void GLFrame::add_label (IxTexImage* texture, Spatial prev, Spatial current, const TexRect* begin, const TexRect* end)
+  {
+    if (labels_back_index == max_labels)
+      return;
+
+    auto& label = labels [labels_back_index];
+    label.tex = texture;
+    label.first = tex_rects_back_index;
+
+    while (tex_rects_back_index != max_tex_rects && begin != end)
+      tex_rects [tex_rects_back_index++] = *begin++;
+
+    label.count = tex_rects_back_index - label.first;
+
+    label_spats [labels_back_index].prev = prev;
+    label_spats [labels_back_index].cur  = current;
+      
+    labels_back_index++;
+  }
+
+  void GLFrame::add_lights (const Light* begin, const Light* end)
+  {
+    while (lights_back_index != max_lights && begin != end)
+      lights [lights_back_index++] = *begin++;
+  }
+
+  void GLFrame::set_camera (Spatial prev, Spatial cur, float prev_fov, float cur_fov, float near, float far)
+  {
+    camera_prev     = prev;
+    camera_cur      = cur;
+    camera_prev_fov = prev_fov;
+    camera_cur_fov  = cur_fov;
+    camera_near     = near;
+    camera_far      = far;
+  }
+
+  void GLFrame::set_size (u32 w, u32 h)
+  {
+    width  = w;
+    height = h;
+  }
+
   //
   // render_point_geoms
   //
@@ -24,7 +124,7 @@ namespace Co
     glEnable (GL_DEPTH_TEST);
     //glDisable (GL_CULL_FACE);
 
-    Spatial point_interps [max_point_geoms_def];
+    Spatial point_interps [max_point_geoms];
     for (uint i = 0; i != point_geoms_back_index; i++)
       point_interps [i] = lerp (point_spats [i].prev, point_spats [i].cur, alpha);
 
@@ -172,7 +272,7 @@ namespace Co
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Transformations
-    Spatial camera_sp = lerp (camera_pos.prev, camera_pos.cur, alpha);
+    Spatial camera_sp = lerp (camera_prev, camera_cur, alpha);
     
     auto world_to_eye = Rk::world_to_eye_xform (
       camera_sp.position,
@@ -202,7 +302,7 @@ namespace Co
     geom_program.done ();
 
     // Render textured rectangles
-    TexRect adjusted_rects [max_tex_rects_def];
+    TexRect adjusted_rects [max_tex_rects];
 
     for (uint index = 0; index != tex_rects_back_index; index++)
     {
@@ -246,25 +346,4 @@ namespace Co
     return old_id;
   }
 
-  GLFrame::GLFrame () :
-    IxFrame (
-      point_spats_buffer,
-      point_geoms_buffer,
-      point_comps_buffer,
-      meshes_buffer,
-      materials_buffer,
-      ui_batches_buffer,
-      labels_buffer,
-      label_spats_buffer,
-      tex_rects_buffer,
-      lights_buffer,
-      max_point_geoms_def,
-      max_meshes_def,
-      max_materials_def,
-      max_ui_batches_def,
-      max_labels_def,
-      max_tex_rects_def,
-      max_lights_def)
-  { }
-  
 } // namespace Co
