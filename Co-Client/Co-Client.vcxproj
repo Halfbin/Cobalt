@@ -84,6 +84,9 @@
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
       <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Ir-Game\Ir-Game.vcxproj">
+      <Project>{6764b810-b40d-4027-9016-2b64be354726}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\SH-Game\SH-Game.vcxproj">
       <Project>{254e5f2d-a5b3-4f27-9618-2f37e9439b0f}</Project>
     </ProjectReference>

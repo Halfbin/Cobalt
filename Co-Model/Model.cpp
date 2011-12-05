@@ -217,6 +217,12 @@ namespace Co
       return model;
     }
 
+  public:
+    ~ModelFactory ()
+    {
+
+    }
+
   } factory;
 
   IX_EXPOSE (void** out, u64 ixid)

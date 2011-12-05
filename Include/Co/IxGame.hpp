@@ -25,7 +25,7 @@ namespace Co
 
     virtual bool init (IxEngine* engine, Rk::IxLockedOutStreamImpl* log) = 0;
     
-    virtual void start (IxEngine* engine) = 0;
+    virtual void start () = 0;
     virtual void stop  () = 0;
     
     virtual void tick (float time, float prev_time) = 0;

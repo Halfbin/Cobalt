@@ -15,9 +15,6 @@
     <ClInclude Include="..\Include\Co\IxGame.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\Library.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\EntityClass.hpp">
       <Filter>API</Filter>
     </ClInclude>

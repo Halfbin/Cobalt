@@ -11,7 +11,6 @@
 #include <Co/IxRenderer.hpp>
 #include <Co/IxEngine.hpp>
 #include <Co/IxLoader.hpp>
-#include <Co/Library.hpp>
 #include <Co/IxGame.hpp>
 
 #include <Rk/ShortString.hpp>
@@ -97,8 +96,7 @@ namespace Co
 
     game_module
       .load (game_path + "Binaries/Co-Game" CO_SUFFIX ".dll")
-      .expose (game)
-      .expose (library);
+      .expose (game);
 
     // Initialize subsystems
     window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
@@ -118,9 +116,6 @@ namespace Co
     ok = game -> init (engine.get (), log.get_impl ());
     if (!ok)
       throw Rk::Exception ("Co-Client: IxGame::init - error initializing game");
-
-    if (library)
-      engine -> register_classes (library);
   }
 
   Client::~Client ()
@@ -135,7 +130,7 @@ namespace Co
   {
     loader   -> start ();
     renderer -> start ();
-    game     -> start (engine.get ());
+    game     -> start ();
 
     window.show ();
 

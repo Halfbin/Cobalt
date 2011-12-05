@@ -108,6 +108,7 @@ namespace SH
     TestEntity (IxLoadContext& loadcontext, IxPropMap* props)
     {
       spatial.position = Vector3 (75.0f, 66.0f, 75.0f);
+      spatial.orientation = nil;
 
       if (!model)
       {

@@ -6,8 +6,6 @@
 #ifndef CO_H_IXENGINE
 #define CO_H_IXENGINE
 
-#include <Co/Library.hpp>
-
 #include <Rk/StreamForward.hpp>
 #include <Rk/StringRef.hpp>
 #include <Rk/IxUnique.hpp>
@@ -35,8 +33,8 @@ namespace Co
     virtual IxModule* load_module (Rk::StringRef name) = 0;
     virtual u32       clear_modules () = 0;
 
-    virtual bool register_classes   (const IxEntityClass** classes, const IxEntityClass** end) = 0;
-    virtual bool unregister_classes (const IxEntityClass** classes, const IxEntityClass** end) = 0;
+    virtual bool register_classes   (const IxEntityClass* const* classes, const IxEntityClass* const* end) = 0;
+    virtual bool unregister_classes (const IxEntityClass* const* classes, const IxEntityClass* const* end) = 0;
 
     virtual IxEntity* create_entity (Rk::StringRef type, IxPropMap* props) = 0;
     virtual bool      open          (Rk::StringRef scene) = 0;
@@ -46,14 +44,16 @@ namespace Co
     virtual bool update    (float& next_update) = 0;
     virtual void terminate () = 0;
 
-    bool register_classes (const Library* lib)
+    template <typename Container>
+    bool register_classes (const Container& cont)
     {
-      return register_classes (lib -> begin (), lib -> end ());
+      return register_classes (std::begin (cont), std::end (cont));
     }
 
-    bool unregister_classes (const Library* lib)
+    template <typename Container>
+    bool unregister_classes (const Container& cont)
     {
-      return unregister_classes (lib -> begin (), lib -> end ());
+      return unregister_classes (std::begin (cont), std::end (cont));
     }
 
   }; // class IxEngine

@@ -22,7 +22,6 @@ namespace Co
   class IxRenderDevice;
   class IxLoader;
   class IxGame;
-  class Library;
   class GLWindow;
   
   class Client
@@ -40,8 +39,7 @@ namespace Co
     IxLoader*       loader;
     IxEngine::Ptr   engine;
     IxGame::Ptr     game;
-    Library*        library;
-
+    
     void cleanup ();
 
     static iptr handler_proxy (GLWindow*, u32, uptr, iptr);

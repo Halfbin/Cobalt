@@ -19,6 +19,17 @@
 
 namespace SH
 {
+  extern const Co::IxEntityClass
+    *test_class,
+    *block_world_class,
+    *spectator_class;
+
+  static const Co::IxEntityClass* const classes [] = {
+    test_class,
+    block_world_class,
+    spectator_class
+  };
+
   Co::IxModelFactory*   model_factory;
   Co::IxTextureFactory* texture_factory;
   Co::IxFontFactory*    font_factory;
@@ -28,6 +39,8 @@ namespace SH
   class Game :
     public Co::IxGame
   {
+    Co::IxEngine* engine;
+
     Co::IxModule::Ptr model_module;
     Co::IxModule::Ptr texture_module;
     Co::IxModule::Ptr font_module;
@@ -35,7 +48,7 @@ namespace SH
     virtual bool init    (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
     virtual void destroy ();
 
-    virtual void start (Co::IxEngine* engine);
+    virtual void start ();
     virtual void stop  ();
     
     virtual void tick      (float time, float prev_time);
@@ -46,11 +59,12 @@ namespace SH
 
   } game;
 
-  bool Game::init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl) try
+  bool Game::init (Co::IxEngine* new_engine, Rk::IxLockedOutStreamImpl* log_impl) try
   {
-    if (!engine || !log_impl)
+    if (!new_engine || !log_impl)
       throw Rk::Exception ("null pointer");
 
+    engine = new_engine;
     log.set_impl (log_impl);
 
     model_module = engine -> load_module ("Co-Model");
@@ -63,6 +77,8 @@ namespace SH
     font_module -> expose (font_factory);
     if (!font_factory -> init (log_impl))
       throw Rk::Exception ("error initializing font factory");
+
+    engine -> register_classes (classes);
 
     return true;
   }
@@ -82,11 +98,12 @@ namespace SH
   void Game::destroy ()
   {
     model_module.reset ();
-    model_module.reset ();
-    model_module.reset ();
+    texture_module.reset ();
+    font_module.reset ();
+    engine -> unregister_classes (classes);
   }
 
-  void Game::start (Co::IxEngine* engine)
+  void Game::start ()
   {
     engine -> create_entity ("TestEntity", 0);
     engine -> create_entity ("BlockWorld", 0);
@@ -113,9 +130,9 @@ namespace SH
     Rk::expose <Co::IxGame> (&game, ixid, out);
   }
 
-  void expose_game (u64 ixid, void** out)
+  IX_EXPOSE (void** out, u64 ixid)
   {
-    return game.expose (out, ixid);
+    game.expose (out, ixid);
   }
 
 } // namespace SH

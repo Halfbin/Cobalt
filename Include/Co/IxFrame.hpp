@@ -68,6 +68,10 @@ namespace Co
     Material () { }
 
     Material (const Nil&) :
+      ambient_mat    (nil),
+      diffuse_mat    (nil),
+      specular_mat   (nil),
+      emissive_mat   (nil),
       diffuse_tex    (0),
       specular_tex   (0),
       emissive_tex   (0),

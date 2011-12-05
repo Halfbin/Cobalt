@@ -36,7 +36,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Co-Freetype", "Co-Freetype\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Co-Font", "Co-Font\Co-Font.vcxproj", "{0E64C3BC-A6A1-4E70-B523-E70198E6DF43}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MMO-Game", "MMO-Game\MMO-Game.vcxproj", "{6764B810-B40D-4027-9016-2B64BE354726}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ir-Game", "Ir-Game\Ir-Game.vcxproj", "{6764B810-B40D-4027-9016-2B64BE354726}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

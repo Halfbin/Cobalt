@@ -49,7 +49,8 @@ namespace
 
   public:
     Module (Rk::StringRef name) :
-      Rk::Module (name) // loading from /Cobalt/Binaries is fine
+      Rk::Module (name), // loading from /Cobalt/Binaries is fine
+      ref_count  (1)
     { }
     
     uint references () const
@@ -117,8 +118,8 @@ namespace
     virtual void destroy ();
 
     // Type registration
-    virtual bool register_classes   (const IxEntityClass** classes_in, const IxEntityClass** end);
-    virtual bool unregister_classes (const IxEntityClass** classes_in, const IxEntityClass** end);
+    virtual bool register_classes   (const IxEntityClass* const* classes_in, const IxEntityClass* const* end);
+    virtual bool unregister_classes (const IxEntityClass* const* classes_in, const IxEntityClass* const* end);
 
     // Module loading
     virtual IxModule* load_module   (Rk::StringRef name);
@@ -178,9 +179,17 @@ namespace
       for (auto iter = modules.begin (); iter != modules.end (); iter++)
         lock << "!   " << iter -> first << " (" << iter -> second -> references () << " references)\n";
     }
+
+    if (!registry.empty ())
+    {
+      auto lock = log.get_lock ();
+      lock << "! Co-Engine: IxEngine::destroy - " << registry.size () << " classes still registered:\n";
+      for (auto iter = registry.begin (); iter != registry.end (); iter++)
+        lock << "!   " << iter -> first << '\n';
+    }
   }
 
-  bool Engine::register_classes (const IxEntityClass** begin, const IxEntityClass** end) try
+  bool Engine::register_classes (const IxEntityClass* const* begin, const IxEntityClass* const* end) try
   {
     if (!begin || !end) throw Rk::Exception ("Co-Engine: IxEngine::register_classes - null pointer");
     if (end < begin)    throw Rk::Exception ("Co-Engine: IxEngine::register_classes - invalid range");
@@ -198,7 +207,7 @@ namespace
     return false;
   }
 
-  bool Engine::unregister_classes (const IxEntityClass** begin, const IxEntityClass** end) try
+  bool Engine::unregister_classes (const IxEntityClass* const* begin, const IxEntityClass* const* end) try
   {
     if (!begin || !end) throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - null pointer");
     if (end < begin)    throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - invalid range");

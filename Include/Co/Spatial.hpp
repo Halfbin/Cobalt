@@ -24,6 +24,11 @@ namespace Co
     Spatial ()
     { }
 
+    Spatial (const Nil&) :
+      position    (nil),
+      orientation (nil)
+    { } 
+    
     Spatial (Vector3 pos, Quaternion ori) :
       position    (pos),
       orientation (ori)

@@ -82,7 +82,6 @@
     <ClInclude Include="..\Include\Co\IxGame.hpp" />
     <ClInclude Include="..\Include\Co\IxModule.hpp" />
     <ClInclude Include="..\Include\Co\IxEntity.hpp" />
-    <ClInclude Include="..\Include\Co\Library.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />

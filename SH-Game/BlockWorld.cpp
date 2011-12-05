@@ -115,6 +115,7 @@ namespace SH
   {
     static const uint size = 65536,
                       mask = size - 1;
+
     uint        permute   [size];
     Co::Vector3 gradients [size];
 
@@ -272,8 +273,8 @@ namespace SH
 
       frame.begin_point_geom (
         compilation.get (),
-        Co::Spatial (Co::Vector3 (fx, fy, fz), Co::Quaternion ()),
-        Co::Spatial (Co::Vector3 (fx, fy, fz), Co::Quaternion ())
+        Co::Spatial (Co::Vector3 (fx, fy, fz), nil),
+        Co::Spatial (Co::Vector3 (fx, fy, fz), nil)
       );
 
       Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);

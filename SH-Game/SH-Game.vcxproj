@@ -72,8 +72,6 @@
   <ItemGroup>
     <ClCompile Include="BlockWorld.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Library.cpp" />
-    <ClCompile Include="Module.cpp" />
     <ClCompile Include="Spectator.cpp" />
     <ClCompile Include="TestEntity.cpp" />
   </ItemGroup>
