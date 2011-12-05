@@ -10,13 +10,14 @@
 
 namespace SH
 {
-  extern Co::IxEntityClass *test_class,
-                           *block_world_class,
-                           *spectator_class;
+  extern const Co::IxEntityClass
+    *test_class,
+    *block_world_class,
+    *spectator_class;
 
   namespace
   {
-    Co::IxEntityClass* classes [] = {
+    const Co::IxEntityClass* classes [] = {
       test_class,
       block_world_class,
       spectator_class

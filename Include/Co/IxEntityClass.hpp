@@ -20,7 +20,7 @@ namespace Co
   public:
     Rk::StringRef name;
 
-    virtual IxEntity* create (IxLoadContext& context, IxPropMap* props) = 0;
+    virtual IxEntity* create (IxLoadContext& context, IxPropMap* props) const = 0;
 
   protected:
     IxEntityClass (Rk::StringRef new_name) :

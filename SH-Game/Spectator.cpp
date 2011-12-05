@@ -29,9 +29,9 @@ namespace SH
       Co::Quaternion a (prev_time * 0.2f, Co::Vector3 (0, 0, 1)),
                      b (time * 0.2f,      Co::Vector3 (0, 0, 1));
 
-      old_spatial.position    = spatial.position + a.forward () * -200.0f;
+      old_spatial.position    = spatial.position + a.forward () * -20.0f;
       old_spatial.orientation = a;
-      new_spatial.position    = spatial.position + b.forward () * -200.0f;
+      new_spatial.position    = spatial.position + b.forward () * -20.0f;
       new_spatial.orientation = b;
 
       //Co::Spatial new_spatial = spatial;
@@ -47,13 +47,13 @@ namespace SH
   public:
     Spectator (Co::IxLoadContext& load_context, Co::IxPropMap* props)
     {
-      spatial.position = Co::Vector3 (96.0f, 96.0f, 96.0f);
+      spatial.position = Co::Vector3 (96.0f, 96.0f, 126.0f);
       //spatial.orientation = Co::Quaternion (1.57f, Co::Vector3 (0, 0, 1));
     }
 
   };
 
   Co::EntityClass <Spectator> ent_class ("Spectator");
-  Co::IxEntityClass* spectator_class = &ent_class;
+  const Co::IxEntityClass* spectator_class = &ent_class;
 
 }

@@ -23,17 +23,6 @@ namespace Co
   class GLFrame :
     public IxFrame
   {
-    enum
-    {
-      max_point_geoms = 5000,
-      max_meshes      = 5000,
-      max_materials   = 5000,
-      max_ui_batches  = 2000,
-      max_labels      = 2000,
-      max_tex_rects   = 10000,
-      max_lights      = 8
-    };
-
     struct PointSpatial
     {
       Spatial prev, // 32
@@ -60,6 +49,18 @@ namespace Co
                   count; // 12 16
     };
 
+    // Limits
+    enum
+    {
+      max_point_geoms = 5000,
+      max_meshes      = 5000,
+      max_materials   = 5000,
+      max_ui_batches  = 2000,
+      max_labels      = 2000,
+      max_tex_rects   = 10000,
+      max_lights      = 8
+    };
+    
     // Data
     PointSpatial       point_spats [max_point_geoms];
     PointGeom          point_geoms [max_point_geoms];
@@ -81,6 +82,7 @@ namespace Co
         tex_rects_back_index,
         lights_back_index;
 
+    // Camera
     Spatial camera_prev,
             camera_cur;
     float   camera_prev_fov,
@@ -88,21 +90,26 @@ namespace Co
             camera_near,
             camera_far;
 
+    // Viewport
     u32 width,
         height;
 
+    // Rendering
     void render_point_geoms (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
     void render_ui_batches  (RectProgram& rect_program);
 
   public:
+    // Timing
     u32 id;
     float time, prev_time;
 
+    // VAO cleanup
     enum Maxima { max_garbage_vaos = 256 };
     u32 garbage_vaos [max_garbage_vaos];
     uint garbage_vao_back_index;
 
+    // Drawing interface
     virtual bool begin_point_geom (IxGeomCompilation* compilation, Spatial prev, Spatial current);
     virtual void end_point_geom   ();
     virtual void add_meshes       (const Mesh* meshes, const Mesh* end);
@@ -113,8 +120,10 @@ namespace Co
     virtual void set_camera       (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far);
     virtual void set_size         (u32 width, u32 height);
 
+    // Rendering
     void render (float alpha, GeomProgram& geom_program, RectProgram& rect_program);
     
+    // Acquisition
     u32 reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id);
 
   }; // class GLFrame

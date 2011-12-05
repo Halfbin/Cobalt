@@ -130,6 +130,6 @@ namespace SH
   IxFont::Ptr    TestEntity::font;
 
   EntityClass <TestEntity> ent_class ("TestEntity");
-  IxEntityClass* test_class = &ent_class;
+  const IxEntityClass* test_class = &ent_class;
 
 } // namespace SH

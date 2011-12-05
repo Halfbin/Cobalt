@@ -32,8 +32,9 @@ namespace SH
     Co::IxModule::Ptr texture_module;
     Co::IxModule::Ptr font_module;
 
-    virtual bool init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
-    
+    virtual bool init    (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual void destroy ();
+
     virtual void start (Co::IxEngine* engine);
     virtual void stop  ();
     
@@ -68,14 +69,21 @@ namespace SH
   catch (const std::exception& e)
   {
     if (log)
-      log << "SH-Game: IxGame::init - " << e.what () << '\n';
+      log << "X " << e.what () << '\n';
     return false;
   }
   catch (...)
   {
     if (log)
-      log << "SH-Game: IxGame::init - exception\n";
+      log << "X Exception caught\n";
     return false;
+  }
+
+  void Game::destroy ()
+  {
+    model_module.reset ();
+    model_module.reset ();
+    model_module.reset ();
   }
 
   void Game::start (Co::IxEngine* engine)

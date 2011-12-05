@@ -22,11 +22,11 @@ namespace Co
     }
     catch (const std::exception& e)
     {
-      log << e.what () << '\n';
+      log << "X " << e.what () << '\n';
     }
     catch (...)
     {
-      log << "Exception caught\n";
+      log << "X Exception caught\n";
     }
 
     log << "- Co-Client" CO_SUFFIX " exiting\n";

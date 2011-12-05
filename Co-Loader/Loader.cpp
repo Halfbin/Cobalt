@@ -129,12 +129,13 @@ namespace
   catch (const std::exception& e)
   {
     if (log)
-      log << e.what () << '\n';
-
+      log << "X " << e.what () << '\n';
     return false;
   }
   catch (...)
   {
+    if (log)
+      log << "X Exception caught\n";
     return false;
   }
 
@@ -186,13 +187,11 @@ namespace
       }
       catch (const std::exception& e)
       {
-        log << e.what () << '\n'
-            << "X Caught in Loader\n";
+        log << "X " << e.what () << '\n';
       }
       catch (...)
       {
-        log << "X Exception\n"
-            << "X Caught in Loader\n";
+        log << "X Exception caught\n";
       }
 
       for (auto g = temp_garbage_queue.begin (); g != temp_garbage_queue.end (); g++)

@@ -7,6 +7,7 @@
 #define CO_H_IXGAME
 
 #include <Rk/StreamForward.hpp>
+#include <Rk/IxUnique.hpp>
 #include <Rk/Types.hpp>
 
 namespace Co
@@ -14,10 +15,13 @@ namespace Co
   class IxEngine;
   class IxUI;
 
-  class IxGame
+  class IxGame :
+    public Rk::IxUnique
   {
   public:
     static const u64 id = 0xb31a8a07f5fb1b71ull;
+
+    typedef Rk::IxUniquePtr <IxGame> Ptr;
 
     virtual bool init (IxEngine* engine, Rk::IxLockedOutStreamImpl* log) = 0;
     

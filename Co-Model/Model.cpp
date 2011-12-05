@@ -158,7 +158,7 @@ namespace Co
         { attrib_normal,   attrib_f32, 32, 20 }
       };
 
-      comp = rc.create_compilation (attribs, element_buffer, index_buffer, index_u16);
+      comp = rc.create_compilation (attribs, element_buffer.get (), index_buffer.get (), index_u16);
 
       ready = true;
     }

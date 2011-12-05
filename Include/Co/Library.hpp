@@ -15,24 +15,24 @@ namespace Co
 
   class Library
   {
-    IxEntityClass** classes;
-    IxEntityClass** classes_end;
+    const IxEntityClass** classes;
+    const IxEntityClass** classes_end;
 
   public:
     static const u64 id = 0xe08de5f30718514cull;
 
     template <uint count>
-    Library (IxEntityClass* (&new_classes) [count]) :
+    Library (const IxEntityClass* (&new_classes) [count]) :
       classes     (new_classes),
       classes_end (new_classes + count)
     { }
     
-    IxEntityClass** begin () const
+    const IxEntityClass** begin () const
     {
       return classes;
     }
 
-    IxEntityClass** end () const
+    const IxEntityClass** end () const
     {
       return classes_end;
     }

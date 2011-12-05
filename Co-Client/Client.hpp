@@ -6,6 +6,8 @@
 #ifndef CO_CLIENT_H_CLIENT
 #define CO_CLIENT_H_CLIENT
 
+#include <Co/IxEngine.hpp>
+#include <Co/IxGame.hpp>
 #include <Co/Clock.hpp>
 
 #include <Rk/StringRef.hpp>
@@ -19,7 +21,6 @@ namespace Co
   class IxRenderer;
   class IxRenderDevice;
   class IxLoader;
-  class IxEngine;
   class IxGame;
   class Library;
   class GLWindow;
@@ -37,8 +38,8 @@ namespace Co
     IxRenderer*     renderer;
     IxRenderDevice* render_device;
     IxLoader*       loader;
-    IxEngine*       engine;
-    IxGame*         game;
+    IxEngine::Ptr   engine;
+    IxGame::Ptr     game;
     Library*        library;
 
     void cleanup ();

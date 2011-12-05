@@ -18,6 +18,7 @@
 #include <Co/IxFrame.hpp>
 
 #include <Rk/VirtualOutStream.hpp>
+#include <Rk/Exception.hpp>
 #include <Rk/Lerp.hpp>
 
 #include <vector>
@@ -32,7 +33,9 @@ namespace SH
   {
     blocktype_air   = 0x00,
     blocktype_soil  = 0x01,
-    blocktype_grass = 0x02
+    blocktype_grass = 0x02,
+
+    blocktype_void  = 0xff
   };
   
   struct BlockTCoords
@@ -79,6 +82,12 @@ namespace SH
   public:
     BlockType type;
 
+    Block () { }
+
+    Block (BlockType new_type) :
+      type (new_type)
+    { }
+    
     bool empty () const
     {
       return type == blocktype_air;
@@ -206,6 +215,8 @@ namespace SH
 
   };
 
+  class BlockWorld;
+
   class Chunk
   {
   public:
@@ -221,6 +232,16 @@ namespace SH
     
     Co::IxGeomCompilation::Ptr compilation;
     uptr index_count;
+
+    int cx, cy, cz,
+        bx, by, bz;
+
+    void set_pos (int x, int y, int z)
+    {
+      cx = x; bx = cx * dim;
+      cy = y; by = cy * dim;
+      cz = z; bz = cz * dim;
+    }
 
     Block& at (int x, int y, int z)
     {
@@ -238,144 +259,19 @@ namespace SH
       return blocks [x][y][z];
     }
 
-    uint regen_mesh (Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices)
-    {
-      uint vertex_count = 0;
+    uint regen_mesh (const BlockWorld& world, Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices);
 
-      for (int z = 0; z != dim; z++)
-      {
-        for (int y = 0; y != dim; y++)
-        {
-          for (int x = 0; x != dim; x++)
-          {
-            const auto& block = at (x, y, z);
-
-            if (block.empty ())
-              continue;
-
-            if (block.type > 0x02)
-              return 0;
-
-            // 0, 0, 0, is the back right bottom
-
-            auto tcoords = block_tcoords [block.type];
-            float side_s = tcoords.sides.x,
-                  side_t = tcoords.sides.y,
-                  top_s  = tcoords.top.x,
-                  top_t  = tcoords.top.y,
-                  bot_s  = tcoords.bottom.x,
-                  bot_t  = tcoords.bottom.y;
-
-            //static const float eps = 0.0f;//1.0f / 1024.0f;
-
-            if ((x == dim - 1) || at (x + 1, y, z).empty ())
-            {
-              // front
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
-            }
-
-            if ((x == 0) || at (x - 1, y, z).empty ())
-            {
-              // back
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
-            }
-            
-            if ((y == dim - 1) || at (x, y + 1, z).empty ())
-            {
-              // left
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
-            }
-            
-            if ((y == 0) || at (x, y - 1, z).empty ())
-            {
-              // right
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
-            }
-            
-            if ((z == dim - 1) || at (x, y, z + 1).empty ())
-            {
-              // top
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f));
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 1.0f, 1.0f, 1.0f));
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 1.0f, 1.0f, 1.0f));
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f));
-            }
-            
-            if ((z == 0) || at (x, y, z - 1).empty ())
-            {
-              // bottom
-              vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f));
-              vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 0.5f, 0.5f, 0.5f));
-              vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 0.5f, 0.5f, 0.5f));
-              vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 0.5f, 0.5f, 0.5f));
-            }
-
-            while (vertex_count != vertices.size ())
-            {
-              indices.push_back (vertex_count + 0);
-              indices.push_back (vertex_count + 1);
-              indices.push_back (vertex_count + 2);
-              indices.push_back (vertex_count + 1);
-              indices.push_back (vertex_count + 3);
-              indices.push_back (vertex_count + 2);
-              vertex_count += 4;
-            }
-          } // x
-        } // y
-      } // z
-
-      if (vertex_count == 0)
-        return 0;
-
-      auto vertex_buffer = rc.create_buffer (vertices.size () * sizeof (Vertex), vertices.data ()),
-           index_buffer  = rc.create_buffer (indices.size ()  * sizeof (u16),    indices.data () );
-      
-      static const Co::GeomAttrib attribs [3] = {
-        { Co::attrib_position, Co::attrib_f32, sizeof (Vertex),  0 },
-        { Co::attrib_tcoords,  Co::attrib_f32, sizeof (Vertex), 12 },
-        { Co::attrib_colour,   Co::attrib_f32, sizeof (Vertex), 20 },
-      };
-
-      compilation = rc.create_compilation (attribs, vertex_buffer, index_buffer, Co::index_u16);
-
-      uint vertices_cap = vertices.capacity ();
-      vertices.clear ();
-      assert (vertices.capacity () == vertices_cap);
-
-      index_count = indices.size ();
-      indices.clear ();
-
-      uint face_count = vertex_count / 4;
-
-      /*float fill = float (face_count) / float (max_faces) * 100.0f;
-      log << "Generated chunk at " << fill << "% capacity\n";*/
-
-      return face_count * 2;
-    }
-
-    void draw (Co::IxFrame& frame, int cx, int cy, int cz, const Co::Material& mat)
+    void draw (Co::IxFrame& frame, const Co::Material& mat)
     {
       if (!compilation)
         return;
 
-      float fx = float (cx * dim),
-            fy = float (cy * dim),
-            fz = float (cz * dim);
+      float fx = float (bx),
+            fy = float (by),
+            fz = float (bz);
 
       frame.begin_point_geom (
-        compilation,
+        compilation.get (),
         Co::Spatial (Co::Vector3 (fx, fy, fz), Co::Quaternion ()),
         Co::Spatial (Co::Vector3 (fx, fy, fz), Co::Quaternion ())
       );
@@ -388,40 +284,8 @@ namespace SH
       frame.end_point_geom ();
     }
 
-    float generate (int cx, int cy, int cz, const Noise& noise)
-    {
-      Co::Vector3 grads [2][2][2];
-      noise.get_gradients (cx, cy, cz, grads);
-      float max_value = 0.0f;
-
-      for (int z = 0; z != dim; z++)
-      {
-        for (int y = 0; y != dim; y++)
-        {
-          for (int x = 0; x != dim; x++)
-          {
-            Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
-            float value = noise.get (block_pos, grads);
-            max_value = std::max (value, max_value);
-            at (x, y, z).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
-          }
-        }
-      }
-
-      for (int z = 0; z != dim; z++)
-      {
-        for (int y = 0; y != dim; y++)
-        {
-          for (int x = 0; x != dim; x++)
-          {
-            if (((z == dim - 1) || at (x, y, z + 1).empty ()) && at (x, y, z).type == blocktype_soil)
-              at (x, y, z).type = blocktype_grass;
-          }
-        }
-      }
-
-      return max_value;
-    }
+    void generate_pass_1 (const Noise& noise);
+    void generate_pass_2 (const BlockWorld& world, const Noise& noise);
 
   }; // class Chunk
 
@@ -443,6 +307,34 @@ namespace SH
     Co::IxTexture::Ptr texture;
     Noise              noise;
 
+    static const Block outside_block;
+
+    const Chunk& chunk_at (int x, int y, int z) const
+    {
+      if (
+        x >= world_dim || x < 0 ||
+        y >= world_dim || y < 0 ||
+        z >= world_dim || z < 0)
+      {
+        throw Rk::Exception ("Chunk reference outside world");
+      }
+
+      return chunks [x][y][z];
+    }
+
+    Chunk& chunk_at (int x, int y, int z)
+    {
+      if (
+        x >= world_dim || x < 0 ||
+        y >= world_dim || y < 0 ||
+        z >= world_dim || z < 0)
+      {
+        throw Rk::Exception ("Chunk reference outside world");
+      }
+
+      return chunks [x][y][z];
+    }
+
     //enum { chunks_size_mb = sizeof (chunks) / (1024 * 1024) };
 
     virtual void acquire () { }
@@ -462,30 +354,31 @@ namespace SH
     {
       noise.generate (seed);
 
-      float max_value = 0.0f;
-
       for (int z = 0; z != world_dim; z++)
       {
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
           {
-            float value = chunks [x][y][z].generate (x, y, z, noise);
-            max_value = std::max (value, max_value);
+            auto& chunk = chunk_at (x, y, z);
+            chunk.set_pos (x, y, z);
+            chunk.generate_pass_1 (noise);
           }
         }
       }
 
-      /*enum
+      for (int z = 0; z != world_dim; z++)
       {
-        max_vertices    = Chunk::max_vertices * world_chunks,
-        vertex_buf_size = max_vertices * sizeof (Vertex),
-        max_indices     = Chunk::max_indices * world_chunks,
-        index_buf_size  = max_indices * 2
-      };*/
+        for (int y = 0; y != world_dim; y++)
+        {
+          for (int x = 0; x != world_dim; x++)
+            chunk_at (x, y, z).generate_pass_2 (*this, noise);
+        }
+      }
 
       uint triangle_count = 0;
 
+      // Scratch space for Chunk::regen_mesh only
       std::vector <Vertex> vertices;
       std::vector <u16>    indices;
 
@@ -497,7 +390,7 @@ namespace SH
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
-            triangle_count += chunks [x][y][z].regen_mesh (rc, 1.0f / 16.0f, vertices, indices);
+            triangle_count += chunk_at (x, y, z).regen_mesh (*this, rc, 1.0f / 16.0f, vertices, indices);
         }
       }
 
@@ -510,7 +403,7 @@ namespace SH
       float size_mb = float (bytes) / float (1024 * 1024);
       float fill    = float (bytes) / float (bytes_max) * 100.0f;
 
-      log << "SH-Game: BlockWorld::load - generated " << triangle_count << " triangles ("
+      log << "- SH-Game: BlockWorld::load - generated " << triangle_count << " triangles ("
           << size_mb << " MB, "
           << fill    << "% capacity) \n";
 
@@ -522,22 +415,15 @@ namespace SH
       if (!ready)
         return;
 
-      Co::Material material = {
-        Co::Vector4 (0, 0, 0, 0),
-        Co::Vector4 (0, 0, 0, 0),
-        Co::Vector4 (0, 0, 0, 0),
-        Co::Vector4 (0, 0, 0, 0),
-        0.0f,
-        texture -> get (),
-        0, 0, 0, 0
-      };
+      Co::Material material = nil;
+      material.diffuse_tex = texture -> get ();
 
       for (uint z = 0; z != world_dim; z++)
       {
         for (uint y = 0; y != world_dim; y++)
         {
           for (uint x = 0; x != world_dim; x++)
-            chunks [x][y][z].draw (frame, x, y, z, material);
+            chunk_at (x, y, z).draw (frame, material);
         }
       }
     }
@@ -550,9 +436,192 @@ namespace SH
       load_context.load (this);
     }
 
+    const Block& block_at (int bx, int by, int bz) const
+    {
+      int cx = bx / Chunk::dim,
+          cy = by / Chunk::dim, 
+          cz = bz / Chunk::dim;
+
+      bx %= Chunk::dim;
+      by %= Chunk::dim;
+      bz %= Chunk::dim;
+
+      if (
+        cx >= world_dim || cx < 0 ||
+        cy >= world_dim || cy < 0 ||
+        cz >= world_dim || cz < 0)
+      {
+        return outside_block;
+      }
+      else
+      {
+        return chunk_at (cx, cy, cz).at (bx, by, bz);
+      }
+    }
+
   };
 
+  const Block BlockWorld::outside_block (blocktype_void);
+
+  void Chunk::generate_pass_1 (const Noise& noise)
+  {
+    Co::Vector3 grads [2][2][2];
+    noise.get_gradients (cx, cy, cz, grads);
+    
+    for (int z = 0; z != dim; z++)
+    {
+      for (int y = 0; y != dim; y++)
+      {
+        for (int x = 0; x != dim; x++)
+        {
+          Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
+          float value = noise.get (block_pos, grads);
+          at (x, y, z).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
+        }
+      }
+    }
+  }
+
+  void Chunk::generate_pass_2 (const BlockWorld& world, const Noise& noise)
+  {
+    for (int z = 0; z != dim; z++)
+    {
+      for (int y = 0; y != dim; y++)
+      {
+        for (int x = 0; x != dim; x++)
+        {
+          if ((at (x, y, z).type == blocktype_soil) && (world.block_at (bx + x, by + y, bz + z + 1).empty ()))
+            at (x, y, z).type = blocktype_grass;
+        }
+      }
+    }
+  }
+
+  uint Chunk::regen_mesh (const BlockWorld& world, Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices)
+  {
+    uint vertex_count = 0;
+
+    for (int z = 0; z != dim; z++)
+    {
+      for (int y = 0; y != dim; y++)
+      {
+        for (int x = 0; x != dim; x++)
+        {
+          const auto& block = at (x, y, z);
+
+          if (block.empty ())
+            continue;
+
+          // 0, 0, 0, is the back right bottom
+
+          auto tcoords = block_tcoords [block.type];
+          float side_s = tcoords.sides.x,
+                side_t = tcoords.sides.y,
+                top_s  = tcoords.top.x,
+                top_t  = tcoords.top.y,
+                bot_s  = tcoords.bottom.x,
+                bot_t  = tcoords.bottom.y;
+
+          //static const float eps = 0.0f;//1.0f / 1024.0f;
+
+          if (world.block_at (bx + x + 1, by + y, bz + z).empty ())
+          {
+            // front
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
+          }
+
+          if (world.block_at (bx + x - 1, by + y, bz + z).empty ())
+          {
+            // back
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
+          }
+            
+          if (world.block_at (bx + x, by + y + 1, bz + z).empty ())
+          {
+            // left
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
+          }
+            
+          if (world.block_at (bx + x, by + y - 1, bz + z).empty ())
+          {
+            // right
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
+          }
+            
+          if (world.block_at (bx + x, by + y, bz + z + 1).empty ())
+          {
+            // top
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 1.0f, 1.0f, 1.0f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 1.0f, 1.0f, 1.0f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f));
+          }
+            
+          if (world.block_at (bx + x, by + y, bz + z - 1).empty ())
+          {
+            // bottom
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 0.5f, 0.5f, 0.5f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 0.5f, 0.5f, 0.5f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 0.5f, 0.5f, 0.5f));
+          }
+
+          while (vertex_count != vertices.size ())
+          {
+            indices.push_back (vertex_count + 0);
+            indices.push_back (vertex_count + 1);
+            indices.push_back (vertex_count + 2);
+            indices.push_back (vertex_count + 1);
+            indices.push_back (vertex_count + 3);
+            indices.push_back (vertex_count + 2);
+            vertex_count += 4;
+          }
+        } // x
+      } // y
+    } // z
+
+    if (vertex_count == 0)
+      return 0;
+
+    auto vertex_buffer = rc.create_buffer (vertices.size () * sizeof (Vertex), vertices.data ()),
+         index_buffer  = rc.create_buffer (indices.size ()  * sizeof (u16),    indices.data () );
+    
+    static const Co::GeomAttrib attribs [3] = {
+      { Co::attrib_position, Co::attrib_f32, sizeof (Vertex),  0 },
+      { Co::attrib_tcoords,  Co::attrib_f32, sizeof (Vertex), 12 },
+      { Co::attrib_colour,   Co::attrib_f32, sizeof (Vertex), 20 },
+    };
+
+    compilation = rc.create_compilation (attribs, vertex_buffer, index_buffer, Co::index_u16);
+
+    uint vertices_cap = vertices.capacity ();
+    vertices.clear ();
+    assert (vertices.capacity () == vertices_cap);
+
+    index_count = indices.size ();
+    indices.clear ();
+
+    uint face_count = vertex_count / 4;
+
+    /*float fill = float (face_count) / float (max_faces) * 100.0f;
+    log << "- Generated chunk at " << fill << "% capacity\n";*/
+
+    return face_count * 2;
+  }
+
   Co::EntityClass <BlockWorld> ent_class ("BlockWorld");
-  Co::IxEntityClass* block_world_class = &ent_class;
+  const Co::IxEntityClass* block_world_class = &ent_class;
 
 } // namespace SH

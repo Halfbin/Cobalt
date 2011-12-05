@@ -111,11 +111,11 @@ namespace Co
     if (!ok)
       throw Rk::Exception ("Co-Client: IxLoader::init - error initializing loader");
 
-    ok = engine -> init (renderer, loader, &clock);
+    ok = engine -> init (renderer, loader, &clock, log.get_impl ());
     if (!ok)
       throw Rk::Exception ("Co-Client: IxEngine::init - error initializing engine");
 
-    ok = game -> init (engine, log.get_impl ());
+    ok = game -> init (engine.get (), log.get_impl ());
     if (!ok)
       throw Rk::Exception ("Co-Client: IxGame::init - error initializing game");
 
@@ -129,20 +129,18 @@ namespace Co
     game     -> stop ();
     renderer -> stop ();
     loader   -> stop ();
-    
-    if (library)
-      engine -> unregister_classes (library);
   }
 
   void Client::run ()
   {
     loader   -> start ();
     renderer -> start ();
-    game     -> start (engine);
+    game     -> start (engine.get ());
 
     window.show ();
 
-    float next_update = engine -> start ();
+    float next_update;
+    engine -> start (next_update);
 
     for (;;)
     {

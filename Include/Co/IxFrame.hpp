@@ -58,12 +58,24 @@ namespace Co
                diffuse_mat,
                specular_mat,
                emissive_mat;
-    float      exponent_mat;
     IxTexImage *diffuse_tex,
                *specular_tex,
                *emissive_tex,
                *exponent_tex,
-               *normal_tex;
+               *normal_tex,
+               *self_illum_tex;
+
+    Material () { }
+
+    Material (const Nil&) :
+      diffuse_tex    (0),
+      specular_tex   (0),
+      emissive_tex   (0),
+      exponent_tex   (0),
+      normal_tex     (0),
+      self_illum_tex (0)
+    { }
+    
   };
 
   //

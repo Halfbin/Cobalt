@@ -16,8 +16,9 @@ namespace
   class Game :
     public Co::IxGame
   {
-    virtual bool init (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
-    
+    virtual bool init    (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual void destroy ();
+
     virtual void start (Co::IxEngine* engine);
     virtual void stop  ();
     
@@ -37,6 +38,11 @@ namespace
   catch (...)
   {
     return false;
+  }
+
+  void Game::destroy ()
+  {
+
   }
 
   void Game::start (Co::IxEngine* engine)

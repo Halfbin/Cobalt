@@ -35,7 +35,7 @@ namespace Co
   class EntityClass :
     public IxEntityClass
   {
-    virtual IxEntity* create (IxLoadContext& context, IxPropMap* props)
+    virtual IxEntity* create (IxLoadContext& context, IxPropMap* props) const
     {
       return new E (context, props);
     }

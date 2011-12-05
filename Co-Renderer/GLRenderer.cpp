@@ -193,12 +193,11 @@ namespace Co
   }
   catch (const std::exception& e)
   {
-    log << e.what () << '\n'
-        << "from Co::GLRenderer::loop\n";
+    log << "X " << e.what () << '\n';
   }
   catch (...)
   {
-    log << "Exception from Co::GLRenderer::loop\n";
+    log << "X Exception caught\n";
   }
 
   //
@@ -322,14 +321,14 @@ namespace Co
   catch (const std::exception& e)
   {
     if (log)
-      log << "Co-GLRenderer: IxRenderer::init - " << e.what () << '\n';
+      log << "X " << e.what () << '\n';
     cleanup ();
     return false;
   }
   catch (...)
   {
     if (log)
-      log << "Co-GLRenderer: IxRenderer::init - exception\n";
+      log << "X Exception caught\n";
     cleanup ();
     return false;
   }

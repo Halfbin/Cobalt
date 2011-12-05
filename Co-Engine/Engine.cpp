@@ -16,13 +16,15 @@
 #include <Co/IxGame.hpp>
 #include <Co/Clock.hpp>
 
+#include <Rk/VirtualOutStream.hpp>
 #include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
 #include <Rk/Module.hpp>
 #include <Rk/Mutex.hpp>
 
 #include <unordered_map>
-#include <algorithm>
+//#include <algorithm>
+//#include <iterator>
 #include <vector>
 
 extern "C"
@@ -45,6 +47,16 @@ namespace
   {
     long ref_count;
 
+  public:
+    Module (Rk::StringRef name) :
+      Rk::Module (name) // loading from /Cobalt/Binaries is fine
+    { }
+    
+    uint references () const
+    {
+      return uint (ref_count);
+    }
+
     virtual void acquire ()
     {
       ref_count++;
@@ -60,11 +72,6 @@ namespace
       return Rk::Module::expose (ixid);
     }
 
-  public:
-    Module (Rk::StringRef name) :
-      Rk::Module (name) // loading from /Cobalt/Binaries is fine
-    { }
-    
   };
 
   //
@@ -74,10 +81,11 @@ namespace
     public IxEngine
   {
     // Subsystems
-    IxRenderer* renderer;
-    IxLoader*   loader;
-    Clock*      clock;
-    
+    IxRenderer*                renderer;
+    IxLoader*                  loader;
+    Clock*                     clock;
+    Rk::VirtualLockedOutStream log;
+
     // Input
     IxInputSink* input_sink;
     int          mouse_x,
@@ -93,47 +101,58 @@ namespace
     bool running;
     
     // Type registry
-    typedef std::unordered_map <Rk::StringRef, IxEntityClass*> Registry;
+    typedef std::unordered_map <Rk::StringRef, const IxEntityClass*> Registry;
     Registry registry;
 
     // Entities
     typedef std::vector <IxEntity*> EntityList;
     EntityList entities;
 
-    // Initialization and cleanup
-    virtual bool init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in);
-    void cleanup ();
+    // Module cache
+    typedef std::unordered_map <Rk::ShortString <512>, Module*> ModuleCache;
+    ModuleCache modules;
+    
+    // Initialization
+    virtual bool init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual void destroy ();
 
     // Type registration
-    virtual void register_classes   (IxEntityClass** classes_in, IxEntityClass** end);
-    virtual void unregister_classes (IxEntityClass** classes_in, IxEntityClass** end);
+    virtual bool register_classes   (const IxEntityClass** classes_in, const IxEntityClass** end);
+    virtual bool unregister_classes (const IxEntityClass** classes_in, const IxEntityClass** end);
 
     // Module loading
-    virtual IxModule* load_module (Rk::StringRef name);
+    virtual IxModule* load_module   (Rk::StringRef name);
+    virtual u32       clear_modules ();
 
     // Object creation
     virtual IxEntity* create_entity (Rk::StringRef type, IxPropMap* props);
-    virtual void      open          (Rk::StringRef scene);
+    virtual bool      open          (Rk::StringRef scene);
 
     // Simulation control
-    virtual float start     ();
-    virtual void  wait      ();
-    virtual bool  update    (float& next_update);
-    virtual void  terminate ();
+    virtual bool start     (float& new_time);
+    virtual void wait      ();
+    virtual bool update    (float& next_update);
+    virtual void terminate ();
 
   public:
     void expose (void** out, u64 ixid);
 
   } engine;
 
-  const float Engine::frame_rate     = 50.0f,
+  const float Engine::frame_rate     = 75.0f,
               Engine::frame_interval = 1.0f / frame_rate;
 
-  bool Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in) try
+  bool Engine::init (IxRenderer* renderer_in, IxLoader* loader_in, Clock* clock_in, Rk::IxLockedOutStreamImpl* log_impl) try
   {
+    if (!renderer_in || !loader_in || !clock_in || !log_impl)
+      throw Rk::Exception ("Co-Engine: IxEngine::init - null pointer");
+
     if (running)
       throw Rk::Exception ("Co-Engine: IxEngine::init - engine is running");
-    
+
+    log.set_impl (log_impl);
+    log << "- Engine initializing\n";
+
     renderer   = renderer_in;
     loader     = loader_in;
     clock      = clock_in;
@@ -147,64 +166,103 @@ namespace
     return false;
   }
 
-  void Engine::cleanup ()
+  void Engine::destroy ()
   {
+    log << "- Engine shutting down\n";
 
+    uint mod_count = clear_modules ();
+    if (mod_count != 0 && log)
+    {
+      auto lock = log.get_lock ();
+      lock << "! Co-Engine: IxEngine::destroy - " << mod_count << " modules still loaded:\n";
+      for (auto iter = modules.begin (); iter != modules.end (); iter++)
+        lock << "!   " << iter -> first << " (" << iter -> second -> references () << " references)\n";
+    }
   }
 
-  void Engine::register_classes (IxEntityClass** classes_in, IxEntityClass** end)
+  bool Engine::register_classes (const IxEntityClass** begin, const IxEntityClass** end) try
   {
-    if (!classes_in || !end)
-      throw Rk::Exception ("Co-Engine: IxEngine::register_classes - null pointer");
-
-    if (end < classes_in)
-      throw Rk::Exception ("Co-Engine: IxEngine::register_classes - invalid range");
+    if (!begin || !end) throw Rk::Exception ("Co-Engine: IxEngine::register_classes - null pointer");
+    if (end < begin)    throw Rk::Exception ("Co-Engine: IxEngine::register_classes - invalid range");
     
-    std::for_each (
-      classes_in,
-      end,
-      [this] (IxEntityClass* cl)
-      {
-        registry.insert (std::make_pair (cl -> name, cl));
-      }
-    );
+    while (begin != end)
+    {
+      registry.insert (std::make_pair ((*begin) -> name, *begin));
+      begin++;
+    }
 
-    /*while (classes_in != end)
-      registry.insert (Registry::value_type ((*classes_in) -> name, *classes_in));*/
+    return true;
   }
-
-  void Engine::unregister_classes (IxEntityClass** classes_in, IxEntityClass** end)
+  catch (...)
   {
-    if (!classes_in || !end)
-      throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - null pointer");
-
-    if (end < classes_in)
-      throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - invalid range");
-
-    std::for_each (
-      classes_in,
-      end,
-      [this] (IxEntityClass* cl)
-      {
-        registry.erase (cl -> name);
-      }
-    );
-
-    /*while (classes_in != end)
-      registry.erase ((*classes_in) -> name);*/
+    return false;
   }
 
-  IxModule* Engine::load_module (Rk::StringRef name)
+  bool Engine::unregister_classes (const IxEntityClass** begin, const IxEntityClass** end) try
+  {
+    if (!begin || !end) throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - null pointer");
+    if (end < begin)    throw Rk::Exception ("Co-Engine: IxEngine::unregister_classes - invalid range");
+
+    while (begin != end)
+      registry.erase ((*begin++) -> name);
+
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+
+  IxModule* Engine::load_module (Rk::StringRef name) try
   {
     if (!name)
       throw Rk::Exception ("Co-Engine: IxEngine::load_module - name is nil");
 
+    Module* module;
+
     Rk::ShortString <512> tagged_name (name);
     tagged_name += CO_SUFFIX ".dll";
-    return new Module (tagged_name);
+
+    auto iter = modules.find (tagged_name);
+    if (iter != modules.end ())
+    {
+      module = iter -> second;
+      module -> acquire ();
+    }
+    else
+    {
+      module = new Module (tagged_name);
+      modules.insert (std::make_pair (tagged_name, module));
+    }
+    
+    return module;
+  }
+  catch (...)
+  {
+    return 0;
   }
 
-  IxEntity* Engine::create_entity (Rk::StringRef type, IxPropMap* props)
+  u32 Engine::clear_modules ()
+  {
+    u32 count = 0;
+
+    for (auto module = modules.begin (); module != modules.end ();)
+    {
+      if (module -> second -> references () == 0)
+      {
+        module = modules.erase (module);
+      }
+      else
+      {
+        count++;
+        module++;
+      }
+    }
+
+    return count;
+  }
+
+  IxEntity* Engine::create_entity (Rk::StringRef type, IxPropMap* props) try
   {
     if (!type)
       throw Rk::Exception ("Co-Engine: IxEngine::create_entity - type is nil");
@@ -217,21 +275,32 @@ namespace
     entities.push_back (ent);
     return ent;
   }
-
-  void Engine::open (Rk::StringRef scene)
+  catch (...)
   {
-
+    return 0;
   }
 
-  float Engine::start ()
+  bool Engine::open (Rk::StringRef scene)
+  {
+    return false;
+  }
+
+  bool Engine::start (float& new_time) try
   {
     if (running)
       throw Rk::Exception ("Co-Engine: IxEngine::start - engine already running");
 
+    log << "- Engine starting\n";
+
     running = true;
     prev_time = clock -> time ();
     time = prev_time + frame_interval;
-    return time;
+    new_time = time;
+    return true;
+  }
+  catch (...)
+  {
+    return false;
   }
 
   void Engine::wait ()
@@ -307,6 +376,7 @@ namespace
 
   void Engine::terminate ()
   {
+    log << "- Engine stopping\n";
     running = false;
   }
 
