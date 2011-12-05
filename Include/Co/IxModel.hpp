@@ -10,7 +10,7 @@
 #include <Co/IxResource.hpp>
 
 // Uses
-#include <Co/Frame.hpp>
+#include <Co/IxFrame.hpp>
 
 namespace Co
 {
@@ -25,7 +25,7 @@ namespace Co
   public:
     typedef Rk::IxSharedPtr <IxModel> Ptr;
 
-    void draw (Frame& target, Spatial prev, Spatial cur, const Material* materials, uint material_count)
+    void draw (IxFrame& target, Spatial prev, Spatial cur, const Material* materials, uint material_count)
     {
       if (!ready)
         return;

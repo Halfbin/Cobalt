@@ -15,7 +15,7 @@
 #include <Co/IxGeomBuffer.hpp>
 #include <Co/EntityClass.hpp>
 #include <Co/IxTexture.hpp>
-#include <Co/Frame.hpp>
+#include <Co/IxFrame.hpp>
 
 #include <Rk/VirtualOutStream.hpp>
 #include <Rk/Lerp.hpp>
@@ -365,7 +365,7 @@ namespace SH
       return face_count * 2;
     }
 
-    void draw (Co::Frame& frame, int cx, int cy, int cz, const Co::Material& mat)
+    void draw (Co::IxFrame& frame, int cx, int cy, int cz, const Co::Material& mat)
     {
       if (!compilation)
         return;
@@ -380,7 +380,7 @@ namespace SH
         Co::Spatial (Co::Vector3 (fx, fy, fz), Co::Quaternion ())
       );
 
-      Co::Mesh mesh = { Co::prim_triangles, 0, 0, 0, index_count };
+      Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
 
       frame.add_meshes    (&mesh, 1);
       frame.add_materials (&mat,  1);
@@ -517,7 +517,7 @@ namespace SH
       ready = true;
     }
 
-    virtual void tick (float time, float prev_time, Co::Frame& frame)
+    virtual void tick (float time, float prev_time, Co::IxFrame& frame)
     {
       if (!ready)
         return;

@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\Frame.hpp" />
+    <ClInclude Include="..\Include\Co\IxFrame.hpp" />
     <ClInclude Include="..\Include\Co\IxGeomCompilation.hpp" />
     <ClInclude Include="..\Include\Co\IxGeomBuffer.hpp" />
     <ClInclude Include="..\Include\Co\IxRenderContext.hpp" />

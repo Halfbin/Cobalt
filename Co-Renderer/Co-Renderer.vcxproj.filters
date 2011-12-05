@@ -39,9 +39,6 @@
     <ClInclude Include="..\Include\Co\IxRenderer.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\Frame.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\IxRenderDevice.hpp">
       <Filter>API</Filter>
     </ClInclude>
@@ -86,6 +83,9 @@
       <Filter>Shaders\Rect</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Co\IxTexRectangle.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\IxFrame.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

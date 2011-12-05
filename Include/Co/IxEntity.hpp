@@ -10,7 +10,7 @@
 
 namespace Co
 {
-  class Frame;
+  class IxFrame;
 
   class IxEntity :
     public Rk::IxUnique
@@ -18,7 +18,7 @@ namespace Co
   public:
     typedef Rk::IxUniquePtr <IxEntity> Ptr;
 
-    virtual void tick (float time, float prev_time, Frame& frame) = 0;
+    virtual void tick (float time, float prev_time, IxFrame& frame) = 0;
 
   };
 

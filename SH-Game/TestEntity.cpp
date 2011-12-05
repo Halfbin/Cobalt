@@ -29,7 +29,7 @@ namespace SH
   extern IxTextureFactory* texture_factory;
   extern IxFontFactory*    font_factory;
 
-  void draw_ui_text (Frame& frame, int x, int y, IxFont* font, Rk::U16StringRef text)
+  void draw_ui_text (IxFrame& frame, int x, int y, IxFont* font, Rk::U16StringRef text)
   {
     if (!font -> ready ())
       return;
@@ -79,7 +79,7 @@ namespace SH
       delete this;
     }
 
-    virtual void tick (float time, float prev_time, Frame& frame)
+    virtual void tick (float time, float prev_time, IxFrame& frame)
     {
       Spatial next = spatial;
       next.orientation = Quaternion (time * 2.0f, Vector3 (0.0f, 0.0f, 1.0f));

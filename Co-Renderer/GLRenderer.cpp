@@ -426,7 +426,7 @@ namespace Co
   //
   // Frame specification
   //
-  Frame* GLRenderer::begin_frame (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id)
+  IxFrame* GLRenderer::begin_frame (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id)
   {
     if (prepping_frame)
       throw Rk::Exception ("Co-GLRenderer: IxRenderer::begin_frame - current frame must be submitted before requesting a new one");
@@ -442,7 +442,7 @@ namespace Co
     return prepping_frame;
   }
 
-  void GLRenderer::submit_frame (Frame* frame)
+  void GLRenderer::submit_frame (IxFrame* frame)
   {
     auto gl_frame = static_cast <GLFrame*> (frame);
 

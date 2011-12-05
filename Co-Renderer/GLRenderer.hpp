@@ -67,8 +67,8 @@ namespace Co
     virtual void stop  ();
 
     // Frame exchange
-    virtual Frame* begin_frame  (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id);
-    virtual void   submit_frame (Frame*);
+    virtual IxFrame* begin_frame  (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id);
+    virtual void     submit_frame (IxFrame*);
 
     // Device
     GLContext*               create_context_impl ();

@@ -8,7 +8,7 @@
 
 // Uses
 #include <Co/EntityClass.hpp>
-#include <Co/Frame.hpp>
+#include <Co/IxFrame.hpp>
 
 namespace SH
 {
@@ -22,7 +22,7 @@ namespace SH
       delete this;
     }
 
-    virtual void tick (float time, float prev_time, Co::Frame& frame)
+    virtual void tick (float time, float prev_time, Co::IxFrame& frame)
     {
       Co::Spatial old_spatial, new_spatial;
 

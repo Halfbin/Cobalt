@@ -3,8 +3,8 @@
 // All Rights Reserved.
 //
 
-#ifndef CO_H_FRAME
-#define CO_H_FRAME
+#ifndef CO_H_IXFRAME
+#define CO_H_IXFRAME
 
 #include <Rk/Types.hpp>
 #include <Co/Spatial.hpp>
@@ -36,6 +36,17 @@ namespace Co
     u32      base_element,  // 8
              base_index,    // 12
              element_count; // 16
+
+    Mesh () { }
+
+    Mesh (PrimType new_prim_type, u16 new_material, u32 new_base_element, u32 new_base_index, u32 new_element_count) :
+      prim_type     (new_prim_type),
+      material      (new_material),
+      base_element  (new_base_element),
+      base_index    (new_base_index),
+      element_count (new_element_count)
+    { }
+    
   };
 
   //
@@ -88,9 +99,9 @@ namespace Co
   };
 
   //
-  // = Frame ===========================================================================================================
+  // = IxFrame =========================================================================================================
   //
-  class Frame :
+  class IxFrame :
     Rk::NoCopy
   {
   protected:
@@ -120,44 +131,36 @@ namespace Co
                   count; // 12 16
     };
 
-    // Point geometry data
-    enum { max_point_geoms = 5000 };
-    PointSpatial       point_spats [max_point_geoms];
-    PointGeom          point_geoms [max_point_geoms];
-    IxGeomCompilation* point_comps [max_point_geoms];
-    uint               point_geoms_back_index;
+    // Limits
+    const u32 max_point_geoms,
+              max_meshes,
+              max_materials,
+              max_ui_batches,
+              max_labels,
+              max_tex_rects,
+              max_lights;
 
-    // Meshes
-    enum { max_meshes = 5000 };
-    Mesh meshes [max_meshes];
-    uint meshes_back_index;
+    // Indices
+    u32 point_geoms_back_index,
+        meshes_back_index,
+        materials_back_index,
+        ui_batches_back_index,
+        labels_back_index,
+        tex_rects_back_index,
+        lights_back_index;
 
-    // Materials
-    enum { max_materials = 5000 };
-    Material materials [max_materials];
-    uint     materials_back_index;
+    // Drawing data
+    PointSpatial*       const point_spats;
+    PointGeom*          const point_geoms;
+    IxGeomCompilation** const point_comps;
+    Mesh*               const meshes;
+    Material*           const materials;
+    UIBatch*            const ui_batches;
+    Label*              const labels;
+    PointSpatial*       const label_spats;
+    TexRect*            const tex_rects;
+    Light*              const lights;
 
-    // UI rects
-    enum { max_ui_batches = 2048 };
-		UIBatch ui_batches [max_ui_batches];
-    uint    ui_batches_back_index;
-
-    // Labels
-    enum { max_labels = 2048 };
-    Label        labels      [max_labels];
-    PointSpatial label_spats [max_labels];
-    uint         labels_back_index;
-    
-    // Tex rects
-    enum { max_tex_rects = 16384 };
-    TexRect tex_rects [max_tex_rects];
-    uint    tex_rects_back_index;
-    
-    // Lights
-    enum { max_lights = 8 };
-    Light lights [max_lights];
-    uint  lights_back_index;
-    
     // Camera
     PointSpatial camera_pos;
     float        camera_prev_fov,
@@ -169,6 +172,45 @@ namespace Co
     uint width,
          height;
 
+  protected:
+    IxFrame (
+      PointSpatial*       new_point_spats,
+      PointGeom*          new_point_geoms,
+      IxGeomCompilation** new_point_comps,
+      Mesh*               new_meshes,
+      Material*           new_materials,
+      UIBatch*            new_ui_batches,
+      Label*              new_labels,
+      PointSpatial*       new_label_spats,
+      TexRect*            new_tex_rects,
+      Light*              new_lights,
+      u32                 new_max_point_geoms,
+      u32                 new_max_meshes,
+      u32                 new_max_materials,
+      u32                 new_max_ui_batches,
+      u32                 new_max_labels,
+      u32                 new_max_tex_rects,
+      u32                 new_max_lights
+    ) :
+      point_spats     (new_point_spats),
+      point_geoms     (new_point_geoms),
+      point_comps     (new_point_comps),
+      meshes          (new_meshes),
+      materials       (new_materials),
+      ui_batches      (new_ui_batches),
+      labels          (new_labels),
+      label_spats     (new_label_spats),
+      tex_rects       (new_tex_rects),
+      lights          (new_lights),
+      max_point_geoms (new_max_point_geoms),
+      max_meshes      (new_max_meshes),
+      max_materials   (new_max_materials),
+      max_ui_batches  (new_max_ui_batches),
+      max_labels      (new_max_labels),
+      max_tex_rects   (new_max_tex_rects),
+      max_lights      (new_max_lights)
+    { }
+    
   public:
     bool begin_point_geom (IxGeomCompilation* comp, Spatial prev, Spatial cur)
     {
@@ -301,9 +343,7 @@ namespace Co
       height = h;
     }
 
-  }; // class Frame
-
-  enum { frame_size = sizeof (Frame) };
+  }; // class IxFrame
 
 } // namespace Co
 

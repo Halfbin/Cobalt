@@ -12,7 +12,7 @@
 namespace Co
 {
   class Clock;
-  class Frame;
+  class IxFrame;
   
   class IxRenderer
   {
@@ -24,14 +24,14 @@ namespace Co
     virtual void start () = 0;
     virtual void stop  () = 0;
     
-    virtual Frame* begin_frame (
+    virtual IxFrame* begin_frame (
       float prev_time,
       float current_time,
       u32&  old_frame_id,
       u32&  new_frame_id
     ) = 0;
     
-    virtual void submit_frame (Frame* frame) = 0;
+    virtual void submit_frame (IxFrame* frame) = 0;
 
   }; // class IxRenderer
 

@@ -24,7 +24,7 @@ namespace Co
     glEnable (GL_DEPTH_TEST);
     //glDisable (GL_CULL_FACE);
 
-    Spatial point_interps [max_point_geoms];
+    Spatial point_interps [max_point_geoms_def];
     for (uint i = 0; i != point_geoms_back_index; i++)
       point_interps [i] = lerp (point_spats [i].prev, point_spats [i].cur, alpha);
 
@@ -202,7 +202,7 @@ namespace Co
     geom_program.done ();
 
     // Render textured rectangles
-    TexRect adjusted_rects [max_tex_rects];
+    TexRect adjusted_rects [max_tex_rects_def];
 
     for (uint index = 0; index != tex_rects_back_index; index++)
     {
@@ -246,4 +246,25 @@ namespace Co
     return old_id;
   }
 
+  GLFrame::GLFrame () :
+    IxFrame (
+      point_spats_buffer,
+      point_geoms_buffer,
+      point_comps_buffer,
+      meshes_buffer,
+      materials_buffer,
+      ui_batches_buffer,
+      labels_buffer,
+      label_spats_buffer,
+      tex_rects_buffer,
+      lights_buffer,
+      max_point_geoms_def,
+      max_meshes_def,
+      max_materials_def,
+      max_ui_batches_def,
+      max_labels_def,
+      max_tex_rects_def,
+      max_lights_def)
+  { }
+  
 } // namespace Co

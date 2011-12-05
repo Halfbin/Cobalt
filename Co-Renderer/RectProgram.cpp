@@ -3,7 +3,7 @@
 // All Rights Reserved.
 //
 
-#include <Co/Frame.hpp>
+#include <Co/IxFrame.hpp>
 
 #include "RectProgram.hpp"
 

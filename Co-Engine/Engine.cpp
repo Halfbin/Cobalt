@@ -12,9 +12,9 @@
 #include <Co/IxEntity.hpp>
 #include <Co/IxLoader.hpp>
 #include <Co/IxModule.hpp>
+#include <Co/IxFrame.hpp>
 #include <Co/IxGame.hpp>
 #include <Co/Clock.hpp>
-#include <Co/Frame.hpp>
 
 #include <Rk/Exception.hpp>
 #include <Rk/Expose.hpp>
@@ -33,7 +33,6 @@ extern "C"
 namespace Co
 {
   class IxInputSink;
-  class Frame;
   
 namespace
 {
@@ -261,7 +260,7 @@ namespace
     //int old_mouse_x = 0, old_mouse_y = 0;
     
     u32 recycled_id, frame_id;
-    Frame* frame = renderer -> begin_frame (prev_time, time, recycled_id, frame_id);
+    IxFrame* frame = renderer -> begin_frame (prev_time, time, recycled_id, frame_id);
     
     frame -> set_size (1280, 720);
     
