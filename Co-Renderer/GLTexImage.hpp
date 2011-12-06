@@ -25,11 +25,11 @@ namespace Co
     virtual void destroy ();
 
   protected:
-    virtual void load_map (uint level, const void* data, TexFormat format, uint width, uint height, uptr size = 0);
+    virtual bool load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size = 0);
     ~GLTexImage ();
     
   public:
-    GLTexImage (uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type);
+    GLTexImage (uint level_count, TexImageWrap wrap, bool filter, TexImageType type);
 
     void bind (u32 unit)
     {

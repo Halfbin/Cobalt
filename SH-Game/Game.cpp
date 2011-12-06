@@ -45,13 +45,13 @@ namespace SH
     Co::IxModule::Ptr texture_module;
     Co::IxModule::Ptr font_module;
 
-    virtual bool init    (Co::IxEngine* engine, Rk::IxLockedOutStreamImpl* log_impl);
+    virtual bool init    (Co::IxEngine* engine, Co::IxLoadContext* load_context, Rk::IxLockedOutStreamImpl* log_impl);
     virtual void destroy ();
 
     virtual void start ();
     virtual void stop  ();
     
-    virtual void tick      (float time, float prev_time);
+    virtual void tick      (Co::IxFrame* frame, float time, float prev_time);
     virtual void update_ui (Co::IxUI* ui);
 
   public:
@@ -59,7 +59,7 @@ namespace SH
 
   } game;
 
-  bool Game::init (Co::IxEngine* new_engine, Rk::IxLockedOutStreamImpl* log_impl) try
+  bool Game::init (Co::IxEngine* new_engine, Co::IxLoadContext* load_context, Rk::IxLockedOutStreamImpl* log_impl) try
   {
     if (!new_engine || !log_impl)
       throw Rk::Exception ("null pointer");
@@ -115,7 +115,7 @@ namespace SH
     //ent -> destroy ();
   }
 
-  void Game::tick (float time, float prev_time)
+  void Game::tick (Co::IxFrame* frame, float time, float prev_time)
   {
 
   }

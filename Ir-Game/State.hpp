@@ -6,6 +6,9 @@
 #ifndef IR_H_STATE
 #define IR_H_STATE
 
+#include <Co/IxLoadContext.hpp>
+#include <Co/IxFrame.hpp>
+
 namespace Ir
 {
   class State
@@ -13,7 +16,7 @@ namespace Ir
   public:
     virtual void enter () = 0;
     virtual void leave () = 0;
-    virtual void tick  (float time, float prev_time) = 0;
+    virtual void tick  (Co::IxFrame* frame, float time, float prev_time) = 0;
 
   };
 

@@ -262,7 +262,7 @@ namespace SH
 
     uint regen_mesh (const BlockWorld& world, Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices);
 
-    void draw (Co::IxFrame& frame, const Co::Material& mat)
+    void draw (Co::IxFrame* frame, const Co::Material& mat)
     {
       if (!compilation)
         return;
@@ -271,7 +271,7 @@ namespace SH
             fy = float (by),
             fz = float (bz);
 
-      frame.begin_point_geom (
+      frame -> begin_point_geom (
         compilation.get (),
         Co::Spatial (Co::Vector3 (fx, fy, fz), nil),
         Co::Spatial (Co::Vector3 (fx, fy, fz), nil)
@@ -279,10 +279,10 @@ namespace SH
 
       Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
 
-      frame.add_meshes    (&mesh, 1);
-      frame.add_materials (&mat,  1);
+      frame -> add_meshes    (&mesh, 1);
+      frame -> add_materials (&mat,  1);
 
-      frame.end_point_geom ();
+      frame -> end_point_geom ();
     }
 
     void generate_pass_1 (const Noise& noise);
@@ -411,7 +411,7 @@ namespace SH
       ready = true;
     }
 
-    virtual void tick (float time, float prev_time, Co::IxFrame& frame)
+    virtual void tick (Co::IxFrame* frame, float time, float prev_time)
     {
       if (!ready)
         return;
@@ -430,11 +430,11 @@ namespace SH
     }
 
   public:
-    BlockWorld (Co::IxLoadContext& load_context, Co::IxPropMap* props)
+    BlockWorld (Co::IxLoadContext* load_context, Co::IxPropMap* props)
     {
       seed = 923;
       texture = texture_factory -> create (load_context, "Blocks.cotexture", false, false);
-      load_context.load (this);
+      load_context -> load (this);
     }
 
     const Block& block_at (int bx, int by, int bz) const

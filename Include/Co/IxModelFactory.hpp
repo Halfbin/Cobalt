@@ -18,7 +18,7 @@ namespace Co
   public:
     static const u64 id = 0x7d39d77531907521ull;
 
-    virtual IxModel* create (IxLoadContext& context, Rk::StringRef path) = 0;
+    virtual IxModel* create (IxLoadContext* context, Rk::StringRef path) = 0;
 
   };
 

@@ -18,6 +18,7 @@ namespace Co
   class IxPropMap;
   class IxModule;
   class IxEntity;
+  class IxGame;
   class Clock;
 
   class IxEngine :
@@ -43,6 +44,9 @@ namespace Co
     virtual void wait      () = 0;
     virtual bool update    (float& next_update) = 0;
     virtual void terminate () = 0;
+
+    virtual void game_starting (IxGame* game) = 0;
+    virtual void game_stopping (IxGame* game) = 0;
 
     template <typename Container>
     bool register_classes (const Container& cont)

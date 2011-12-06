@@ -34,7 +34,7 @@ namespace Co
     virtual bool init (Rk::IxLockedOutStreamImpl* log_impl) = 0;
 
     virtual IxFont* create (
-      IxLoadContext&   context,
+      IxLoadContext*   context,
       Rk::StringRef    path,
       uint             size,
       FontSizeMode     mode,
@@ -45,7 +45,7 @@ namespace Co
 
     template <typename Container>
     IxFont* create (
-      IxLoadContext&   context,
+      IxLoadContext*   context,
       Rk::StringRef    path,
       uint             size,
       FontSizeMode     mode,

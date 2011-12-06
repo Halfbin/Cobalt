@@ -12,8 +12,10 @@
 // Uses
 #include <Rk/MatrixForward.hpp>
 
+#include "SkyboxProgram.hpp"
 #include "GeomProgram.hpp"
 #include "RectProgram.hpp"
+#include "GLTexImage.hpp"
 
 namespace Co
 {
@@ -72,6 +74,7 @@ namespace Co
     PointSpatial       label_spats [max_labels];
     TexRect            tex_rects   [max_tex_rects];
     Light              lights      [max_lights];
+    GLTexImage*        skybox;
 
     // Indices
     u32 point_geoms_back_index,
@@ -95,6 +98,7 @@ namespace Co
         height;
 
     // Rendering
+    void render_skybox      ();
     void render_point_geoms (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
     void render_ui_batches  (RectProgram& rect_program);
@@ -119,9 +123,10 @@ namespace Co
     virtual void add_lights       (const Light* lights, const Light* end);
     virtual void set_camera       (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far);
     virtual void set_size         (u32 width, u32 height);
+    virtual void set_skybox       (IxTexImage* cube);
 
     // Rendering
-    void render (float alpha, GeomProgram& geom_program, RectProgram& rect_program);
+    void render (float alpha, SkyboxProgram& skybox_program, GeomProgram& geom_program, RectProgram& rect_program);
     
     // Acquisition
     u32 reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id);

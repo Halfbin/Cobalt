@@ -79,7 +79,7 @@ namespace SH
       delete this;
     }
 
-    virtual void tick (float time, float prev_time, IxFrame& frame)
+    virtual void tick (IxFrame* frame, float time, float prev_time)
     {
       Spatial next = spatial;
       next.orientation = Quaternion (time * 2.0f, Vector3 (0.0f, 0.0f, 1.0f));
@@ -105,21 +105,21 @@ namespace SH
     }
 
   public:
-    TestEntity (IxLoadContext& loadcontext, IxPropMap* props)
+    TestEntity (IxLoadContext* load_context, IxPropMap* props)
     {
       spatial.position = Vector3 (75.0f, 66.0f, 75.0f);
       spatial.orientation = nil;
 
       if (!model)
       {
-        model = model_factory   -> create (loadcontext, "cube.rkmodel");
-        tex   = texture_factory -> create (loadcontext, "derp.cotexture", false, true);
+        model = model_factory   -> create (load_context, "cube.rkmodel");
+        tex   = texture_factory -> create (load_context, "derp.cotexture", false, true);
 
         CodeRange ranges [] = {
           { 0x0020, 0x007f }, // ASCII
           { 0x00a1, 0x0100 }  // Latin-1 Supplement
         };
-        font = font_factory -> create (loadcontext, "DejaVuSans.ttf", 14, fontsize_points, ranges);
+        font = font_factory -> create (load_context, "DejaVuSans.ttf", 14, fontsize_points, ranges);
       }
     }
 

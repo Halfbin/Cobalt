@@ -82,6 +82,7 @@ namespace
     public IxEngine
   {
     // Subsystems
+    IxGame*                    game;
     IxRenderer*                renderer;
     IxLoader*                  loader;
     Clock*                     clock;
@@ -134,6 +135,10 @@ namespace
     virtual void wait      ();
     virtual bool update    (float& next_update);
     virtual void terminate ();
+
+    // Game registration
+    virtual void game_starting (IxGame* game);
+    virtual void game_stopping (IxGame* game);
 
   public:
     void expose (void** out, u64 ixid);
@@ -280,7 +285,7 @@ namespace
     if (iter == registry.end ())
       throw Rk::Exception () << "Co-Engine: IxEngine::create_entity - no such entity class \"" << type << "\"";
 
-    auto ent = iter -> second -> create (*loader, props);
+    auto ent = iter -> second -> create (loader, props);
     entities.push_back (ent);
     return ent;
   }
@@ -372,8 +377,10 @@ namespace
     if (current_ui_state != ui_hidden && frame)
       ui.paint (frame);*/
     
+    game -> tick (frame, time, prev_time);
+
     for (auto ent = entities.begin (); ent != entities.end (); ent++)
-      (*ent) -> tick (time, prev_time, *frame);
+      (*ent) -> tick (frame, time, prev_time);
     
     renderer -> submit_frame (frame);
 
@@ -387,6 +394,16 @@ namespace
   {
     log << "- Engine stopping\n";
     running = false;
+  }
+
+  void Engine::game_starting (IxGame* new_game)
+  {
+    game = new_game;
+  }
+
+  void Engine::game_stopping (IxGame* new_game)
+  {
+    game = 0;
   }
 
   void Engine::expose (void** out, u64 ixid)

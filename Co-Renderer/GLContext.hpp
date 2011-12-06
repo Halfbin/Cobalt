@@ -47,10 +47,10 @@ namespace Co
     );
 
     virtual IxTexImage* create_tex_image (
-      uint           level_count,
-      TexImageWrap   wrap,
-      TexImageFilter filter,
-      TexImageType   type
+      uint         level_count,
+      TexImageWrap wrap,
+      bool         filter,
+      TexImageType type
     );
     
     virtual void flush ();

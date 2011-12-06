@@ -18,7 +18,6 @@
     <ClInclude Include="..\Include\Co\IxRenderDevice.hpp" />
     <ClInclude Include="..\Include\Co\IxRenderer.hpp" />
     <ClInclude Include="..\Include\Co\IxTexImage.hpp" />
-    <ClInclude Include="..\Include\Co\IxTexRectangle.hpp" />
     <ClInclude Include="GeomProgram.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GLBuffer.hpp" />
@@ -29,6 +28,7 @@
     <ClInclude Include="GLShader.hpp" />
     <ClInclude Include="GLTexImage.hpp" />
     <ClInclude Include="RectProgram.hpp" />
+    <ClInclude Include="SkyboxProgram.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GeomProgram.cpp" />
@@ -41,6 +41,7 @@
     <ClCompile Include="GLRenderer.cpp" />
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="RectProgram.cpp" />
+    <ClCompile Include="SkyboxProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
@@ -82,6 +83,26 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Skybox-Fragment.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="Skybox-Vertex.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>

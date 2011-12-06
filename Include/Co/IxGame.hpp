@@ -12,9 +12,11 @@
 
 namespace Co
 {
+  class IxLoadContext;
   class IxEngine;
+  class IxFrame;
   class IxUI;
-
+  
   class IxGame :
     public Rk::IxUnique
   {
@@ -23,12 +25,12 @@ namespace Co
 
     typedef Rk::IxUniquePtr <IxGame> Ptr;
 
-    virtual bool init (IxEngine* engine, Rk::IxLockedOutStreamImpl* log) = 0;
+    virtual bool init (IxEngine* engine, IxLoadContext* load_context, Rk::IxLockedOutStreamImpl* log) = 0;
     
     virtual void start () = 0;
     virtual void stop  () = 0;
     
-    virtual void tick (float time, float prev_time) = 0;
+    virtual void tick (IxFrame* frame, float time, float prev_time) = 0;
     virtual void update_ui (IxUI* ui) = 0;
     
   };

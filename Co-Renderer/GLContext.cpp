@@ -102,7 +102,7 @@ namespace Co
   // Texture creation
   //
   IxTexImage* GLContext::create_tex_image (
-    uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type)
+    uint level_count, TexImageWrap wrap, bool filter, TexImageType type)
   {
     return new GLTexImage (level_count, wrap, filter, type);
   }

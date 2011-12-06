@@ -169,16 +169,16 @@ namespace Co
     }
 
   public:
-    Model (IxLoadContext& context, Rk::StringRef new_path)
+    Model (IxLoadContext* context, Rk::StringRef new_path)
     {
       ref_count = 1;
-      path = context.get_game_path ();
+      path = context -> get_game_path ();
       path += "Models/";
       path += new_path;
       comp = 0;
       meshes = 0;
       mesh_count = 0;
-      context.load (this);
+      context -> load (this);
     }
 
     bool dead () const
@@ -197,7 +197,7 @@ namespace Co
     typedef std::unordered_map <Rk::ShortString <512>, IxModel*> CacheType;
     CacheType cache;
 
-    virtual IxModel* create (IxLoadContext& context, Rk::StringRef path)
+    virtual IxModel* create (IxLoadContext* context, Rk::StringRef path)
     {
       IxModel* model;
 

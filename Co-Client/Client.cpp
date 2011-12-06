@@ -75,10 +75,11 @@ namespace Co
 
   Client::Client (Rk::StringRef config_path)
   {
+    Rk::StringRef game_name = "Iridium";
+
     // Parse configuration
-    //ConfigReader config (config_path);
-    Rk::ShortString <512> game_path ("../");
-    game_path += "SH/";//config ["Client.Game"].as_string ("SH");
+    Rk::ShortStringOutStream <512> game_path;
+    game_path << "../" << game_name << "/";
 
     // Load subsystem modules
     renderer_module
@@ -99,7 +100,10 @@ namespace Co
       .expose (game);
 
     // Initialize subsystems
-    window.create (L"Cobalt", handler_proxy, false, 1280, 720, this);
+    Rk::ShortWStringOutStream <256> title;
+    title << L"Cobalt Client"; 
+
+    window.create (title.c_str (), handler_proxy, false, 1280, 720, this);
     
     bool ok = renderer -> init (window.get_handle (), &clock, log.get_impl ());
     if (!ok)
@@ -113,7 +117,7 @@ namespace Co
     if (!ok)
       throw Rk::Exception ("Co-Client: IxEngine::init - error initializing engine");
 
-    ok = game -> init (engine.get (), log.get_impl ());
+    ok = game -> init (engine.get (), loader, log.get_impl ());
     if (!ok)
       throw Rk::Exception ("Co-Client: IxGame::init - error initializing game");
   }

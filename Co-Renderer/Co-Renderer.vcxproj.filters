@@ -34,6 +34,9 @@
     <Filter Include="Shaders\Rect">
       <UniqueIdentifier>{4ab2c60a-7d81-47b3-bc20-f3831e134c1e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Skybox">
+      <UniqueIdentifier>{1d941aaf-7cf6-46bc-a165-5d592f9e3fe0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\IxRenderer.hpp">
@@ -82,11 +85,11 @@
     <ClInclude Include="RectProgram.hpp">
       <Filter>Shaders\Rect</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxTexRectangle.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\IxFrame.hpp">
       <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyboxProgram.hpp">
+      <Filter>Shaders\Skybox</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +121,9 @@
     <ClCompile Include="RectProgram.cpp">
       <Filter>Shaders\Rect</Filter>
     </ClCompile>
+    <ClCompile Include="SkyboxProgram.cpp">
+      <Filter>Shaders\Skybox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="Geom-Fragment.glsl">
@@ -131,6 +137,12 @@
     </CustomBuild>
     <CustomBuild Include="Rect-Vertex.glsl">
       <Filter>Shaders\Rect</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Skybox-Fragment.glsl">
+      <Filter>Shaders\Skybox</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Skybox-Vertex.glsl">
+      <Filter>Shaders\Skybox</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

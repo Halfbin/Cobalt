@@ -7,6 +7,7 @@
 #define CO_H_IXRENDERCONTEXT
 
 #include <Rk/IxUnique.hpp>
+#include <Co/TextureFile.hpp>
 
 namespace Co
 {
@@ -24,19 +25,20 @@ namespace Co
     texwrap_wrap  = 1
   };
   
-  enum TexImageType :
-    u32
-  {
-    textype_2d        = 0,
-    textype_rectangle = 1
-  };
-  
-  enum TexImageFilter :
+  /*enum TexImageFilter :
     u32
   {
     texfilter_none      = 0,
     texfilter_linear    = 1,
     texfilter_trilinear = 2
+  };*/
+  
+  enum TexImageType :
+    u32
+  {
+    textype_2d        = 0,
+    textype_rectangle = 1,
+    textype_cube      = 2
   };
   
   enum IndexType :
@@ -78,19 +80,11 @@ namespace Co
     }
 
     virtual IxTexImage* create_tex_image (
-      uint           level_count,
-      TexImageWrap   wrap,
-      TexImageFilter filter,
-      TexImageType   type
+      uint         level_count,
+      TexImageWrap wrap,
+      bool         filter,
+      TexImageType type
     ) = 0;
-    
-    /*virtual IxTexRectangle* create_tex_rectangle (
-      const void* data,
-      TexFormat   format,
-      uint        width,
-      uint        height,
-      uptr        size = 0
-    ) = 0;*/
 
     virtual void flush () = 0;
 

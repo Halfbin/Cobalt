@@ -25,15 +25,15 @@ namespace Co
   public:
     typedef Rk::IxSharedPtr <IxModel> Ptr;
 
-    void draw (IxFrame& target, Spatial prev, Spatial cur, const Material* materials, uint material_count)
+    void draw (IxFrame* target, Spatial prev, Spatial cur, const Material* materials, uint material_count)
     {
       if (!ready)
         return;
 
-      target.begin_point_geom (comp, prev, cur);
-        target.add_meshes    (meshes,    mesh_count);
-        target.add_materials (materials, material_count);
-      target.end_point_geom ();
+      target -> begin_point_geom (comp, prev, cur);
+        target -> add_meshes    (meshes,    mesh_count);
+        target -> add_materials (materials, material_count);
+      target -> end_point_geom ();
     }
 
   }; // class IxModel

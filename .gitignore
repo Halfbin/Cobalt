@@ -17,6 +17,8 @@ Debug/
 Release
 */Release/
 
+NoGit/
+
 *.sdf
 *.opensdf
 *.suo

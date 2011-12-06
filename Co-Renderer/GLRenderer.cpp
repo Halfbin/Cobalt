@@ -13,6 +13,7 @@
 #include <Rk/Expose.hpp>
 #include <Rk/File.hpp>
 
+#include "SkyboxProgram.hpp"
 #include "GeomProgram.hpp"
 #include "RectProgram.hpp"
 #include "GLTexImage.hpp"
@@ -112,8 +113,9 @@ namespace Co
     GLContext::Ptr context = create_context_impl ();
 
     // Set up shaders
-    GeomProgram geom_program;
-    RectProgram rect_program;
+    SkyboxProgram skybox_program;
+    GeomProgram   geom_program;
+    RectProgram   rect_program;
 
     SetThreadPriority (GetCurrentThread (), 31); // THREAD_PRIORITY_TIME_CRITICAL
 
@@ -172,7 +174,7 @@ namespace Co
 
       float t = clock -> time ();
 
-      frame -> render (alpha, geom_program, rect_program);
+      frame -> render (alpha, skybox_program, geom_program, rect_program);
       
       float t2 = clock -> time ();
 

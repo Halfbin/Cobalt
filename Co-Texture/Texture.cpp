@@ -79,14 +79,18 @@ namespace Co
             if (header.version)
               throw Rk::Exception ("Texture has more than one HEAD");
             file.read (&header, Rk::minimum (loader.size, sizeof (header)));
-            if (header.version != 0x20111202)
+            if (header.version != 0x20111206)
               throw Rk::Exception ("Texture is of an unsupported version");
+            if (header.flags & ~u8 (texflag_mask))
+              throw Rk::Exception ("Texture contains invalid flags");
             if (header.map_count == 0)
               throw Rk::Exception ("Texture contains no maps");
             if (header.map_count > 15)
-              throw Rk::Exception ("Texture contains too many mipmaps");
+              throw Rk::Exception ("Texture contains too many maps");
             width  = header.width;  if (width  == 0) width  = 0x10000;
             height = header.height; if (height == 0) height = 0x10000;
+            if ((header.flags & texflag_cube_map) && (width != height))
+              throw Rk::Exception ("Texture contains rectangular cubemap faces");
             if (header.format >= texformat_count)
               throw Rk::Exception ("Texture uses invalid image format");
           break;
@@ -109,45 +113,65 @@ namespace Co
       if (!buffer)
         throw Rk::Exception ("Texture has no DATA");
       
-      TexImageFilter filter_type;
+      /*TexImageFilter filter_type;
+
       if (filter)
-        filter_type = (header.map_count > 1) ? texfilter_trilinear : texfilter_linear;
+        filter_type = texfilter_linear;
       else
         filter_type = texfilter_none;
 
-      image = rc.create_tex_image (header.map_count, wrap ? texwrap_wrap : texwrap_clamp, filter_type, textype_2d);
+      if (filter && header.type != textype_cube && header.map_count > 1)
+        filter_type = texfilter_trilinear;*/
+
+      TexImageType type = textype_2d;
+      if (header.flags & texflag_cube_map)
+        type = textype_cube;
+
+      image = rc.create_tex_image (header.map_count, wrap ? texwrap_wrap : texwrap_clamp, filter, type);
 
       u32 offset = 0;
-      u32 size;
+      
+      uint sub_image_count = 1;
+      if (header.flags & texflag_cube_map)
+        sub_image_count = 6;
 
-      if (header.format == texformat_dxt1)
-        size = header.width / 4 * header.height / 4 * 8;
-      else if (header.format == texformat_bgr888)
-        size = Rk::align (header.width * 3, 4) * header.height;
-
-      for (uint level = 0; level != header.map_count; level++)
+      for (uint sub_image = 0; sub_image != sub_image_count; sub_image++)
       {
-        image -> load_map (level, buffer.get () + offset, (TexFormat) header.format, header.width, header.height, size);
-        offset += size;
-        size          >>= 2;
-        header.width  >>= 1;
-        header.height >>= 1;
+        u32 w = width,
+            h = height;
+
+        for (uint level = 0; level != header.map_count; level++)
+        {
+          u32 size;
+
+          if (header.format == texformat_dxt1)
+            size = w / 4 * h / 4 * 8;
+          /*else if (header.format == texformat_bgr888)
+            size = Rk::align (header.width * 3, 4) * header.height;*/
+          else if (header.format == texformat_rgba8888)
+            size = w * h * 4;
+
+          image -> load_map (sub_image, level, buffer.get () + offset, (TexFormat) header.format, w, h, size);
+          offset += size;
+          w /= 2;
+          h /= 2;
+        }
       }
 
       ready = true;
     }
 
   public:
-    Texture (IxLoadContext& context, Rk::StringRef new_path, bool new_wrap, bool new_filter)
+    Texture (IxLoadContext* context, Rk::StringRef new_path, bool new_wrap, bool new_filter)
     {
       ref_count = 1;
-      path = context.get_game_path ();
+      path = context -> get_game_path ();
       path += "Textures/";
       path += new_path;
       wrap = new_wrap;
       filter = new_filter;
       image = 0;
-      context.load (this);
+      context -> load (this);
     }
 
     bool dead () const
@@ -166,7 +190,7 @@ namespace Co
     typedef std::unordered_map <Rk::ShortString <512>, IxTexture*> CacheType;
     CacheType cache;
 
-    virtual IxTexture* create (IxLoadContext& context, Rk::StringRef path, bool wrap, bool filter)
+    virtual IxTexture* create (IxLoadContext* context, Rk::StringRef path, bool wrap, bool filter)
     {
       IxTexture* tex;
 

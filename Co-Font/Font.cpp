@@ -596,7 +596,7 @@ namespace Co
     public:
       template <typename Iter>
       Font (
-        IxLoadContext& context,
+        IxLoadContext* context,
         Rk::StringRef  new_path,
         uint           new_size,
         FontSizeMode   new_mode,
@@ -630,8 +630,8 @@ namespace Co
       metrics_ptr = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
       metrics = metrics_ptr.get ();
 
-      image_ptr = rc.create_tex_image (1, texwrap_clamp, texfilter_none, textype_rectangle);
-      image_ptr -> load_map (0, image.data, tex_r8, image.width, image.height, image.size ());
+      image_ptr = rc.create_tex_image (1, texwrap_clamp, false, textype_rectangle);
+      image_ptr -> load_map (0, 0, image.data, tex_r8, image.width, image.height, image.size ());
       tex = image_ptr.get ();
 
       IxResource::ready = true;
@@ -671,7 +671,7 @@ namespace Co
 
     template <typename Iter>
     Font::Font (
-      IxLoadContext& context,
+      IxLoadContext* context,
       Rk::StringRef  new_path,
       uint           new_size,
       FontSizeMode   new_mode,
@@ -685,11 +685,11 @@ namespace Co
       code_ranges (ranges, end),
       ref_count   (1)
     {
-      path  = context.get_game_path ();
+      path  = context -> get_game_path ();
       path += "Fonts/";
       path += new_path;
 
-      context.load (this);
+      context -> load (this);
     }
     
     Font::~Font ()
@@ -714,7 +714,7 @@ namespace Co
       virtual bool init (Rk::IxLockedOutStreamImpl* log_impl);
       
       virtual IxFont* create (
-        IxLoadContext&   context,
+        IxLoadContext*   context,
         Rk::StringRef    path,
         uint             size,
         FontSizeMode     mode,
@@ -735,7 +735,7 @@ namespace Co
     }
 
     IxFont* FontFactory::create (
-      IxLoadContext&   context,
+      IxLoadContext*   context,
       Rk::StringRef    path,
       uint             size,
       FontSizeMode     mode,

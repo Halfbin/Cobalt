@@ -18,7 +18,7 @@ namespace Co
   {
   public:
     typedef Rk::IxUniquePtr <IxTexImage> Ptr;
-    virtual void load_map (uint level, const void* data, TexFormat format, uint width, uint height, uptr size = 0) = 0;
+    virtual bool load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size = 0) = 0;
 
   };
 

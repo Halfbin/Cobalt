@@ -6,5 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="State.hpp" />
+    <ClInclude Include="Common.hpp" />
   </ItemGroup>
 </Project>

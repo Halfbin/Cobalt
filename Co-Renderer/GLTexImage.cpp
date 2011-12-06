@@ -14,7 +14,7 @@ namespace Co
   //
   // Mipmap loading
   //
-  void GLTexImage::load_map (uint level, const void* data, TexFormat format, uint width, uint height, uptr size)
+  bool GLTexImage::load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size) try
   {
     if (!data)
       throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - data is null");
@@ -24,9 +24,6 @@ namespace Co
 
     if (width == 0 || height == 0)
       throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - invalid dimensions");
-
-    glBindTexture (target, name);
-    check_gl ("glBindTexture");
 
     GLenum gl_formats [texformat_count][3] = {
       { GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5 }, // rgb565
@@ -45,10 +42,34 @@ namespace Co
       { GL_R8, GL_RED, GL_UNSIGNED_BYTE } // r8
     };
 
+    GLenum image_target = target;
+
+    if (target == GL_TEXTURE_CUBE_MAP)
+    {
+      if (sub_image >= 6)
+        throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - level >= 6 is invalid for cube maps");
+
+      // Remember that OpenGL cube maps are left-handed z-forward
+      // So much for coordinate independence
+      static const GLenum faces [6] = {
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // front
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // back
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // left
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X, // right
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // top
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // bottom
+      };
+
+      image_target = faces [sub_image];
+    }
+
+    glBindTexture (target, name);
+    check_gl ("glBindTexture");
+
     if (!gl_formats [format][2]) // compressed
     {
       glCompressedTexImage2D (
-        target,
+        image_target,
         level,
         gl_formats [format][0],
         width, height, 0,
@@ -60,7 +81,7 @@ namespace Co
     else
     {
       glTexImage2D (
-        target,
+        image_target,
         level,
         gl_formats [format][0],
         width, height, 0,
@@ -70,8 +91,13 @@ namespace Co
       );
       check_gl ("glTexImage2D");
     }
+
+    return true;
   }
-  // load_map
+  catch (...)
+  {
+    return false;
+  } // load_map
 
   //
   // Destructors
@@ -88,7 +114,7 @@ namespace Co
   //
   // Constructor
   //
-  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, TexImageFilter filter, TexImageType type)
+  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, bool filter, TexImageType type)
   {
     if (level_count == 0)
       throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count is zero");
@@ -96,42 +122,34 @@ namespace Co
     GLenum min_filter,
            mag_filter;
 
+    if (filter)
+    {
+      min_filter = GL_LINEAR;
+      mag_filter = GL_LINEAR;
+    }
+    else
+    {
+      min_filter = GL_NEAREST;
+      mag_filter = GL_NEAREST;
+    }
+
     if (type == textype_rectangle)
     {
       if (level_count != 1)
         throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count must be 1 for rectangular textures");
 
-      if (filter == texfilter_trilinear)
-        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - filter cannot be trilinear for rectangular textures");
-
       target = GL_TEXTURE_RECTANGLE;
-      min_filter = GL_NEAREST;
-      mag_filter = GL_NEAREST;
     }
     else if (type == textype_2d)
     {
       target = GL_TEXTURE_2D;
 
-      switch (filter)
-      {
-        case texfilter_none:
-          min_filter = GL_NEAREST;
-          mag_filter = GL_NEAREST;
-        break;
-
-        case texfilter_linear:
-          min_filter = GL_LINEAR;
-          mag_filter = GL_LINEAR;
-        break;
-
-        case texfilter_trilinear:
-          min_filter = GL_LINEAR_MIPMAP_LINEAR;
-          mag_filter = GL_LINEAR;
-        break;
-
-        default:
-          throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid filter");
-      }
+      if (filter && level_count > 1)
+        min_filter = GL_LINEAR_MIPMAP_LINEAR;
+    }
+    else if (type == textype_cube)
+    {
+      target = GL_TEXTURE_CUBE_MAP;
     }
     else
     {
@@ -139,18 +157,29 @@ namespace Co
     }
 
     GLenum gl_wrap;
-    switch (wrap)
+
+    if (type == textype_cube)
     {
-      case texwrap_wrap:
-        gl_wrap = GL_REPEAT;
-      break;
-
-      case texwrap_clamp:
+      if (filter)
+        gl_wrap = GL_CLAMP_TO_BORDER;
+      else
         gl_wrap = GL_CLAMP_TO_EDGE;
-      break;
+    }
+    else
+    {
+      switch (wrap)
+      {
+        case texwrap_wrap:
+          gl_wrap = GL_REPEAT;
+        break;
 
-      default:
-        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid wrapping mode");
+        case texwrap_clamp:
+          gl_wrap = GL_CLAMP_TO_EDGE;
+        break;
+
+        default:
+          throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid wrapping mode");
+      }
     }
 
     glGenTextures (1, &name);
@@ -159,9 +188,13 @@ namespace Co
     glBindTexture (target, name);
     check_gl ("glBindTexture");
 
-    glTexParameteri (target, GL_TEXTURE_MAX_LEVEL,  level_count - 1);
-    glTexParameteri (target, GL_TEXTURE_WRAP_S,     gl_wrap);
-    glTexParameteri (target, GL_TEXTURE_WRAP_T,     gl_wrap);
+    glTexParameteri (target, GL_TEXTURE_MAX_LEVEL, level_count - 1);
+
+    glTexParameteri (target, GL_TEXTURE_WRAP_S, gl_wrap);
+    glTexParameteri (target, GL_TEXTURE_WRAP_T, gl_wrap);
+    if (type == textype_cube)
+      glTexParameteri (target, GL_TEXTURE_WRAP_S, gl_wrap);
+
     glTexParameteri (target, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri (target, GL_TEXTURE_MAG_FILTER, mag_filter);
 

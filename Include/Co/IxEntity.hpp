@@ -18,7 +18,7 @@ namespace Co
   public:
     typedef Rk::IxUniquePtr <IxEntity> Ptr;
 
-    virtual void tick (float time, float prev_time, IxFrame& frame) = 0;
+    virtual void tick (IxFrame* frame, float time, float prev_time) = 0;
 
   };
 

@@ -116,6 +116,19 @@ namespace Co
     height = h;
   }
 
+  void GLFrame::set_skybox (IxTexImage* cube)
+  {
+    skybox = static_cast <GLTexImage*> (cube);
+  }
+
+  //
+  // render_skybox
+  //
+  void GLFrame::render_skybox ()
+  {
+    
+  }
+
   //
   // render_point_geoms
   //
@@ -265,7 +278,7 @@ namespace Co
   // render
   // Renders a frame. This is where the interesting stuff happens.
   //
-  void GLFrame::render (float alpha, GeomProgram& geom_program, RectProgram& rect_program)
+  void GLFrame::render (float alpha, SkyboxProgram& skybox_program, GeomProgram& geom_program, RectProgram& rect_program)
   {
     glClearColor (1.0f, 1.0f, 1.0f, 1.0f);
     glViewport (0, 0, width, height);
@@ -294,11 +307,16 @@ namespace Co
       float (height)
     );
     
-    geom_program.use ();
+    // Render skybox
+    if (skybox)
+    {
+      skybox -> bind (skybox_program.texunit_cube);
+      skybox_program.render (world_to_clip);
+    }
     
     // Render point geometries
+    geom_program.use ();
     render_point_geoms (world_to_clip, geom_program, alpha);
-
     geom_program.done ();
 
     // Render textured rectangles

@@ -22,7 +22,7 @@ namespace SH
       delete this;
     }
 
-    virtual void tick (float time, float prev_time, Co::IxFrame& frame)
+    virtual void tick (Co::IxFrame* frame, float time, float prev_time)
     {
       Co::Spatial old_spatial, new_spatial;
 
@@ -39,13 +39,13 @@ namespace SH
       new_spatial.orientation.normalize ();*/
       //new_spatial.position -= Co::Vector3 (2.0f * (time - prev_time), 0.0f, 0.0f);
 
-      frame.set_camera (old_spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
+      frame -> set_camera (old_spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
 
       //spatial = new_spatial;
     }
 
   public:
-    Spectator (Co::IxLoadContext& load_context, Co::IxPropMap* props)
+    Spectator (Co::IxLoadContext* load_context, Co::IxPropMap* props)
     {
       spatial.position = Co::Vector3 (96.0f, 96.0f, 126.0f);
       //spatial.orientation = Co::Quaternion (1.57f, Co::Vector3 (0, 0, 1));
