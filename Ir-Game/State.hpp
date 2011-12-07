@@ -14,7 +14,7 @@ namespace Ir
   class State
   {
   public:
-    virtual void enter () = 0;
+    virtual void enter (float time) = 0;
     virtual void leave () = 0;
     virtual void tick  (Co::IxFrame* frame, float time, float prev_time) = 0;
 

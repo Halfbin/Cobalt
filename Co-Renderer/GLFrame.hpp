@@ -74,7 +74,12 @@ namespace Co
     PointSpatial       label_spats [max_labels];
     TexRect            tex_rects   [max_tex_rects];
     Light              lights      [max_lights];
-    GLTexImage*        skybox;
+
+    // Skybox
+    GLTexImage* skybox_tex;
+    Vector3     skybox_colour;
+    float       skybox_prev_alpha,
+                skybox_cur_alpha;
 
     // Indices
     u32 point_geoms_back_index,
@@ -98,7 +103,6 @@ namespace Co
         height;
 
     // Rendering
-    void render_skybox      ();
     void render_point_geoms (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
     void render_labels      (float alpha);
     void render_ui_batches  (RectProgram& rect_program);
@@ -123,7 +127,7 @@ namespace Co
     virtual void add_lights       (const Light* lights, const Light* end);
     virtual void set_camera       (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far);
     virtual void set_size         (u32 width, u32 height);
-    virtual void set_skybox       (IxTexImage* cube);
+    virtual void set_skybox       (IxTexImage* cube, Co::Vector3 colour, float prev_alpha, float alpha);
 
     // Rendering
     void render (float alpha, SkyboxProgram& skybox_program, GeomProgram& geom_program, RectProgram& rect_program);

@@ -122,7 +122,7 @@ namespace Ir
         state -> leave ();
       state = next_state;
       if (state)
-        state -> enter ();
+        state -> enter (time);
       next_state = 0;
     }
 

@@ -129,7 +129,7 @@ namespace Co
     virtual void add_lights       (const Light* lights, const Light* end) = 0;
     virtual void set_camera       (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far) = 0;
     virtual void set_size         (u32 width, u32 height) = 0;
-    virtual void set_skybox       (IxTexImage* cube) = 0;
+    virtual void set_skybox       (IxTexImage* cube, Co::Vector3 colour, float prev_alpha, float alpha) = 0;
 
     void add_meshes (const Mesh* meshes, uint count)
     {

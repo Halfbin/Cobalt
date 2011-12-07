@@ -40,10 +40,11 @@ extern "C"
   __declspec(dllimport) i32  __stdcall DispatchMessageW (const Message*);
 }
 
-enum WinAPIConstants
+enum
 {
-  wm_size  = 0x05,
-  wm_close = 0x10
+  wm_size    = 0x0005,
+  wm_close   = 0x0010,
+  wm_keydown = 0x0100
 };
 
 namespace Co
@@ -64,6 +65,11 @@ namespace Co
 
       case wm_size:
         render_device -> set_size (lp & 0xffff, (lp >> 16) & 0xffff);
+      break;
+
+      case wm_keydown:
+        if (wp == 0x7a && !(lp & (1 << 30))) // f11, not repeated
+          window.set_fullscreen (!window.is_fullscreen ());
       break;
 
       default:

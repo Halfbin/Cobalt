@@ -116,17 +116,12 @@ namespace Co
     height = h;
   }
 
-  void GLFrame::set_skybox (IxTexImage* cube)
+  void GLFrame::set_skybox (IxTexImage* cube, Co::Vector3 colour, float prev_alpha, float cur_alpha)
   {
-    skybox = static_cast <GLTexImage*> (cube);
-  }
-
-  //
-  // render_skybox
-  //
-  void GLFrame::render_skybox ()
-  {
-    
+    skybox_tex         = static_cast <GLTexImage*> (cube);
+    skybox_colour      = colour;
+    skybox_prev_alpha  = prev_alpha;
+    skybox_cur_alpha   = cur_alpha;
   }
 
   //
@@ -280,7 +275,7 @@ namespace Co
   //
   void GLFrame::render (float alpha, SkyboxProgram& skybox_program, GeomProgram& geom_program, RectProgram& rect_program)
   {
-    glClearColor (1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
     glViewport (0, 0, width, height);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -308,10 +303,11 @@ namespace Co
     );
     
     // Render skybox
-    if (skybox)
+    if (skybox_tex)
     {
-      skybox -> bind (skybox_program.texunit_cube);
-      skybox_program.render (world_to_clip);
+      skybox_tex -> bind (skybox_program.texunit_cube);
+      float skybox_alpha = Rk::lerp (skybox_prev_alpha, skybox_cur_alpha, alpha);
+      skybox_program.render (world_to_clip, skybox_colour, skybox_alpha);
     }
     
     // Render point geometries

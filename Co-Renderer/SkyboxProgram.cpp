@@ -23,6 +23,7 @@ namespace Co
     program.link ();
 
     world_to_clip  = program.link_uniform ("world_to_clip");
+    blend_colour   = program.link_uniform ("blend_colour");
 
     program.use ();
 
@@ -110,12 +111,15 @@ namespace Co
     index_buf = 0;
   }
 
-  void SkyboxProgram::render (Rk::Matrix4f xform)
+  void SkyboxProgram::render (Rk::Matrix4f xform, Vector3 colour, float alpha)
   {
     program.use ();
 
     glUniformMatrix4fv (world_to_clip, 1, true, xform.raw ());
     check_gl ("glUniformMatrix4fv");
+
+    glUniform4f (blend_colour, colour.x, colour.y, colour.z, alpha);
+    check_gl ("glUniform4f");
 
     glBindVertexArray (vao);
     check_gl ("glBindVertexArray");

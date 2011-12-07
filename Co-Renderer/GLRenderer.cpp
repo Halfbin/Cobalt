@@ -127,6 +127,7 @@ namespace Co
 
     glEnable (GL_DEPTH_TEST);
     glEnable (GL_CULL_FACE);
+    glEnable (GL_FRAMEBUFFER_SRGB);
 
     uint frames = 0;
     GLFrame* frame = 0;

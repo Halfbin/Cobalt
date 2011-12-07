@@ -6,6 +6,7 @@
 #ifndef CO_GLRENDERER_H_SKYBOXPROGRAM
 #define CO_GLRENDERER_H_SKYBOXPROGRAM
 
+#include <Co/Spatial.hpp>
 #include <Rk/Matrix.hpp>
 
 #include "GLShader.hpp"
@@ -19,7 +20,8 @@ namespace Co
               fragment_shader;
     GLProgram program;
 
-    u32 world_to_clip;
+    u32 world_to_clip,
+        blend_colour;
 
     u32 vertex_buf,
         index_buf,
@@ -34,7 +36,7 @@ namespace Co
     SkyboxProgram ();
     ~SkyboxProgram ();
     
-    void render (Rk::Matrix4f xform);
+    void render (Rk::Matrix4f xform, Vector3 colour, float alpha);
 
   };
 
