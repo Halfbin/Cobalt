@@ -6,7 +6,7 @@
 #ifndef CO_GLRENDERER_H_GEOMPROGRAM
 #define CO_GLRENDERER_H_GEOMPROGRAM
 
-#include <Co/IxGeomCompilation.hpp>
+#include <Co/GeomCompilation.hpp>
 
 #include <Rk/Matrix.hpp>
 

@@ -6,4 +6,7 @@
     <ClCompile Include="BlockWorld.cpp" />
     <ClCompile Include="Spectator.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Common.hpp" />
+  </ItemGroup>
 </Project>

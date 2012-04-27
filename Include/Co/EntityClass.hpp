@@ -6,43 +6,51 @@
 #ifndef CO_H_ENTITYCLASS
 #define CO_H_ENTITYCLASS
 
-#include <Co/IxEntityClass.hpp>
-//#include <Rk/Meta.hpp>
+// Uses
+#include <Co/WorkQueue.hpp>
+#include <Co/PropMap.hpp>
+#include <Co/Entity.hpp>
+
+#include <Rk/StringRef.hpp>
 
 namespace Co
 {
-  /*namespace EntityClassPrivate
+  class EntityClassBase
   {
-    template <typename M, M m>
-    struct Test;
+  public:
+    virtual Rk::StringRef name   () const = 0;
+    virtual Entity::Ptr   create (WorkQueue& queue, const PropMap& props) const = 0;
 
-    template <typename E>
-    struct HasPreloadMethod
-    {
-      template <typename T>
-      static Rk::YesType check (T*, Test <void (*) (IxLoadContext&), &T::preload>* = 0);
+  };
 
-      template <typename T>
-      static Rk::NoType check (...);
+  /*template <typename EntType>
+  Entity::Ptr create_entity (WorkQueue& queue, const PropMap& props)
+  {
+    return return Entity::Ptr (
+      new EntType (queue, props),
+      queue.make_deleter <EntType> ()
+    );
+  }*/
 
-      enum { value = check ((E*) 0)::value };
-
-    };
-
-  };*/
-
-  template <typename E>
+  template <typename EntType>
   class EntityClass :
-    public IxEntityClass
+    public EntityClassBase
   {
-    virtual IxEntity* create (IxLoadContext* context, IxPropMap* props) const
+    const Rk::StringRef name_;
+
+    virtual Entity::Ptr create (WorkQueue& queue, const PropMap& props) const
     {
-      return new E (context, props);
+      return EntType::create (queue, props);
+    }
+
+    virtual Rk::StringRef name () const
+    {
+      return name_;
     }
 
   public:
     EntityClass (Rk::StringRef name) :
-      IxEntityClass (name)
+      name_ (name)
     { }
     
   };

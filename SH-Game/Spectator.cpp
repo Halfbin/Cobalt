@@ -4,25 +4,20 @@
 //
 
 // Implements
-#include <Co/IxEntity.hpp>
+#include <Co/Entity.hpp>
 
 // Uses
 #include <Co/EntityClass.hpp>
-#include <Co/IxFrame.hpp>
+#include <Co/Frame.hpp>
 
 namespace SH
 {
   class Spectator :
-    public Co::IxEntity
+    public Co::Entity
   {
     Co::Spatial spatial;
 
-    virtual void destroy ()
-    {
-      delete this;
-    }
-
-    virtual void tick (Co::IxFrame* frame, float time, float prev_time)
+    virtual void tick (Co::Frame& frame, float time, float prev_time)
     {
       Co::Spatial old_spatial, new_spatial;
 
@@ -39,21 +34,28 @@ namespace SH
       new_spatial.orientation.normalize ();*/
       //new_spatial.position -= Co::Vector3 (2.0f * (time - prev_time), 0.0f, 0.0f);
 
-      frame -> set_camera (old_spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
+      frame.set_camera (old_spatial, new_spatial, 75.0f, 75.0f, 0.1f, 1000.0f);
 
       //spatial = new_spatial;
     }
 
-  public:
-    Spectator (Co::IxLoadContext* load_context, Co::IxPropMap* props)
+    Spectator ()
     {
       spatial.position = Co::Vector3 (96.0f, 96.0f, 126.0f);
       //spatial.orientation = Co::Quaternion (1.57f, Co::Vector3 (0, 0, 1));
     }
 
+  public:
+    static Ptr create (Co::WorkQueue& queue, const Co::PropMap& props)
+    {
+      return Ptr (
+        new Spectator (),
+        queue.make_deleter <Spectator> ()
+      );
+    }
+
   };
 
   Co::EntityClass <Spectator> ent_class ("Spectator");
-  const Co::IxEntityClass* spectator_class = &ent_class;
 
 }

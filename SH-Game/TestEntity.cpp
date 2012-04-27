@@ -4,32 +4,27 @@
 //
 
 // Implements
-#include <Co/IxEntity.hpp>
+#include <Co/Entity.hpp>
 
 // Uses
-#include <Co/IxTextureFactory.hpp>
-#include <Co/IxModelFactory.hpp>
-#include <Co/IxFontFactory.hpp>
-#include <Co/IxLoadContext.hpp>
 #include <Co/EntityClass.hpp>
-#include <Co/IxTexture.hpp>
-#include <Co/IxModel.hpp>
+#include <Co/WorkQueue.hpp>
 #include <Co/Spatial.hpp>
-#include <Co/IxFont.hpp>
+#include <Co/Texture.hpp>
+#include <Co/Model.hpp>
+#include <Co/Font.hpp>
 
 #include <Rk/ShortString.hpp>
 
 #include <array>
 
+#include "Common.hpp"
+
 using namespace Co;
 
 namespace SH
 {
-  extern IxModelFactory*   model_factory;
-  extern IxTextureFactory* texture_factory;
-  extern IxFontFactory*    font_factory;
-
-  void draw_ui_text (IxFrame& frame, int x, int y, IxFont* font, Rk::U16StringRef text)
+  void draw_ui_text (Frame& frame, int x, int y, Font* font, Rk::U16StringRef text)
   {
     if (!font -> ready ())
       return;
@@ -46,7 +41,7 @@ namespace SH
     for (uint i = 0; i != text.length (); i++)
     {
       const auto& character = chars [i];
-      const auto& metrics   = font -> get_metrics (character.index);
+      const auto& metrics   = font -> metrics (character.index);
       auto&       rect      = rects [i];
 
       x += character.kerning;
@@ -61,25 +56,20 @@ namespace SH
       x += metrics.advance;
     }
 
-    frame.add_ui_batch (font -> get_image (), rects, rects + text.length ());
+    //frame.add_label (font -> image (), rects, text.length (), Co::Spatial2D (), Co::Spatial2D ());
   }
 
   class TestEntity :
-    public IxEntity
+    public Entity
   {
-    static IxModel::Ptr   model;
-    static IxTexture::Ptr tex;
-    static IxFont::Ptr    font;
-    static Co::Material   mat;
+    static Model::Ptr   model;
+    static Texture::Ptr tex;
+    static Font::Ptr    font;
+    static Co::Material mat;
 
     Spatial spatial;
 
-    virtual void destroy ()
-    {
-      delete this;
-    }
-
-    virtual void tick (IxFrame* frame, float time, float prev_time)
+    virtual void tick (Frame& frame, float time, float prev_time)
     {
       Spatial next = spatial;
       next.orientation = Quaternion (time * 2.0f, Vector3 (0.0f, 0.0f, 1.0f));
@@ -104,33 +94,37 @@ namespace SH
       spatial = next;
     }
 
-  public:
-    TestEntity (IxLoadContext* load_context, IxPropMap* props)
+    TestEntity (WorkQueue& queue)
     {
       spatial.position = Vector3 (75.0f, 66.0f, 75.0f);
       spatial.orientation = nil;
 
       if (!model)
       {
-        model = model_factory   -> create (load_context, "cube.rkmodel");
-        tex   = texture_factory -> create (load_context, "derp.cotexture", false, true);
+        model = model_factory   -> create (queue, "cube.rkmodel");
+        tex   = texture_factory -> create (queue, "derp.cotexture", false, true);
 
         CodeRange ranges [] = {
           { 0x0020, 0x007f }, // ASCII
           { 0x00a1, 0x0100 }  // Latin-1 Supplement
         };
-        font = font_factory -> create (load_context, "DejaVuSans.ttf", 14, fontsize_points, ranges);
+        font = font_factory -> create (queue, "DejaVuSans.ttf", 14, fontsize_points, ranges);
       }
+    }
+
+  public:
+    static Ptr create (Co::WorkQueue& queue, const Co::PropMap& props)
+    {
+      return queue.gc_attach (new TestEntity (queue));
     }
 
   }; // class TestEntity
 
-  IxModel::Ptr   TestEntity::model;
-  IxTexture::Ptr TestEntity::tex;
-  Material       TestEntity::mat;
-  IxFont::Ptr    TestEntity::font;
+  Model::Ptr   TestEntity::model;
+  Texture::Ptr TestEntity::tex;
+  Material     TestEntity::mat;
+  Font::Ptr    TestEntity::font;
 
   EntityClass <TestEntity> ent_class ("TestEntity");
-  const IxEntityClass* test_class = &ent_class;
 
 } // namespace SH

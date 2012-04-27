@@ -45,6 +45,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>RK_API=__declspec(dllimport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -64,8 +65,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxTexture.hpp" />
-    <ClInclude Include="..\Include\Co\IxTextureFactory.hpp" />
+    <ClInclude Include="..\Include\Co\Texture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp" />

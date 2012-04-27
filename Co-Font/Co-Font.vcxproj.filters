@@ -6,10 +6,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxFont.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxFontFactory.hpp">
+    <ClInclude Include="..\Include\Co\Font.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

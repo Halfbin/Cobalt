@@ -83,6 +83,16 @@ namespace Co
       show (false);
     }
 
+    uint get_width () const
+    {
+      return width;
+    }
+
+    uint get_height () const
+    {
+      return height;
+    }
+
   };
 
 } // namespace Co

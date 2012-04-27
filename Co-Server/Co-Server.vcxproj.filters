@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Server.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="Net.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Server">
+      <UniqueIdentifier>{8462c645-ea93-44d3-a494-a604214589c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{f2549b81-e80a-46ba-83dd-f46bf91a33a5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Server.hpp">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="Net.hpp">
+      <Filter>Net</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

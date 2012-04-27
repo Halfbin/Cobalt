@@ -11,8 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Rk\Include\Rk\Exception.cpp" />
-    <ClCompile Include="..\..\Rk\Include\Rk\Format.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\FormatFloat.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\FormatInt.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\IO.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\Locale.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{224A74A3-9981-4FB2-85E9-B073D3CA98B1}</ProjectGuid>

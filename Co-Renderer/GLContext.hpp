@@ -7,7 +7,7 @@
 #define CO_GLRENDERER_H_GLCONTEXT
 
 // Implements
-#include <Co/IxRenderContext.hpp>
+#include <Co/RenderContext.hpp>
 
 // Uses
 #include <Rk/Mutex.hpp>
@@ -23,40 +23,45 @@ namespace Co
   // = GLContext =======================================================================================================
   //
   class GLContext :
-    public IxRenderContext
+    public RenderContext
   {
     Rk::Mutex& mutex;
     void*      dc;
     void*      rc;
 
   public:
-    typedef Rk::IxUniquePtr <GLContext> Ptr;
+    typedef std::unique_ptr <GLContext> Ptr;
 
-    GLContext (Rk::Mutex& device_mutex, WGLCCA wglCCA, void* shared_dc, void* shared_rc, void* target);
+    GLContext (Rk::Mutex& device_mutex, WGLCCA wglCCA, void* shared_dc, void* shared_rc, void* target, const int* attribs);
 
     void present ();
 
-    virtual IxGeomBuffer* create_buffer (uptr size, const void* data);
+    virtual GeomBuffer::Ptr create_buffer (
+      WorkQueue&  queue,
+      uptr        size = 0,
+      const void* data = 0
+    );
 
-    virtual IxGeomCompilation* create_compilation (
+    virtual GeomCompilation::Ptr create_compilation (
+      WorkQueue&        queue,
       const GeomAttrib* attribs,
       const GeomAttrib* attribs_end,
-      IxGeomBuffer*     elements,
-      IxGeomBuffer*     indices,
+      GeomBuffer::Ptr   elements,
+      GeomBuffer::Ptr   indices,
       IndexType         index_type
     );
 
-    virtual IxTexImage* create_tex_image (
+    virtual TexImage::Ptr create_tex_image (
+      WorkQueue&   queue,
       uint         level_count,
       TexImageWrap wrap,
       bool         filter,
       TexImageType type
     );
-    
+
     virtual void flush ();
 
     ~GLContext ();
-    virtual void destroy ();
 
   }; // class GLContext
 

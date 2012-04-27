@@ -4,30 +4,25 @@
 //
 
 // Implements
-#include <Co/IxResource.hpp>
-#include <Co/IxEntity.hpp>
+#include <Co/Entity.hpp>
 
 // Uses
-#include <Co/IxGeomCompilation.hpp>
-#include <Co/IxTextureFactory.hpp>
-#include <Co/IxRenderContext.hpp>
-#include <Co/IxLoadContext.hpp>
-#include <Co/IxGeomBuffer.hpp>
+#include <Co/GeomCompilation.hpp>
+#include <Co/RenderContext.hpp>
 #include <Co/EntityClass.hpp>
-#include <Co/IxTexture.hpp>
-#include <Co/IxFrame.hpp>
+#include <Co/GeomBuffer.hpp>
+#include <Co/Frame.hpp>
 
-#include <Rk/VirtualOutStream.hpp>
+#include <Rk/AsyncMethod.hpp>
 #include <Rk/Exception.hpp>
 #include <Rk/Lerp.hpp>
 
 #include <vector>
 
+#include "Common.hpp"
+
 namespace SH
 {
-  extern Rk::VirtualLockedOutStream log;
-  extern Co::IxTextureFactory* texture_factory;
-
   enum BlockType :
     u8
   {
@@ -126,10 +121,10 @@ namespace SH
       return (3.0f * t2) - (2.0f * t2 * t);
     }
 
-    Co::Vector3 grad (int x, int y, int z) const
+    Co::Vector3 grad (Rk::Vector3i pos) const
     {
       return gradients [
-        (x + permute [(y + permute [z & mask]) & mask]) & mask
+        (pos.x + permute [(pos.y + permute [pos.z & mask]) & mask]) & mask
       ];
     }
 
@@ -155,18 +150,18 @@ namespace SH
           for (uint r = 0; r != 10; r++)
             samples [s] += uint (std::rand ());
 
-        auto vec = Co::Vector3 (
+        auto vec = unit (Co::Vector3 (
           (float (samples [0]) / float (RAND_MAX * 5)) - 1.0f,
           (float (samples [1]) / float (RAND_MAX * 5)) - 1.0f,
           (float (samples [2]) / float (RAND_MAX * 5)) - 1.0f
-        ).unit ();
+        ));
         gradients [i] = vec;
         /*if (vec.magnitude () > 1.0f)
           return;*/
       }
     }
 
-    void get_gradients (int x, int y, int z, Co::Vector3 grads [2][2][2]) const
+    void get_gradients (Rk::Vector3i pos, Co::Vector3 grads [2][2][2]) const
     {
       for (uint k = 0; k != 2; k++)
       {
@@ -174,7 +169,7 @@ namespace SH
         {
           for (uint i = 0; i != 2; i++)
           {
-            grads [i][j][k] = grad (x + i, y + j, z + k);
+            grads [i][j][k] = grad (pos + Rk::Vector3i (i, j, k));
           }
         }
       }
@@ -231,58 +226,55 @@ namespace SH
 
     Block blocks [dim][dim][dim];
     
-    Co::IxGeomCompilation::Ptr compilation;
+    Co::GeomCompilation::Ptr compilation;
     uptr index_count;
 
-    int cx, cy, cz,
-        bx, by, bz;
+    Rk::Vector3i cpos,
+                 bpos;
 
-    void set_pos (int x, int y, int z)
+    void set_pos (Rk::Vector3i pos)
     {
-      cx = x; bx = cx * dim;
-      cy = y; by = cy * dim;
-      cz = z; bz = cz * dim;
+      cpos = pos;
+      bpos = pos * uint (dim);
     }
 
-    Block& at (int x, int y, int z)
+    Block& at (Rk::Vector3i bv)
     {
-      if (x == -1) x = 0; else if (x == dim) x = dim - 1;
-      if (y == -1) y = 0; else if (y == dim) y = dim - 1;
-      if (z == -1) z = 0; else if (z == dim) z = dim - 1;
-      return blocks [x][y][z];
+      if (bv.x == -1) bv.x = 0; else if (bv.x == dim) bv.x = dim - 1;
+      if (bv.y == -1) bv.y = 0; else if (bv.y == dim) bv.y = dim - 1;
+      if (bv.z == -1) bv.z = 0; else if (bv.z == dim) bv.z = dim - 1;
+      return blocks [bv.x][bv.y][bv.z];
     }
 
-    const Block& at (int x, int y, int z) const
+    const Block& at (Rk::Vector3i bv) const
     {
-      if (x == -1) x = 0; else if (x == dim) x = dim - 1;
-      if (y == -1) y = 0; else if (y == dim) y = dim - 1;
-      if (z == -1) z = 0; else if (z == dim) z = dim - 1;
-      return blocks [x][y][z];
+      if (bv.x == -1) bv.x = 0; else if (bv.x == dim) bv.x = dim - 1;
+      if (bv.y == -1) bv.y = 0; else if (bv.y == dim) bv.y = dim - 1;
+      if (bv.z == -1) bv.z = 0; else if (bv.z == dim) bv.z = dim - 1;
+      return blocks [bv.x][bv.y][bv.z];
     }
 
-    uint regen_mesh (const BlockWorld& world, Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices);
+    uint regen_mesh (Co::WorkQueue& queue, const BlockWorld& world, Co::RenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices);
 
-    void draw (Co::IxFrame* frame, const Co::Material& mat)
+    void draw (Co::Frame& frame, const Co::Material& mat)
     {
       if (!compilation)
         return;
 
-      float fx = float (bx),
-            fy = float (by),
-            fz = float (bz);
+      Rk::Vector3f fbpos = bpos;
 
-      frame -> begin_point_geom (
-        compilation.get (),
-        Co::Spatial (Co::Vector3 (fx, fy, fz), nil),
-        Co::Spatial (Co::Vector3 (fx, fy, fz), nil)
+      frame.begin_point_geom (
+        compilation,
+        Co::Spatial (fbpos, nil),
+        Co::Spatial (fbpos, nil)
       );
 
       Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
 
-      frame -> add_meshes    (&mesh, 1);
-      frame -> add_materials (&mat,  1);
+      frame.add_meshes    (&mesh, 1);
+      frame.add_materials (&mat,  1);
 
-      frame -> end_point_geom ();
+      frame.end ();
     }
 
     void generate_pass_1 (const Noise& noise);
@@ -291,8 +283,7 @@ namespace SH
   }; // class Chunk
 
   class BlockWorld :
-    public Co::IxEntity,
-    public Co::IxResource
+    public Co::Entity
   {
     enum
     {
@@ -300,58 +291,74 @@ namespace SH
       world_chunks = world_dim * world_dim * world_dim
     };
 
+    static const Rk::Vector3i world_extent;
+
     // Parameters
     u64 seed;
 
     // State
-    Chunk              chunks [world_dim][world_dim][world_dim];
-    Co::IxTexture::Ptr texture;
-    Noise              noise;
+    Chunk            chunks [world_dim][world_dim][world_dim];
+    Co::Texture::Ptr texture;
+    Noise            noise;
 
     static const Block outside_block;
 
-    const Chunk& chunk_at (int x, int y, int z) const
+    const Chunk& chunk_at (Rk::Vector3i cv) const
     {
       if (
-        x >= world_dim || x < 0 ||
-        y >= world_dim || y < 0 ||
-        z >= world_dim || z < 0)
+        cv.x >= world_dim || cv.x < 0 ||
+        cv.y >= world_dim || cv.y < 0 ||
+        cv.z >= world_dim || cv.z < 0)
       {
-        throw Rk::Exception ("Chunk reference outside world");
+        throw std::runtime_error ("Chunk reference outside world");
       }
 
-      return chunks [x][y][z];
+      return chunks [cv.x][cv.y][cv.z];
     }
 
-    Chunk& chunk_at (int x, int y, int z)
+    Chunk& chunk_at (Rk::Vector3i cv)
     {
       if (
-        x >= world_dim || x < 0 ||
-        y >= world_dim || y < 0 ||
-        z >= world_dim || z < 0)
+        cv.x >= world_dim || cv.x < 0 ||
+        cv.y >= world_dim || cv.y < 0 ||
+        cv.z >= world_dim || cv.z < 0)
       {
-        throw Rk::Exception ("Chunk reference outside world");
+        throw std::runtime_error ("Chunk reference outside world");
       }
 
-      return chunks [x][y][z];
+      return chunks [cv.x][cv.y][cv.z];
     }
 
     //enum { chunks_size_mb = sizeof (chunks) / (1024 * 1024) };
 
-    virtual void acquire () { }
-    virtual void release () { }
-
-    virtual void dispose ()
+    virtual void tick (Co::Frame& frame, float time, float prev_time)
     {
-      delete this;
+      Co::Material material = nil;
+      material.diffuse_tex = texture -> get ();
+
+      for (uint z = 0; z != world_dim; z++)
+      {
+        for (uint y = 0; y != world_dim; y++)
+        {
+          for (uint x = 0; x != world_dim; x++)
+            chunk_at (Rk::Vector3i (x, y, z)).draw (frame, material);
+        }
+      }
     }
 
-    virtual void destroy ()
+    BlockWorld (Co::WorkQueue& queue)
     {
-      delete this;
+      seed = 923;
+      texture = texture_factory -> create (queue, "Blocks.cotexture", false, false);
     }
 
-    virtual void load (Co::IxRenderContext& rc)
+  public:
+    static Ptr create (Co::WorkQueue& queue, const Co::PropMap& props)
+    {
+      return queue.gc_construct (new BlockWorld (queue));
+    }
+
+    void construct (std::shared_ptr <BlockWorld>& self, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Filesystem& fs)
     {
       noise.generate (seed);
 
@@ -361,8 +368,8 @@ namespace SH
         {
           for (int x = 0; x != world_dim; x++)
           {
-            auto& chunk = chunk_at (x, y, z);
-            chunk.set_pos (x, y, z);
+            auto& chunk = chunk_at (Rk::Vector3i (x, y, z));
+            chunk.set_pos (Rk::Vector3i (x, y, z));
             chunk.generate_pass_1 (noise);
           }
         }
@@ -373,7 +380,7 @@ namespace SH
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
-            chunk_at (x, y, z).generate_pass_2 (*this, noise);
+            chunk_at (Rk::Vector3i (x, y, z)).generate_pass_2 (*this, noise);
         }
       }
 
@@ -391,7 +398,7 @@ namespace SH
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
-            triangle_count += chunk_at (x, y, z).regen_mesh (*this, rc, 1.0f / 16.0f, vertices, indices);
+            triangle_count += chunk_at (Rk::Vector3i (x, y, z)).regen_mesh (queue, *this, rc, 1.0f / 16.0f, vertices, indices);
         }
       }
 
@@ -404,70 +411,33 @@ namespace SH
       float size_mb = float (bytes) / float (1024 * 1024);
       float fill    = float (bytes) / float (bytes_max) * 100.0f;
 
-      log << "- SH-Game: BlockWorld::load - generated " << triangle_count << " triangles ("
-          << size_mb << " MB, "
-          << fill    << "% capacity) \n";
-
-      ready = true;
+      log () << "- SH-Game: BlockWorld::load - generated " << triangle_count << " triangles ("
+             << size_mb << " MB, "
+             << fill    << "% capacity) \n";
     }
 
-    virtual void tick (Co::IxFrame* frame, float time, float prev_time)
+    const Block& block_at (Rk::Vector3i bv) const
     {
-      if (!ready)
-        return;
+      Rk::Vector3i cv = bv / uint (Chunk::dim);
 
-      Co::Material material = nil;
-      material.diffuse_tex = texture -> get ();
+      bv %= uint (Chunk::dim);
 
-      for (uint z = 0; z != world_dim; z++)
-      {
-        for (uint y = 0; y != world_dim; y++)
-        {
-          for (uint x = 0; x != world_dim; x++)
-            chunk_at (x, y, z).draw (frame, material);
-        }
-      }
-    }
-
-  public:
-    BlockWorld (Co::IxLoadContext* load_context, Co::IxPropMap* props)
-    {
-      seed = 923;
-      texture = texture_factory -> create (load_context, "Blocks.cotexture", false, false);
-      load_context -> load (this);
-    }
-
-    const Block& block_at (int bx, int by, int bz) const
-    {
-      int cx = bx / Chunk::dim,
-          cy = by / Chunk::dim, 
-          cz = bz / Chunk::dim;
-
-      bx %= Chunk::dim;
-      by %= Chunk::dim;
-      bz %= Chunk::dim;
-
-      if (
-        cx >= world_dim || cx < 0 ||
-        cy >= world_dim || cy < 0 ||
-        cz >= world_dim || cz < 0)
-      {
+      if (cv.x >= world_dim || cv.y >= world_dim || cv.z >= world_dim || cv.x < 0 || cv.y < 0 || cv.z < 0)
         return outside_block;
-      }
       else
-      {
-        return chunk_at (cx, cy, cz).at (bx, by, bz);
-      }
+        return chunk_at (cv).at (bv);
     }
 
   };
 
+  const Rk::Vector3i BlockWorld::world_extent (world_dim, world_dim, world_dim);
+  
   const Block BlockWorld::outside_block (blocktype_void);
 
   void Chunk::generate_pass_1 (const Noise& noise)
   {
     Co::Vector3 grads [2][2][2];
-    noise.get_gradients (cx, cy, cz, grads);
+    noise.get_gradients (cpos, grads);
     
     for (int z = 0; z != dim; z++)
     {
@@ -477,7 +447,7 @@ namespace SH
         {
           Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
           float value = noise.get (block_pos, grads);
-          at (x, y, z).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
+          at (Rk::Vector3i (x, y, z)).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
         }
       }
     }
@@ -491,14 +461,14 @@ namespace SH
       {
         for (int x = 0; x != dim; x++)
         {
-          if ((at (x, y, z).type == blocktype_soil) && (world.block_at (bx + x, by + y, bz + z + 1).empty ()))
-            at (x, y, z).type = blocktype_grass;
+          if ((at (Rk::Vector3i (x, y, z)).type == blocktype_soil) && (world.block_at (bpos + Rk::Vector3i (x, y, z + 1)).empty ()))
+            at (Rk::Vector3i (x, y, z)).type = blocktype_grass;
         }
       }
     }
   }
 
-  uint Chunk::regen_mesh (const BlockWorld& world, Co::IxRenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices)
+  uint Chunk::regen_mesh (Co::WorkQueue& queue, const BlockWorld& world, Co::RenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices)
   {
     uint vertex_count = 0;
 
@@ -508,7 +478,7 @@ namespace SH
       {
         for (int x = 0; x != dim; x++)
         {
-          const auto& block = at (x, y, z);
+          const auto& block = at (Rk::Vector3i (x, y, z));
 
           if (block.empty ())
             continue;
@@ -525,7 +495,7 @@ namespace SH
 
           //static const float eps = 0.0f;//1.0f / 1024.0f;
 
-          if (world.block_at (bx + x + 1, by + y, bz + z).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x + 1, y, z)).empty ())
           {
             // front
             vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
@@ -534,7 +504,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
           }
 
-          if (world.block_at (bx + x - 1, by + y, bz + z).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x - 1, y, z)).empty ())
           {
             // back
             vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
@@ -543,7 +513,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
           }
             
-          if (world.block_at (bx + x, by + y + 1, bz + z).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x, y + 1, z)).empty ())
           {
             // left
             vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
@@ -552,7 +522,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
           }
             
-          if (world.block_at (bx + x, by + y - 1, bz + z).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x, y - 1, z)).empty ())
           {
             // right
             vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
@@ -561,7 +531,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
           }
             
-          if (world.block_at (bx + x, by + y, bz + z + 1).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x, y, z + 1)).empty ())
           {
             // top
             vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f));
@@ -570,7 +540,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f));
           }
             
-          if (world.block_at (bx + x, by + y, bz + z - 1).empty ())
+          if (world.block_at (bpos + Rk::Vector3i (x, y, z - 1)).empty ())
           {
             // bottom
             vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f));
@@ -596,8 +566,8 @@ namespace SH
     if (vertex_count == 0)
       return 0;
 
-    auto vertex_buffer = rc.create_buffer (vertices.size () * sizeof (Vertex), vertices.data ()),
-         index_buffer  = rc.create_buffer (indices.size ()  * sizeof (u16),    indices.data () );
+    auto vertex_buffer = rc.create_buffer (queue, vertices.size () * sizeof (Vertex), vertices.data ()),
+         index_buffer  = rc.create_buffer (queue, indices.size ()  * sizeof (u16),    indices.data () );
     
     static const Co::GeomAttrib attribs [3] = {
       { Co::attrib_position, Co::attrib_f32, sizeof (Vertex),  0 },
@@ -605,7 +575,7 @@ namespace SH
       { Co::attrib_colour,   Co::attrib_f32, sizeof (Vertex), 20 },
     };
 
-    compilation = rc.create_compilation (attribs, vertex_buffer, index_buffer, Co::index_u16);
+    compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
 
     uint vertices_cap = vertices.capacity ();
     vertices.clear ();
@@ -623,6 +593,5 @@ namespace SH
   }
 
   Co::EntityClass <BlockWorld> ent_class ("BlockWorld");
-  const Co::IxEntityClass* block_world_class = &ent_class;
 
 } // namespace SH

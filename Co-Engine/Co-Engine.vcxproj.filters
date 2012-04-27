@@ -6,22 +6,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxEngine.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxEntityClass.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxGame.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\EntityClass.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxModule.hpp">
+    <ClInclude Include="..\Include\Co\UIInput.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxEntity.hpp">
+    <ClInclude Include="..\Include\Co\Engine.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Entity.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Game.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Module.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\InputSink.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Host.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

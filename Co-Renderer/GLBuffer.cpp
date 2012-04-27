@@ -33,11 +33,6 @@ namespace Co
     glDeleteBuffers (1, &name);
   }
 
-  void GLBuffer::destroy ()
-  {
-    delete this;
-  }
-
   GLBuffer::GLBuffer (uptr size, const void* data)
   {
     glGenBuffers (1, &name);

@@ -26,8 +26,8 @@ namespace Co
     u32 tex_diffuse = program.link_uniform ("tex_diffuse");
     glUniform1i (tex_diffuse, texunit_diffuse);
 
-    glVertexAttrib3f (attrib_colour, 1.0f, 1.0f, 1.0f);
-    check_gl ("glVertexAttrib3f");
+    glVertexAttrib4f (attrib_colour, 1.0f, 1.0f, 1.0f, 1.0f);
+    check_gl ("glVertexAttrib4f");
 
     program.done ();
 

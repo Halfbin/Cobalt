@@ -19,7 +19,7 @@ namespace Co
 
     u32 size = u32 (file.size ());
     if (size == 0)
-      throw Rk::Exception () << "Co-GLRenderer: GLShader::GLShader - " << path << " is empty";
+      Rk::raise () << "Co-GLRenderer: GLShader::GLShader - " << path << " is empty";
 
     std::unique_ptr <char []> buffer (new char [size]);
     file.read (buffer.get (), size);
@@ -55,7 +55,7 @@ namespace Co
     check_gl ("glGetShaderiv (GL_COMPILE_STATUS)");
 
     if (!ok)
-      throw Rk::Exception ("Error compiling shader");
+      throw std::runtime_error ("Error compiling shader");
   }
 
   GLShader::~GLShader ()
@@ -117,7 +117,7 @@ namespace Co
     check_gl ("glGetProgramiv (GL_LINK_STATUS)");
 
     if (!ok)
-      throw Rk::Exception ("Co-GLRenderer: GLProgram::link - Error linking shader program");
+      throw std::runtime_error ("Co-GLRenderer: GLProgram::link - Error linking shader program");
   }
 
   u32 GLProgram::link_uniform (const char* uniform)
@@ -125,7 +125,7 @@ namespace Co
     u32 location = glGetUniformLocation (name, uniform);
     check_gl ("glGetUniformLocation");
     if (location == 0xffffffff)
-      throw Rk::Exception ("Co-GLRenderer: GLProgram::link_uniform - Uniform not present or inactive");
+      throw std::runtime_error ("Co-GLRenderer: GLProgram::link_uniform - Uniform not present or inactive");
     return location;
   }
 

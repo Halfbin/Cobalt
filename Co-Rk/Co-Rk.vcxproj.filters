@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\Rk\Include\Rk\Exception.cpp" />
-    <ClCompile Include="..\..\Rk\Include\Rk\Format.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\IO.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\FormatInt.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\Locale.cpp" />
+    <ClCompile Include="..\..\Rk\Include\Rk\FormatFloat.cpp" />
   </ItemGroup>
 </Project>

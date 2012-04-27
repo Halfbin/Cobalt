@@ -14,24 +14,24 @@ namespace Co
   //
   // Mipmap loading
   //
-  bool GLTexImage::load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size) try
+  void GLTexImage::load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size)
   {
     if (!data)
-      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - data is null");
+      throw std::invalid_argument ("data is null");
 
     if (format >= texformat_count)
-      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - invalid format");
+      throw std::invalid_argument ("Invalid texture format");
 
     if (width == 0 || height == 0)
-      throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - invalid dimensions");
+      throw std::invalid_argument ("Invalid dimensions");
 
     GLenum gl_formats [texformat_count][3] = {
       { GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5 }, // rgb565
       { GL_RGB,  GL_BGR,  GL_UNSIGNED_SHORT_5_6_5 }, // bgr565
       { GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE        }, // rgb888
       { GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE        }, // bgr888
-      { GL_RGBA, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8 }, // rgba8888
-      { GL_RGBA, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8 }, // bgra8888
+      { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE        }, // rgba8888
+      { GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE        }, // bgra8888
 
       { GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  0, 0 }, // bc1/dxt1,
       { GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, 0, 0 }, // bc1/dxt1a
@@ -39,7 +39,8 @@ namespace Co
       { GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 0, 0 }, // bc3/dxt5,
       { GL_COMPRESSED_RG_RGTC2,           0, 0 }, // bc5/dxtn/3dc/ati2,
 
-      { GL_R8, GL_RED, GL_UNSIGNED_BYTE } // r8
+      { GL_R8, GL_RED, GL_UNSIGNED_BYTE }, // r8
+      { GL_R8, GL_RED, GL_UNSIGNED_BYTE }  // a8 (swizzled r8)
     };
 
     GLenum image_target = target;
@@ -47,7 +48,7 @@ namespace Co
     if (target == GL_TEXTURE_CUBE_MAP)
     {
       if (sub_image >= 6)
-        throw Rk::Exception ("Co-GLRenderer: IxTexImage::load_map - level >= 6 is invalid for cube maps");
+        throw std::runtime_error ("Co-GLRenderer: TexImage::load_map - level >= 6 is invalid for cube maps");
 
       // Remember that OpenGL cube maps are left-handed z-forward
       // So much for coordinate independence
@@ -90,13 +91,14 @@ namespace Co
         data
       );
       check_gl ("glTexImage2D");
-    }
 
-    return true;
-  }
-  catch (...)
-  {
-    return false;
+      if (format == texformat_a8)
+      {
+        int swizzle [4] = { GL_ONE, GL_ONE, GL_ONE, GL_RED };
+        glTexParameteriv (image_target, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+        check_gl ("glTexParameteriv");
+      }
+    }
   } // load_map
 
   //
@@ -106,18 +108,13 @@ namespace Co
     glDeleteTextures (1, &name);
   }
 
-  void GLTexImage::destroy ()
-  {
-    delete this;
-  }
-
   //
   // Constructor
   //
   GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, bool filter, TexImageType type)
   {
     if (level_count == 0)
-      throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count is zero");
+      throw std::invalid_argument ("level_count is zero");
 
     GLenum min_filter,
            mag_filter;
@@ -136,7 +133,7 @@ namespace Co
     if (type == textype_rectangle)
     {
       if (level_count != 1)
-        throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - level_count must be 1 for rectangular textures");
+        throw std::logic_error ("level_count must be 1 for rectangular textures");
 
       target = GL_TEXTURE_RECTANGLE;
     }
@@ -153,7 +150,7 @@ namespace Co
     }
     else
     {
-      throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid type");
+      throw std::invalid_argument ("Invalid type");
     }
 
     GLenum gl_wrap;
@@ -178,7 +175,7 @@ namespace Co
         break;
 
         default:
-          throw Rk::Exception ("Co-GLRenderer: IxRenderContext::create_tex_image - invalid wrapping mode");
+          throw std::invalid_argument ("Invalid wrapping mode");
       }
     }
 

@@ -7,43 +7,52 @@
 #define CO_GLRENDERER_H_GLCOMPILATION
 
 // Implements
-#include <Co/IxGeomCompilation.hpp>
+#include <Co/GeomCompilation.hpp>
 
 // Uses
-#include <Co/IxRenderContext.hpp>
+#include <Co/RenderContext.hpp>
+#include <Co/WorkQueue.hpp>
 
+#include "GLBuffer.hpp"
 #include "GL.hpp"
 
 #include <vector>
 
 namespace Co
 {
-  class GLBuffer;
-  class IxGeomBuffer;
-
   class GLCompilation :
-    public IxGeomCompilation
+    public GeomCompilation
   {
     u32                      vao;
     std::vector <GeomAttrib> attribs;
-    GLBuffer*                elements;
-    GLBuffer*                indices;
+    GLBuffer::Ptr            elements;
+    GLBuffer::Ptr            indices;
     IndexType                index_type;
-
-    ~GLCompilation ();
-    virtual void destroy ();
 
 		bool first_use ();
 
-  public:
     GLCompilation (
       const GeomAttrib* new_attribs,
       const GeomAttrib* new_attribs_end,
-      IxGeomBuffer*     new_elements,
-      IxGeomBuffer*     new_indices,
+      GeomBuffer::Ptr   new_elements,
+      GeomBuffer::Ptr   new_indices,
       IndexType         new_index_type
     );
 
+  public:
+    typedef std::shared_ptr <GLCompilation> Ptr;
+
+    static Ptr create (
+      WorkQueue&        work_queue,
+      const GeomAttrib* new_attribs,
+      const GeomAttrib* new_attribs_end,
+      GeomBuffer::Ptr   new_elements,
+      GeomBuffer::Ptr   new_indices,
+      IndexType         new_index_type
+    );
+
+    ~GLCompilation ();
+    
     IndexType get_index_type () const
     {
       return index_type;

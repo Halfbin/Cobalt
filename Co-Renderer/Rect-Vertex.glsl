@@ -5,7 +5,8 @@
 
 #version 330 core
 
-uniform mat3x2 ui_to_clip;
+uniform mat3 ui_to_clip;
+uniform mat3 ui_to_ui;
 
 in ivec4 attrib_rect;
 in ivec4 attrib_tcoords;
@@ -28,7 +29,7 @@ void main ()
 
   ivec4 rect = permute [gl_VertexID];
 
-  xformed_position = vec4 (ui_to_clip * vec3 (rect.xy, 1), 0, 1);
+  xformed_position = vec4 ((ui_to_clip * ui_to_ui * vec3 (rect.xy, 1)).xy, 0, 1);
   xformed_tcoords  = rect.zw;
 
   gl_Position = xformed_position;

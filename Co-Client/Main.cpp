@@ -3,33 +3,52 @@
 // All Rights Reserved.
 //
 
-#include <Co/IxLog.hpp>
+#include <Rk/FileOutStream.hpp>
+
 #include "Client.hpp"
+
+#include <map>
 
 namespace Co
 {
-  IxLog::Ptr log_ptr = create_log ("Co-Client" CO_SUFFIX ".log");
-  Rk::VirtualLockedOutStream log (log_ptr.get ());
+  Rk::FileOutStream log_file ("Co-Client" CO_SUFFIX ".log", Rk::File::open_replace_or_create);
+  Rk::OutStream log_stream = log_file.virtualize ();
+  Log log (log_stream);
+
+  static std::map <std::string, Rk::Module>
+    modules;
+
+  Rk::Module load_module (Rk::StringRef path)
+  {
+    auto iter = modules.find (path.string ());
+    if (iter != modules.end ())
+      return iter -> second;
+
+    Rk::Module mod (path.string () + CO_SUFFIX ".dll");
+    modules.insert (std::make_pair (path.string (), mod));
+    return mod;
+  }
 
   extern "C" int __stdcall WinMain (void*, void*, char*, int)
   {
-    log << "- Co-Client" CO_SUFFIX " starting\n";
+    log_file << "- Co-Client" CO_SUFFIX " starting\n"
+             << "* Starting initialization\n";
 
     try
     {
       Client client ("./");
       client.run ();
     }
-    catch (const std::exception& e)
-    {
-      log << "X " << e.what () << '\n';
-    }
     catch (...)
     {
-      log << "X Exception caught\n";
+      log_exception (log, "in main thread");
     }
 
-    log << "- Co-Client" CO_SUFFIX " exiting\n";
+    log_file << "* Shutdown complete\n"
+             << "- Co-Client" CO_SUFFIX " exiting\n";
+
+    log_file.flush ();
+
     return 0;
   }
 

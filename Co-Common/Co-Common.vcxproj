@@ -12,17 +12,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\Clock.hpp" />
-    <ClInclude Include="..\Include\Co\IxLog.hpp" />
+    <ClInclude Include="..\Include\Co\Log.hpp" />
     <ClInclude Include="..\Include\Co\Profile.hpp" />
+    <ClInclude Include="..\Include\Co\PropMap.hpp" />
+    <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
     <ClInclude Include="..\Include\Co\Spatial.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
       <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Log.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ABB70100-1FAD-4A68-8A40-DA9CE0526CBF}</ProjectGuid>
@@ -54,8 +53,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.dll</TargetExt>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -64,7 +66,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -79,6 +81,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

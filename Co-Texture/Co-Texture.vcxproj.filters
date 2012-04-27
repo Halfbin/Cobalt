@@ -6,10 +6,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxTextureFactory.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxTexture.hpp">
+    <ClInclude Include="..\Include\Co\Texture.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

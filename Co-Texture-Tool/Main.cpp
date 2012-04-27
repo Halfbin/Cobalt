@@ -82,10 +82,10 @@ static u8* build_raw_mipmap (Rk::Image& in, u8* out, uint level)
     {
       box_filter (out, in.data + y_off + x_off, in.row_stride, factor);
       out += 4;
-      x_off += in.pixel_stride * level;
+      x_off += in.pixel_stride * factor;
     }
 
-    y_off += in.row_stride * level;
+    y_off += in.row_stride * factor;
   }
 
   return out;
@@ -181,13 +181,13 @@ static const char* const format_strings [11] = {
 static void check_image (Rk::Image& image)
 {
   if (image.pixel_type != Rk::Image::bgr888)
-    throw Rk::Exception ("Only bgr888 source images are currently supported");
+    throw std::runtime_error ("Only bgr888 source images are currently supported");
 
   if (image.width > 65536 || image.height > 65536)
-    throw Rk::Exception ("Source images may not be wider or taller than 65536 pixels");
+    throw std::runtime_error ("Source images may not be wider or taller than 65536 pixels");
 
   if (image.width % 4 || image.height % 4)
-    throw Rk::Exception ("Dimensions of source images must be multiples of 4");
+    throw std::runtime_error ("Dimensions of source images must be multiples of 4");
 }
 
 static void compute_output_info (u32 width, u32 height, u8& mipmap_count, u32& data_size)
@@ -293,7 +293,7 @@ void convert_cubemap (Rk::ImageFile (&in_images) [6], Rk::File& out_file)
       in_images [i].height     != height ||
       in_images [i].pixel_type != type)
     {
-      throw Rk::Exception ("Source images differ in format or dimensions");
+      throw std::runtime_error ("Source images differ in format or dimensions");
     }
   }
 
@@ -334,9 +334,9 @@ int main (int arg_count, const char** args) try
     if (arg == "-o")
     {
       if (out_path)
-        throw Rk::Exception ("Only one destination file may be specified");
+        throw std::runtime_error ("Only one destination file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected destination file path after \"" << arg << "\"";
+        Rk::raise () << "Expected destination file path after \"" << arg << "\"";
       out_path = args [arg_index];
     }
     else if (arg == "-c" || arg == "--compress")
@@ -366,61 +366,61 @@ int main (int arg_count, const char** args) try
     else if (arg == "-e" || arg == "--envmap")
     {
       if (in_path)
-        throw Rk::Exception () << "Cannot specify a source-file with " << arg;
+        Rk::raise () << "Cannot specify a source-file with " << arg;
       cubemap = true;
     }
     else if (arg == "--front")
     {
       cubemap = true;
       if (face_paths [texface_front])
-        throw Rk::Exception ("Only one front-face file may be specified");
+        throw std::runtime_error ("Only one front-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected front-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected front-face file path after \"" << arg << "\"";
       face_paths [texface_front] = args [arg_index];
     }
     else if (arg == "--back")
     {
       cubemap = true;
       if (face_paths [texface_back])
-        throw Rk::Exception ("Only one back-face file may be specified");
+        throw std::runtime_error ("Only one back-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected back-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected back-face file path after \"" << arg << "\"";
       face_paths [texface_back] = args [arg_index];
     }
     else if (arg == "--left")
     {
       cubemap = true;
       if (face_paths [texface_left])
-        throw Rk::Exception ("Only one left-face file may be specified");
+        throw std::runtime_error ("Only one left-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected left-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected left-face file path after \"" << arg << "\"";
       face_paths [texface_left] = args [arg_index];
     }
     else if (arg == "--right")
     {
       cubemap = true;
       if (face_paths [texface_right])
-        throw Rk::Exception ("Only one right-face file may be specified");
+        throw std::runtime_error ("Only one right-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected right-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected right-face file path after \"" << arg << "\"";
       face_paths [texface_right] = args [arg_index];
     }
     else if (arg == "--top")
     {
       cubemap = true;
       if (face_paths [texface_top])
-        throw Rk::Exception ("Only one top-face file may be specified");
+        throw std::runtime_error ("Only one top-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected top-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected top-face file path after \"" << arg << "\"";
       face_paths [texface_top] = args [arg_index];
     }
     else if (arg == "--bottom")
     {
       cubemap = true;
       if (face_paths [texface_bottom])
-        throw Rk::Exception ("Only one bottom-face file may be specified");
+        throw std::runtime_error ("Only one bottom-face file may be specified");
       if (++arg_index == arg_count)
-        throw Rk::Exception () << "Expected bottom-face file path after \"" << arg << "\"";
+        Rk::raise () << "Expected bottom-face file path after \"" << arg << "\"";
       face_paths [texface_bottom] = args [arg_index];
     }
     else if (arg == "-h" || arg == "--help" || arg == "/?")
@@ -470,21 +470,21 @@ int main (int arg_count, const char** args) try
       if (arg == "-i")
       {
         if (cubemap)
-          throw Rk::Exception () << arg << " may not be used when producing an environment map";
+          Rk::raise () << arg << " may not be used when producing an environment map";
 
         if (++arg_index == arg_count)
-          throw Rk::Exception ("Expected source file path after \"-i\"");
+          throw std::runtime_error ("Expected source file path after \"-i\"");
       }
       else if (arg [0] == '-')
       {
-        throw Rk::Exception () << "Unrecognized option \"" << arg << "\"";
+        throw Rk::raise () << "Unrecognized option \"" << arg << "\"";
       }
       
       if (cubemap)
-          throw Rk::Exception () << "Unrecognized text \"" << arg << "\"";
+          throw Rk::raise () << "Unrecognized text \"" << arg << "\"";
 
       if (in_path)
-        throw Rk::Exception ("Only one source file may be specified");
+        throw std::runtime_error ("Only one source file may be specified");
 
       in_path = args [arg_index];
     }
@@ -496,18 +496,18 @@ int main (int arg_count, const char** args) try
     for (uint i = 0; i != 6; i++)
     {
       if (!face_paths [i])
-        throw Rk::Exception ("Not all source files specified");
+        throw std::runtime_error ("Not all source files specified");
     }
   }
   else if (!in_path)
   {
-    throw Rk::Exception ("No source file specified");
+    throw std::runtime_error ("No source file specified");
   }
 
   if (!out_path)
   {
     if (cubemap)
-      throw Rk::Exception ("No output file specified");
+      throw std::runtime_error ("No output file specified");
 
     uptr dot = in_path.reverse_find ('.');
     if (dot == in_path.nowhere)

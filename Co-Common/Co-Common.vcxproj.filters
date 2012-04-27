@@ -10,7 +10,13 @@
     <ClInclude Include="..\Include\Co\Spatial.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxLog.hpp">
+    <ClInclude Include="..\Include\Co\PropMap.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\ResourceFactory.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Log.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>
@@ -18,8 +24,5 @@
     <Filter Include="API">
       <UniqueIdentifier>{3f98cab1-e7e1-43c0-bedd-daf4dfd4a86b}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Log.cpp" />
   </ItemGroup>
 </Project>

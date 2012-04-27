@@ -7,26 +7,37 @@
 #define CO_GLRENDERER_H_GLBUFFER
 
 // Implements
-#include <Co/IxGeomBuffer.hpp>
+#include <Co/GeomBuffer.hpp>
 
 // Uses
+#include <Co/WorkQueue.hpp>
+
 #include "GL.hpp"
 
 namespace Co
 {
   class GLBuffer :
-    public IxGeomBuffer
+    public GeomBuffer
   {
     u32 name;
 
     virtual void load_data (const void* data, uptr size);
 
-    ~GLBuffer ();
-    virtual void destroy ();
-
-  public:
     GLBuffer (uptr size, const void* data);
 
+  public:
+    typedef std::shared_ptr <GLBuffer> Ptr;
+
+    static inline Ptr create (WorkQueue& queue, uptr size, const void* data)
+    {
+      return Ptr (
+        new GLBuffer (size, data),
+        queue.make_deleter <GLBuffer> ()
+      );
+    }
+
+    ~GLBuffer ();
+    
     bool bind (uint target)
     {
       if (glIsBuffer (name))

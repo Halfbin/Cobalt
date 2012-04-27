@@ -4,144 +4,113 @@
 //
 
 // Implements
-#include <Co/IxGame.hpp>
+#include <Co/Game.hpp>
 
 // Uses
-#include <Co/IxModule.hpp>
-#include <Co/IxFrame.hpp>
+#include <Co/Engine.hpp>
+#include <Co/Frame.hpp>
 
-#include <Rk/VirtualOutStream.hpp>
-#include <Rk/Expose.hpp>
+#include <Rk/Module.hpp>
 
 #include "Common.hpp"
 #include "State.hpp"
 
 namespace Ir
 {
-  /*static const Co::IxEntityClass* const classes [] = {
-    
-  };*/
+  State* State::current = 0;
+  State* State::next    = 0;
+  bool   State::loading = false;
 
-  Co::IxTextureFactory* texture_factory;
-  Co::IxModelFactory*   model_factory;
-  Co::IxFontFactory*    font_factory;
-  Co::IxLoadContext*    load_context;
-  Co::IxEngine*         engine;
+  Co::Log* log_ptr = 0;
 
-  Rk::VirtualLockedOutStream log;
-
+  Co::TextureFactory::Ptr texture_factory;
+  Co::ModelFactory::Ptr   model_factory;
+  Co::FontFactory::Ptr    font_factory;
+  
   class Game :
-    public Co::IxGame
+    public Co::Game
   {
-    Co::IxModule::Ptr texture_module,
-                      model_module,
-                      font_module;
+    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
 
-    State *state,
-          *next_state;
+    virtual Co::EntityClassBase& find_class (Rk::StringRef name);
 
-    virtual bool init    (Co::IxEngine* engine, Co::IxLoadContext* load_context, Rk::IxLockedOutStreamImpl* log_impl);
-    virtual void destroy ();
-
-    virtual void start ();
+    virtual void start (Co::Engine& engine);
     virtual void stop  ();
     
-    virtual void tick      (Co::IxFrame* frame, float time, float prev_time);
-    virtual void update_ui (Co::IxUI* ui);
+    virtual void tick (
+      Co::WorkQueue&     queue,
+      Co::Frame&         frame,
+      float              cur_time,
+      float              prev_time,
+      const Co::UIEvent* ui_events,
+      uint               ui_event_count
+    );
 
   public:
-    void expose (void** out, u64 ixid);
+    static Ptr create ()
+    {
+      return std::make_shared <Game> ();
+    }
 
-  } game;
+  };
 
-  bool Game::init (Co::IxEngine* new_engine, Co::IxLoadContext* new_load_context, Rk::IxLockedOutStreamImpl* log_impl) try
+  RK_MODULE_FACTORY (Game);
+
+  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log)
   {
-    if (!new_engine || !new_load_context || !log_impl)
-      return false;
+    log_ptr = &new_log;
+    log () << "- Ir-Game: Initializing\n";
 
-    engine       = new_engine;
-    load_context = new_load_context;
-    log.set_impl (log_impl);
-
-    log << "- Ir-Game: Initializing\n";
-
-    texture_module = engine -> load_module ("Co-Texture");
-    texture_module -> expose (texture_factory);
-
-    model_module = engine -> load_module ("Co-Model");
-    model_module -> expose (model_factory);
-    
-    font_module = engine -> load_module ("Co-Font");
-    font_module -> expose (font_factory);
-
-    //engine -> register_classes (classes);
-
-    return true;
-  }
-  catch (...)
-  {
-    return false;
+    engine.get_object (texture_factory);
+    engine.get_object (model_factory);
+    engine.get_object (font_factory);
   }
 
-  void Game::destroy ()
+  void Game::start (Co::Engine& engine)
   {
-    log << "- Ir-Game: Shutting down\n";
-
-    //engine -> unregister_classes (classes);
-
-    texture_module = nil;
-    model_module   = nil;
-    font_module    = nil;
-  }
-
-  void Game::start ()
-  {
-    log << "- Ir-Game: Starting\n";
-
-    engine -> game_starting (this);
-
-    state      = 0;
-    next_state = title_state;
+    log () << "- Ir-Game: Starting\n";
+    State::init (title_state);
   }
 
   void Game::stop ()
   {
-    log << "- Ir-Game: Stopping\n";
-
-    engine -> game_stopping (this);
-
-    if (state)
-      state -> leave ();
+    log () << "- Ir-Game: Stopping\n";
+    State::finish ();
   }
 
-  void Game::tick (Co::IxFrame* frame, float time, float prev_time)
+  void Game::tick (
+    Co::WorkQueue&     queue,
+    Co::Frame&         frame,
+    float              cur_time,
+    float              prev_time,
+    const Co::UIEvent* ui_events,
+    uint               ui_event_count)
   {
-    if (next_state)
-    {
-      if (state)
-        state -> leave ();
-      state = next_state;
-      if (state)
-        state -> enter (time);
-      next_state = 0;
-    }
-
-    state -> tick (frame, time, prev_time);
+    State::tick_current (queue, frame, cur_time, prev_time, ui_events, ui_event_count);
+  }
+  
+  Co::EntityClassBase& Game::find_class (Rk::StringRef name)
+  {
+    throw std::invalid_argument ("No such class");
   }
 
-  void Game::update_ui (Co::IxUI* ui)
+  void State::show_loading_screen (Co::Frame& frame, float time, float prev_time)
   {
+    Co::TexRect square (
+      -10, -10, 20, 20,
+        0,   0,  1,  1
+    );
 
-  }
+    Co::Vector4 col (1.0f, 1.0f, 1.0f, 1.0f);
 
-  void Game::expose (void** out, u64 ixid)
-  {
-    Rk::expose <Co::IxGame> (&game, ixid, out);
-  }
-
-  IX_EXPOSE (void** out, u64 ixid)
-  {
-    game.expose (out, ixid);
+    frame.add_label (
+      nullptr,
+      &square, 1,
+      Co::Spatial2D (Co::Vector2 (20, 20), Co::rotate (prev_time * 5.0f)),
+      Co::Spatial2D (Co::Vector2 (20, 20), Co::rotate (time      * 5.0f)),
+      nil, nil,
+      col, col
+    );
   }
 
 } // namespace Ir

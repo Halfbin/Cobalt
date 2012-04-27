@@ -8,37 +8,43 @@
 
 // Uses
 #include "GLRenderer.hpp"
-#include "GLBuffer.hpp"
-#include "GL.hpp"
 
 namespace Co
 {
-  class IxGeomBuffer;
-
-  GLCompilation::~GLCompilation ()
-  {
-    renderer.add_garbage_vao (vao);
-  }
-
-  void GLCompilation::destroy ()
-  {
-    delete this;
-  }
-
   GLCompilation::GLCompilation (
     const GeomAttrib* new_attribs,
     const GeomAttrib* new_attribs_end,
-    IxGeomBuffer*     new_elements,
-    IxGeomBuffer*     new_indices,
+    GeomBuffer::Ptr   new_elements,
+    GeomBuffer::Ptr   new_indices,
     IndexType         new_index_type
   ) :
     vao        (0),
     attribs    (new_attribs, new_attribs_end),
-    elements   (static_cast <GLBuffer*> (new_elements)),
-    indices    (static_cast <GLBuffer*> (new_indices)),
+    elements   (std::static_pointer_cast <GLBuffer> (new_elements)),
+    indices    (std::static_pointer_cast <GLBuffer> (new_indices)),
     index_type (new_index_type)
   { }
   
+  GLCompilation::Ptr GLCompilation::create (
+    WorkQueue&        work_queue,
+    const GeomAttrib* new_attribs,
+    const GeomAttrib* new_attribs_end,
+    GeomBuffer::Ptr   new_elements,
+    GeomBuffer::Ptr   new_indices,
+    IndexType         new_index_type)
+  {
+    return Ptr (
+      new GLCompilation (
+        new_attribs,
+        new_attribs_end,
+        new_elements,
+        new_indices,
+        new_index_type
+      ),
+      work_queue.make_deleter <GLCompilation> ()
+    );
+  }
+
   bool GLCompilation::first_use ()
   {
     glGenVertexArrays (1, &vao);
@@ -84,4 +90,7 @@ namespace Co
     return true;
   }
 	
+  GLCompilation::~GLCompilation ()
+  { }
+
 } // namespace Co

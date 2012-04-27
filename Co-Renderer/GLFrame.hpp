@@ -7,15 +7,18 @@
 #define CO_GLRENDERER_H_GLFRAME
 
 // Implements
-#include <Co/IxFrame.hpp>
+#include <Co/Frame.hpp>
 
 // Uses
 #include <Rk/MatrixForward.hpp>
 
+#include "GLCompilation.hpp"
 #include "SkyboxProgram.hpp"
 #include "GeomProgram.hpp"
 #include "RectProgram.hpp"
 #include "GLTexImage.hpp"
+
+#include <vector>
 
 namespace Co
 {
@@ -23,72 +26,118 @@ namespace Co
   // = GLFrame =========================================================================================================
   //
   class GLFrame :
-    public IxFrame
+    public Frame
   {
-    struct PointSpatial
-    {
-      Spatial prev, // 32
-              cur;  // 64
-    };
-    
     struct PointGeom
     {
-      u32 mesh_count,     // 4
-          material_count; // 8
-    };
+      GLCompilation::Ptr comp;
+      Spatial            prev,
+                         cur;
+      u32                mesh_count,
+                         material_count;
 
-    struct UIBatch
-    {
-      IxTexImage* tex;   //  4  8
-      u32         first, //  8 12
-                  count; // 12 16
+      PointGeom (GLCompilation::Ptr comp, Spatial prev, Spatial cur) :
+        comp           (std::move (comp)),
+        prev           (prev),
+        cur            (cur),
+        mesh_count     (0),
+        material_count (0)
+      { }
+      
     };
 
     struct Label
     {
-      IxTexImage* tex;   //  4  8
-      u32         first, //  8 12
-                  count; // 12 16
+      GLTexImage::Ptr tex;
+      u32             first,
+                      count;
+      Vector4         prev_linear_colour,
+                      cur_linear_colour,
+                      prev_const_colour,
+                      cur_const_colour;
+
+      Label (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        Vector4         prev_linear_colour,
+        Vector4         cur_linear_colour,
+        Vector4         prev_const_colour,
+        Vector4         cur_const_colour
+      ) :
+        tex                (std::move (tex)),
+        first              (first),
+        count              (count),
+        prev_linear_colour (prev_linear_colour),
+        cur_linear_colour  (cur_linear_colour),
+        prev_const_colour  (prev_const_colour),
+        cur_const_colour   (cur_const_colour)
+      { }
+      
     };
 
-    // Limits
-    enum
+    struct Label2D :
+      Label
     {
-      max_point_geoms = 5000,
-      max_meshes      = 5000,
-      max_materials   = 5000,
-      max_ui_batches  = 2000,
-      max_labels      = 2000,
-      max_tex_rects   = 10000,
-      max_lights      = 8
+      Spatial2D prev,
+                current;
+
+      Label2D (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        Spatial2D       prev,
+        Spatial2D       current,
+        Vector4         prev_linear_colour,
+        Vector4         cur_linear_colour,
+        Vector4         prev_const_colour,
+        Vector4         cur_const_colour
+      ) :
+        Label   (std::move (tex), first, count, prev_linear_colour, cur_linear_colour, prev_const_colour, cur_const_colour),
+        prev    (prev),
+        current (current)
+      { }
+      
     };
-    
+
+    struct Label3D :
+      Label
+    {
+      Spatial prev,
+              current;
+      
+      Label3D (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        Spatial         prev,
+        Spatial         current,
+        Vector4         prev_linear_colour,
+        Vector4         cur_linear_colour,
+        Vector4         prev_const_colour,
+        Vector4         cur_const_colour
+      ) :
+        Label   (std::move (tex), first, count, prev_linear_colour, cur_linear_colour, prev_const_colour, cur_const_colour),
+        prev    (prev),
+        current (current)
+      { }
+      
+    };
+
     // Data
-    PointSpatial       point_spats [max_point_geoms];
-    PointGeom          point_geoms [max_point_geoms];
-    IxGeomCompilation* point_comps [max_point_geoms];
-    Mesh               meshes      [max_meshes];
-    Material           materials   [max_materials];
-    UIBatch            ui_batches  [max_ui_batches];
-    Label              labels      [max_labels];
-    PointSpatial       label_spats [max_labels];
-    TexRect            tex_rects   [max_tex_rects];
-    Light              lights      [max_lights];
+    std::vector <PointGeom> geoms;
+    std::vector <Mesh>      meshes;
+    std::vector <Material>  materials;
+    std::vector <Label2D>   labels_2d;
+    std::vector <Label3D>   labels_3d;
+    std::vector <TexRect>   rects;
+    std::vector <Light>     lights;
 
     // Skybox
-    GLTexImage* skybox_tex;
-    Vector3     skybox_colour;
-    float       skybox_prev_alpha,
-                skybox_cur_alpha;
-
-    // Indices
-    u32 point_geoms_back_index,
-        meshes_back_index,
-        materials_back_index,
-        ui_batches_back_index,
-        labels_back_index,
-        tex_rects_back_index,
-        lights_back_index;
+    GLTexImage::Ptr skybox_tex;
+    Vector3         skybox_colour;
+    float           skybox_prev_alpha,
+                    skybox_cur_alpha;
 
     // Camera
     Spatial camera_prev,
@@ -103,37 +152,64 @@ namespace Co
         height;
 
     // Rendering
-    void render_point_geoms (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
-    void render_labels      (float alpha);
-    void render_ui_batches  (RectProgram& rect_program);
+    void render_geoms     (Rk::Matrix4f model_to_clip, GeomProgram& geom_program, float alpha);
+    void render_labels_3d (float alpha);
+    void render_labels_2d (RectProgram& rect_program, float alpha);
 
   public:
-    // Timing
-    u32 id;
-    float time, prev_time;
+    GLFrame ();
 
-    // VAO cleanup
-    enum Maxima { max_garbage_vaos = 256 };
-    u32 garbage_vaos [max_garbage_vaos];
-    uint garbage_vao_back_index;
+    // Timing
+    float time,
+          prev_time;
+
+    virtual uint get_width  ();
+    virtual uint get_height ();
 
     // Drawing interface
-    virtual bool begin_point_geom (IxGeomCompilation* compilation, Spatial prev, Spatial current);
-    virtual void end_point_geom   ();
-    virtual void add_meshes       (const Mesh* meshes, const Mesh* end);
-    virtual void add_materials    (const Material* materials, const Material* end);
-    virtual void add_ui_batch     (IxTexImage* texture, const TexRect* rects, const TexRect* end);
-    virtual void add_label        (IxTexImage* texture, Spatial prev, Spatial current, const TexRect* begin, const TexRect* end);
-    virtual void add_lights       (const Light* lights, const Light* end);
-    virtual void set_camera       (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far);
-    virtual void set_size         (u32 width, u32 height);
-    virtual void set_skybox       (IxTexImage* cube, Co::Vector3 colour, float prev_alpha, float alpha);
+    virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial prev, Spatial current);
+    virtual void end              ();
+
+    virtual void add_label (
+      TexImage::Ptr  texture,
+      const TexRect* rects,
+      const TexRect* end,
+      Spatial2D      prev,
+      Spatial2D      cur,
+      Vector4        prev_linear_colour,
+      Vector4        cur_linear_colour,
+      Vector4        prev_const_colour,
+      Vector4        cur_const_colour
+    );
+
+    virtual void add_label (
+      TexImage::Ptr  texture,
+      const TexRect* rects,
+      const TexRect* end,
+      Spatial        prev,
+      Spatial        cur,
+      Vector4        prev_linear_colour,
+      Vector4        cur_linear_colour,
+      Vector4        prev_const_colour,
+      Vector4        cur_const_colour
+    );
+
+    virtual void add_lights (const Light* lights, const Light* end);
+    virtual void set_skybox (TexImage::Ptr cube, Co::Vector3 colour, float prev_alpha, float alpha);
+
+    virtual void set_camera (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far);
+    virtual void set_size   (u32 width, u32 height);
+    
+    virtual void add_meshes    (const Mesh*     begin, const Mesh*     end);
+    virtual void add_materials (const Material* begin, const Material* end);
+    
+    virtual void submit ();
 
     // Rendering
     void render (float alpha, SkyboxProgram& skybox_program, GeomProgram& geom_program, RectProgram& rect_program);
     
     // Acquisition
-    u32 reset (float new_prev_time, float new_current_time, u32 id_advance, u32& new_id);
+    void reset (float new_prev_time, float new_current_time);
 
   }; // class GLFrame
 

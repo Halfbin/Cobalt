@@ -156,7 +156,7 @@ namespace Co
     
     u16 atom = RegisterClassExW (&wc);
     if (!atom)
-      throw Rk::Exception ("Error registering window class");
+      throw Rk::WinError ("Error registering window class");
     
     // Save window border sizes
     borders = Rect (0, 0, 0, 0);
@@ -199,10 +199,7 @@ namespace Co
     );
 
     if (!handle)
-    {
-      throw Rk::Exception ("Error creating window")
-        << " GetLastError () " << GetLastError ();
-    }
+      throw Rk::WinError ("Error creating window");
     
     SetWindowLongPtrW (handle, gwlp_userdata, this);
 

@@ -3,8 +3,6 @@
 // All Rights Reserved.
 //
 
-#include <Rk/Expose.hpp>
-
 #include "GLRenderer.hpp"
 
 namespace Co
@@ -12,9 +10,6 @@ namespace Co
   //
   // Module interface
   //
-  IX_EXPOSE (void** out, u64 ixid)
-  {
-    renderer.expose (ixid, out);
-  }
+  
 
 }

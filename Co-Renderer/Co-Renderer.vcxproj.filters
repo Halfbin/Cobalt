@@ -39,18 +39,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxRenderer.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxRenderDevice.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxGeomBuffer.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\IxGeomCompilation.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="GLBuffer.hpp">
       <Filter>GLBuffer</Filter>
     </ClInclude>
@@ -60,19 +48,10 @@
     <ClInclude Include="GLRenderer.hpp">
       <Filter>GLRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="GLContext.hpp">
-      <Filter>GLContext</Filter>
-    </ClInclude>
     <ClInclude Include="GLFrame.hpp">
       <Filter>GLFrame</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxRenderContext.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="GL.hpp" />
-    <ClInclude Include="..\Include\Co\IxTexImage.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="GLTexImage.hpp">
       <Filter>GLTexImage</Filter>
     </ClInclude>
@@ -85,11 +64,32 @@
     <ClInclude Include="RectProgram.hpp">
       <Filter>Shaders\Rect</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\IxFrame.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="SkyboxProgram.hpp">
       <Filter>Shaders\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Frame.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\GeomBuffer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\GeomCompilation.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\RenderContext.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\RenderDevice.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\Renderer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\TexImage.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="GLContext.hpp">
+      <Filter>GLContext</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

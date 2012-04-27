@@ -3,7 +3,7 @@
 // All Rights Reserved.
 //
 
-#include <Co/IxFrame.hpp>
+#include <Co/Frame.hpp>
 
 #include "RectProgram.hpp"
 
@@ -22,12 +22,17 @@ namespace Co
     program.link ();
 
     ui_to_clip    = program.link_uniform ("ui_to_clip");
-    tex_to_colour = program.link_uniform ("tex_to_colour");
+    ui_to_ui      = program.link_uniform ("ui_to_ui");
+    linear_colour = program.link_uniform ("linear_colour");
+    const_colour  = program.link_uniform ("const_colour");
 
     program.use ();
 
     u32 tex = program.link_uniform ("tex");
     glUniform1i (tex, texunit_tex);
+
+    //set_linear_colour (Vector4 (1, 1, 1, 1));
+    //set_const_colour  (Vector4 (0, 0, 0, 0));
 
     program.done ();
 

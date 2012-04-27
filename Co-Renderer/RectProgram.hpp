@@ -6,7 +6,7 @@
 #ifndef CO_GLRENDERER_H_RECTPROGRAM
 #define CO_GLRENDERER_H_RECTPROGRAM
 
-#include <Rk/Matrix.hpp>
+#include <Co/Spatial.hpp>
 
 #include "GLShader.hpp"
 #include "GL.hpp"
@@ -20,7 +20,9 @@ namespace Co
     GLProgram program;
 
     u32 ui_to_clip,
-        tex_to_colour;
+        ui_to_ui,
+        linear_colour,
+        const_colour;
 
     u32 buffer,
         vao;
@@ -40,16 +42,29 @@ namespace Co
     void use  ();
     void done ();
 
-    void set_ui_to_clip (Rk::Matrix2x3f xform)
+    void set_ui_to_clip (Rk::Matrix3f xform)
     {
-      glUniformMatrix3x2fv (ui_to_clip, 1, true, xform.raw ());
+      glUniformMatrix3fv (ui_to_clip, 1, true, xform.raw ());
       check_gl ("glUniformMatrix3x2fv");
     }
 
-    void set_tex_to_colour (Rk::Matrix4f xform)
+    void set_linear_colour (Vector4 colour)
     {
-      glUniformMatrix4fv (tex_to_colour, 1, true, xform.raw ());
-      check_gl ("glUniformMatrix4fv");
+      glUniform4f (linear_colour, colour.x, colour.y, colour.z, colour.w);
+      check_gl ("glUniform4f");
+    }
+
+    void set_const_colour (Vector4 colour)
+    {
+      glUniform4f (const_colour, colour.x, colour.y, colour.z, colour.w);
+      check_gl ("glUniform4f");
+    }
+
+    void set_transform (Spatial2D xform)
+    {
+      auto mat = xform.to_matrix ();
+      glUniformMatrix3fv (ui_to_ui, 1, true, mat.raw ());
+      check_gl ("glUniformMatrix3fv");
     }
 
     void upload_rects (const TexRect* rects, u32 count)

@@ -4,39 +4,32 @@
 //
 
 // Implements
-#include <Co/IxModelFactory.hpp>
-#include <Co/IxModel.hpp>
+#include <Co/Model.hpp>
 
 // Uses
-#include <Co/IxGeomCompilation.hpp>
-#include <Co/IxRenderContext.hpp>
-#include <Co/IxLoadContext.hpp>
-#include <Co/IxGeomBuffer.hpp>
+#include <Co/GeomCompilation.hpp>
+#include <Co/ResourceFactory.hpp>
+#include <Co/RenderContext.hpp>
+#include <Co/Filesystem.hpp>
+#include <Co/GeomBuffer.hpp>
+#include <Co/WorkQueue.hpp>
 
+#include <Rk/AsyncMethod.hpp>
 #include <Rk/ChunkLoader.hpp>
-#include <Rk/ShortString.hpp>
-#include <Rk/Expose.hpp>
+#include <Rk/Module.hpp>
+#include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
 
 #include <unordered_map>
-
-namespace
-{
-  extern "C" long _InterlockedIncrement (long*);
-  #pragma intrinsic (_InterlockedIncrement)
-
-  extern "C" long _InterlockedDecrement (long*);
-  #pragma intrinsic (_InterlockedDecrement)
-
-}
+#include <vector>
 
 namespace Co
 {
   //
-  // = Model ===========================================================================================================
+  // = ModelImpl =======================================================================================================
   //
-  class Model :
-    public IxModel
+  class ModelImpl :
+    public Model
   {
     struct Header
     {
@@ -46,7 +39,7 @@ namespace Co
       u16 material_count,
           vismesh_count;
     };
-    static_assert (sizeof (Header) == 16, "Model::Header miscompiled");
+    static_assert (sizeof (Header) == 16, "ModelImpl::Header miscompiled");
 
     struct VisMesh
     {
@@ -54,46 +47,37 @@ namespace Co
           element_count,
           material;
     };
-    static_assert (sizeof (VisMesh) == 6, "Model::VisMesh miscompiled");
+    static_assert (sizeof (VisMesh) == 6, "ModelImpl::VisMesh miscompiled");
 
-    Co::IxGeomBuffer::Ptr element_buffer,
-                          index_buffer;
-    Rk::ShortString <512> path;
-    long                  ref_count;
+    GeomCompilation::Ptr comp;
+    std::string          path;
+    std::vector <Mesh>   meshes;
+    Rk::Mutex            mutex;
 
-    virtual void acquire ()
+    virtual GeomCompilation::Ptr retrieve (const Mesh*& meshes_out, uint& count_out)
     {
-      _InterlockedIncrement (&ref_count);
+      meshes_out = meshes.data ();
+      count_out  = meshes.size ();
+      return std::move (comp);
     }
 
-    virtual void release ()
-    {
-      _InterlockedDecrement (&ref_count);
-    }
-
-    virtual void dispose ()
-    {
-      delete this;
-    }
-
-    ~Model ()
-    {
-      comp -> destroy ();
-      delete [] meshes;
-    }
+    ModelImpl (Rk::StringRef new_path) :
+      path ("Models/" + new_path.string ())
+    { }
     
-    virtual void load (IxRenderContext& rc) try
+  public:
+    void construct (std::shared_ptr <ModelImpl>& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
     {
       using Rk::ChunkLoader;
       
-      Rk::File file (path, Rk::File::open_read_existing);
+      auto file = fs.open_read (path);
 
       char magic [8];
-      file.get_array (magic);
+      Rk::get (*file, magic);
       if (Rk::StringRef (magic, 8) != "RKMODEL1")
-        throw Rk::Exception ("Source file corrupt or not a model");
+        throw std::runtime_error ("Source file corrupt or not a model");
 
-      ChunkLoader loader (file);
+      auto loader = Rk::make_chunk_loader (*file);
       Header header;
 
       std::unique_ptr <u8 []> buffer;
@@ -105,38 +89,40 @@ namespace Co
         buffer_size = size;
       };
 
+      GeomBuffer::Ptr element_buffer,
+                      index_buffer;
+
       while (loader.resume ())
       {
         switch (loader.type)
         {
           case chunk_type ('H', 'E', 'A', 'D'):
-            file.read (&header, loader.size);
+            file -> read (&header, loader.size);
             if (header.version != (2011 << 16 | 3 << 8 | 27))
-              throw Rk::Exception ("Model is of an unsupported version");
-            element_buffer = rc.create_buffer (header.element_count * 32);
-            index_buffer   = rc.create_buffer (header.index_count   *  2);
-            mesh_count = header.vismesh_count;
-            meshes = new Mesh [mesh_count];
+              throw std::runtime_error ("Model is of an unsupported version");
+            element_buffer = rc.create_buffer (queue, header.element_count * 32);
+            index_buffer   = rc.create_buffer (queue, header.index_count   *  2);
+            meshes.resize (header.vismesh_count);
           break;
           
           case chunk_type ('E', 'L', 'E', 'M'):
             buffer_reserve (loader.size);
-            file.read (buffer.get (), loader.size);
+            file -> read (buffer.get (), loader.size);
             element_buffer -> load_data (buffer.get (), loader.size);
           break;
           
           case chunk_type ('I', 'D', 'C', 'S'):
             buffer_reserve (loader.size);
-            file.read (buffer.get (), loader.size);
+            file -> read (buffer.get (), loader.size);
             index_buffer -> load_data (buffer.get (), loader.size);
           break;
           
           case chunk_type ('V', 'M', 'S', 'H'):
           {
             buffer_reserve (loader.size);
-            file.read (buffer.get (), loader.size);
+            file -> read (buffer.get (), loader.size);
             auto vis_meshes = (const VisMesh*) buffer.get ();
-            for (uint i = 0; i != mesh_count; i++)
+            for (uint i = 0; i != meshes.size (); i++)
             {
               meshes [i].prim_type     = prim_triangles;
               meshes [i].material      = vis_meshes [i].material;
@@ -148,7 +134,7 @@ namespace Co
           break;
           
           default:
-            file.seek (loader.size);
+            file -> seek (loader.size);
         }
       }
 
@@ -158,76 +144,43 @@ namespace Co
         { attrib_normal,   attrib_f32, 32, 20 }
       };
 
-      comp = rc.create_compilation (attribs, element_buffer.get (), index_buffer.get (), index_u16);
-
-      ready = true;
+      auto lock = mutex.get_lock ();
+      comp = rc.create_compilation (queue, attribs, element_buffer, index_buffer, index_u16);
     }
-    catch (...)
+
+    static Ptr create (WorkQueue& queue, Rk::StringRef new_path)
     {
-      delete [] meshes;
-      throw;
+      return queue.gc_construct (new ModelImpl (new_path));
+    }
+
+  };
+
+  //
+  // = FactoryImpl =====================================================================================================
+  //
+  class FactoryImpl :
+    public ModelFactory,
+    public ResourceFactory <std::string, ModelImpl>
+  {
+    virtual Model::Ptr create (WorkQueue& queue, Rk::StringRef path)
+    {
+      auto ptr = find (path.string ());
+      if (!ptr)
+      {
+        ptr = ModelImpl::create (queue, path);
+        add (path.string (), ptr);
+      }
+      return std::move (ptr);
     }
 
   public:
-    Model (IxLoadContext* context, Rk::StringRef new_path)
+    static std::shared_ptr <FactoryImpl> create ()
     {
-      ref_count = 1;
-      path = context -> get_game_path ();
-      path += "Models/";
-      path += new_path;
-      comp = 0;
-      meshes = 0;
-      mesh_count = 0;
-      context -> load (this);
+      return std::make_shared <FactoryImpl> ();
     }
 
-    bool dead () const
-    {
-      return ref_count == 0;
-    }
+  };
 
-  }; // class Model
-
-  //
-  // = ModelFactory ====================================================================================================
-  //
-  class ModelFactory :
-    public IxModelFactory
-  {
-    typedef std::unordered_map <Rk::ShortString <512>, IxModel*> CacheType;
-    CacheType cache;
-
-    virtual IxModel* create (IxLoadContext* context, Rk::StringRef path)
-    {
-      IxModel* model;
-
-      auto iter = cache.find (path);
-
-      if (iter != cache.end ())
-      {
-        model = iter -> second;
-        model -> acquire ();
-      }
-      else
-      {
-        model = new Model (context, path);
-        cache.insert (CacheType::value_type (path, model));
-      }
-      
-      return model;
-    }
-
-  public:
-    ~ModelFactory ()
-    {
-
-    }
-
-  } factory;
-
-  IX_EXPOSE (void** out, u64 ixid)
-  {
-    Rk::expose <IxModelFactory> (factory, ixid, out);
-  }
+  RK_MODULE_FACTORY (FactoryImpl);
 
 } // namespace Co

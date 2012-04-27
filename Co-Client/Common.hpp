@@ -6,11 +6,15 @@
 #ifndef CO_CLIENT_H_COMMON
 #define CO_CLIENT_H_COMMON
 
-#include <Rk/VirtualOutStream.hpp>
+#include <Co/Log.hpp>
+
+#include <Rk/Module.hpp>
 
 namespace Co
 {
-  extern Rk::VirtualLockedOutStream log;
+  extern Log log;
+
+  Rk::Module load_module (Rk::StringRef path);
 
 }
 

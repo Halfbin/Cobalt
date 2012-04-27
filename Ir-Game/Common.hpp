@@ -6,19 +6,24 @@
 #ifndef IR_H_COMMON
 #define IR_H_COMMON
 
-#include <Co/IxTextureFactory.hpp>
-#include <Co/IxModelFactory.hpp>
-#include <Co/IxFontFactory.hpp>
-#include <Co/IxEngine.hpp>
+#include <Co/Texture.hpp>
+#include <Co/Model.hpp>
+#include <Co/Font.hpp>
+#include <Co/Log.hpp>
 
 namespace Ir
 {
-  extern Co::IxTextureFactory* texture_factory;
-  extern Co::IxModelFactory*   model_factory;
-  extern Co::IxFontFactory*    font_factory;
-  extern Co::IxLoadContext*    load_context;
-  extern Co::IxEngine*         engine;
+  extern Co::Log* log_ptr;
 
+  static inline Co::Log::Lock log ()
+  {
+    return log_ptr -> lock ();
+  }
+
+  extern Co::TextureFactory::Ptr texture_factory;
+  extern Co::ModelFactory::Ptr   model_factory;
+  extern Co::FontFactory::Ptr    font_factory;
+  
 }
 
 #endif

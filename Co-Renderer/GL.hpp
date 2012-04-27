@@ -7,13 +7,10 @@
 #define CO_GLRENDERER_H_GL
 
 #include <Rk/Exception.hpp>
+#include <Rk/StringRef.hpp>
 
 #include <gl/glew.h>
 //#include <gl/wglew.h>
-
-#pragma comment (lib, "opengl32")
-#pragma comment (lib, "glew32")
-#pragma comment (lib, "glu32")
 
 //
 // = WGL API ===========================================================================================================
@@ -44,15 +41,25 @@ namespace Co
   //
   #ifndef NDEBUG
 
+  class GLError :
+    public std::runtime_error
+  {
+  public:
+    GLError (Rk::StringRef message) :
+      runtime_error (message.string ())
+    { }
+    
+  };
+
   __declspec(noreturn) static void throw_gl (GLenum err, const char* last_call)
   {
     switch (err)
     {
-      case GL_INVALID_ENUM:      throw Rk::Exception ("Invalid enum");
-      case GL_INVALID_VALUE:     throw Rk::Exception ("Invalid value");
-      case GL_INVALID_OPERATION: throw Rk::Exception ("Invalid operation");
-      case GL_OUT_OF_MEMORY:     throw Rk::Exception ("Out of memory");
-      default:                   throw Rk::Exception ("Unknown exception");
+      case GL_INVALID_ENUM:      throw GLError ("Invalid enum");
+      case GL_INVALID_VALUE:     throw GLError ("Invalid value");
+      case GL_INVALID_OPERATION: throw GLError ("Invalid operation");
+      case GL_OUT_OF_MEMORY:     throw GLError ("Out of memory");
+      default:                   throw GLError ("Unknown exception");
     }
   }
 

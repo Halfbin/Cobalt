@@ -7,11 +7,9 @@
 #define CO_GLRENDERER_H_GLRENDERER
 
 // Implements
-#include <Co/IxRenderDevice.hpp>
-#include <Co/IxRenderer.hpp>
+#include <Co/Renderer.hpp>
 
 // Uses
-#include <Rk/VirtualOutStream.hpp>
 #include <Rk/FixedQueue.hpp>
 #include <Rk/Thread.hpp>
 #include <Rk/Mutex.hpp>
@@ -25,8 +23,7 @@ namespace Co
   // = GLRenderer ======================================================================================================
   //
   class GLRenderer :
-    public IxRenderer,
-    public IxRenderDevice
+    public Renderer
   {
     // Frame queueing and rendering
     static const uint frame_count = 10;
@@ -37,7 +34,6 @@ namespace Co
     Rk::Mutex  free_frames_mutex;
     FrameQueue ready_frames;
     Rk::Mutex  ready_frames_mutex;
-    GLFrame*   prepping_frame;
     Rk::Thread thread;
 
     // Render device
@@ -51,39 +47,40 @@ namespace Co
               height;
 
     // Subsystems
-    Clock*                     clock;
-    Rk::VirtualLockedOutStream log;
+    const Clock* clock;
+    Log*         log_ptr;
 
+    Log::Lock log ()
+    {
+      return log_ptr -> lock ();
+    }
+
+    // Internal
+    void loop  ();
+    
     // Setup and teardown
-    virtual bool init    (void* new_target, Clock* new_clock, Rk::IxLockedOutStreamImpl* new_logger);
-    void         cleanup ();
-
-    // Shader setup
-    //void load_shaders ();
-
-    // Rendering control
-    void         loop  ();
-    virtual void start ();
-    virtual void stop  ();
+    virtual void init (void* hwnd, const Clock& clock, Log& log);
+    void         stop ();
 
     // Frame exchange
-    virtual IxFrame* begin_frame  (float prev_time, float current_time, u32& old_frame_id, u32& new_frame_id);
-    virtual void     submit_frame (IxFrame*);
+    virtual Frame* begin_frame (
+      float prev_time,
+      float current_time
+    );
 
     // Device
-    GLContext*               create_context_impl ();
-    virtual IxRenderContext* create_context      ();
-    virtual void             set_size            (uint width, uint height);
+    GLContext::Ptr             create_context_impl ();
+    virtual RenderContext::Ptr create_context      ();
+    virtual void               set_size            (uint width, uint height);
 
-    GLRenderer  ();
-    ~GLRenderer ();
+    GLRenderer ();
 
   public:
     static GLRenderer instance;
 
-    void expose (u64 ixid, void** result);
+    static std::shared_ptr <GLRenderer> create ();
 
-    void add_garbage_vao (u32 vao);
+    void submit_frame (GLFrame* frame);
 
   }; // class GLRenderer
 

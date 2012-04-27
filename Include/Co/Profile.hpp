@@ -6,7 +6,7 @@
 #ifndef CO_H_PROFILE
 #define CO_H_PROFILE
 
-#include <Rk/VirtualOutStream.hpp>
+/*#include <Rk/VirtualOutStream.hpp>
 #include <Rk/StringRef.hpp>
 
 #include <Co/Clock.hpp>
@@ -32,6 +32,6 @@ namespace Co
 
   };
 
-}
+}*/
 
 #endif

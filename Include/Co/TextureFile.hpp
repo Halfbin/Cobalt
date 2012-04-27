@@ -26,7 +26,8 @@ namespace Co
     texformat_dxt5,
     texformat_dxtn,
 
-    tex_r8,
+    texformat_r8,
+    texformat_a8,
 
     texformat_count
   };

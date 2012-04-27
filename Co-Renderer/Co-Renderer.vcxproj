@@ -11,13 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\IxFrame.hpp" />
-    <ClInclude Include="..\Include\Co\IxGeomCompilation.hpp" />
-    <ClInclude Include="..\Include\Co\IxGeomBuffer.hpp" />
-    <ClInclude Include="..\Include\Co\IxRenderContext.hpp" />
-    <ClInclude Include="..\Include\Co\IxRenderDevice.hpp" />
-    <ClInclude Include="..\Include\Co\IxRenderer.hpp" />
-    <ClInclude Include="..\Include\Co\IxTexImage.hpp" />
+    <ClInclude Include="..\Include\Co\Frame.hpp" />
+    <ClInclude Include="..\Include\Co\GeomCompilation.hpp" />
+    <ClInclude Include="..\Include\Co\GeomBuffer.hpp" />
+    <ClInclude Include="..\Include\Co\RenderContext.hpp" />
+    <ClInclude Include="..\Include\Co\RenderDevice.hpp" />
+    <ClInclude Include="..\Include\Co\Renderer.hpp" />
+    <ClInclude Include="..\Include\Co\TexImage.hpp" />
     <ClInclude Include="GeomProgram.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GLBuffer.hpp" />
@@ -46,6 +46,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
       <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-WorkQueue\Co-WorkQueue.vcxproj">
+      <Project>{72e38e20-2807-40dd-bb04-de498eb131b8}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -150,7 +153,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;opengl32.lib;glew32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -164,7 +167,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Co-Rk$(CoSuffix).lib;opengl32.lib;glew32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
