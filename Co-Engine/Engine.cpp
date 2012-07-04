@@ -68,11 +68,12 @@ namespace Co
       virtual float start       ();
       virtual void  post_events (const UIEvent* events, const UIEvent* end);
       virtual void  wait        ();
-      virtual bool  update      (float&, uint, uint, const UIEvent*, uint);
+      virtual bool  update      (float&, uint, uint, const UIEvent*, uint, const KeyState*, v2f);
       virtual void  stop        ();
+      virtual void  enable_ui   (bool enable);
 
       // Object creation
-      virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap& props);
+      virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props);
       
       // Linking
       virtual std::shared_ptr <void> get_object (Rk::StringRef type);
@@ -91,7 +92,7 @@ namespace Co
 
     RK_MODULE_FACTORY (EngineImpl);
 
-    const float EngineImpl::frame_rate     = 75.0f,
+    const float EngineImpl::frame_rate     = 60.0f,
                 EngineImpl::frame_interval = 1.0f / frame_rate;
 
     void EngineImpl::init (Host& new_host, Renderer::Ptr new_renderer, WorkQueue& new_queue, Game::Ptr new_game)
@@ -145,7 +146,7 @@ namespace Co
       }
     }
 
-    bool EngineImpl::update (float& next_update, uint width, uint height, const UIEvent* ui_events, uint ui_event_count)
+    bool EngineImpl::update (float& next_update, uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta)
     {
       if (!running)
       {
@@ -160,7 +161,7 @@ namespace Co
       game -> tick (*queue, *frame, time, prev_time, ui_events, ui_event_count);
 
       for (auto ent = entities.begin (); ent != entities.end (); ent++)
-        (*ent) -> tick (*frame, time, prev_time);
+        (*ent) -> tick (*frame, time, prev_time, keyboard, mouse_delta);
       
       frame -> submit ();
 
@@ -176,13 +177,18 @@ namespace Co
       running = false;
     }
 
+    void EngineImpl::enable_ui (bool enable)
+    {
+      host -> enable_ui (enable);
+    }
+
     void EngineImpl::post_events (const UIEvent* begin, const UIEvent* end)
     {
       if (!begin || end < begin)
         throw std::invalid_argument ("Invalid range");
     }
 
-    Entity::Ptr EngineImpl::create_entity (Rk::StringRef class_name, const PropMap& props)
+    Entity::Ptr EngineImpl::create_entity (Rk::StringRef class_name, const PropMap* props)
     {
       if (!class_name)
         throw std::invalid_argument ("class_name is nil");

@@ -40,17 +40,20 @@ namespace Co
     auto cur_mesh = meshes.begin    ();
     auto cur_mat  = materials.begin ();
 
-    GLCompilation::Ptr prev_comp = nullptr;
+    //GLCompilation::Ptr prev_comp = nullptr;
 
     for (auto geom = geoms.begin (); geom != geoms.end (); geom++)
     {
-      if (geom -> comp != prev_comp)
+      /*if (geom -> comp != prev_comp)
       {
         if (prev_comp)
-          prev_comp -> done ();
-        geom -> comp -> use ();
-        prev_comp = geom -> comp;
-      }
+          prev_comp -> done ();*/
+        bool ok = geom -> comp -> use ();
+        /*prev_comp = geom -> comp;
+      }*/
+
+      if (!ok)
+        renderer.log () << "- uh-oh\n";
 
       static const GLenum index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
       static const uptr   index_sizes [4] = { 0, 1, 2, 4 };
@@ -182,9 +185,16 @@ namespace Co
     // Render skybox
     if (skybox_tex)
     {
+      auto sky_to_eye = Rk::world_to_eye_xform (
+        v3f (0, 0, 0),
+        camera_sp.orientation
+      );
+
+      auto sky_to_clip = eye_to_clip * sky_to_eye;
+
       skybox_tex -> bind (skybox_program.texunit_cube);
       float skybox_alpha = Rk::lerp (skybox_prev_alpha, skybox_cur_alpha, alpha);
-      skybox_program.render (world_to_clip, skybox_colour, skybox_alpha);
+      skybox_program.render (sky_to_clip, skybox_colour, skybox_alpha);
     }
     
     // Render point geometries

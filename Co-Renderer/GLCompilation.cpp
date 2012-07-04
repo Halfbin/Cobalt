@@ -59,7 +59,7 @@ namespace Co
       return false;
     }
 
-		if (indices)
+    if (indices)
     {
       if (!indices -> bind (GL_ELEMENT_ARRAY_BUFFER))
       {

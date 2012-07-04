@@ -46,7 +46,7 @@ namespace Co
     FT_Bitmap        bitmap;
     FT_Glyph_Metrics metrics;
     uint             best_x,
-                      best_y;
+                     best_y;
 
   public:
     uint index,
@@ -478,12 +478,13 @@ namespace Co
     //lock.clear ();
 
     // Render the packed glyphs to an image
-    image.pixel_type   = image.i8;
+    image.pixel_type   = Rk::i_8;
     image.row_stride   = image.width;
     image.bottom_up    = false;
     image.pixel_stride = 1;
     image.allocate ();
-    image.fill (255);
+    for (auto ptr = image.data; ptr != image.data + image.size (); ptr++)
+      *ptr = 255;
 
     for (auto iter = glyphs.begin (); iter != glyphs.end (); iter++)
       iter -> blit (image);

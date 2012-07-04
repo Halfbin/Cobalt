@@ -29,6 +29,7 @@ namespace Co
     typedef std::shared_ptr <Renderer> Ptr;
 
     virtual void   init        (void* hwnd, const Clock& clock, Log& log) = 0;
+    virtual void   stop        () = 0;
     virtual Frame* begin_frame (float prev_time, float current_time) = 0;
 
   };

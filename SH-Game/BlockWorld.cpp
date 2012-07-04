@@ -106,19 +106,24 @@ namespace SH
       
   };
 
+  float minfoo = 1.0f, maxfoo = -1.0f;
+
+  //
+  // = Perlin Noise generator ==========================================================================================
+  //
   class Noise
   {
     static const uint size = 65536,
-                      mask = size - 1;
+                      mask = 0xf;
 
-    uint        permute   [size];
-    Co::Vector3 gradients [size];
+    uint permute [size];
+
+    static const Co::Vector3 gradients [16];
 
     static float ease_1 (float t)
     {
-      //t = 1.0f - t;
       float t2 = t * t;
-      return (3.0f * t2) - (2.0f * t2 * t);
+      return t2 * t * (6.0f * t2 - 15.0f * t + 10.0f);
     }
 
     Co::Vector3 grad (Rk::Vector3i pos) const
@@ -138,26 +143,12 @@ namespace SH
       
       for (uint i = 0; i != size; i++)
       {
-        uint other = std::rand () & mask;
+        uint other = 0;
+        for (uint r = 0; r != 10; r++)
+          other += std::rand ();
+        other &= mask;
+
         std::swap (permute [i], permute [other]);
-      }
-
-      // Non-uniform, but okay for now.
-      for (uint i = 0; i != size; i++)
-      {
-        uint samples [3] = { 0, 0, 0 };
-        for (uint s = 0; s != 3; s++)
-          for (uint r = 0; r != 10; r++)
-            samples [s] += uint (std::rand ());
-
-        auto vec = unit (Co::Vector3 (
-          (float (samples [0]) / float (RAND_MAX * 5)) - 1.0f,
-          (float (samples [1]) / float (RAND_MAX * 5)) - 1.0f,
-          (float (samples [2]) / float (RAND_MAX * 5)) - 1.0f
-        ));
-        gradients [i] = vec;
-        /*if (vec.magnitude () > 1.0f)
-          return;*/
       }
     }
 
@@ -190,27 +181,43 @@ namespace SH
         }
       }
 
-      float alpha_x = ease_1 (1.0f - pos.x);
+      float alpha_x = ease_1 (pos.x);
       float xiy0z0 = Rk::lerp (contribs [0][0][0], contribs [1][0][0], alpha_x);
       float xiy1z0 = Rk::lerp (contribs [0][1][0], contribs [1][1][0], alpha_x);
       float xiy0z1 = Rk::lerp (contribs [0][0][1], contribs [1][0][1], alpha_x);
       float xiy1z1 = Rk::lerp (contribs [0][1][1], contribs [1][1][1], alpha_x);
 
-      float alpha_y = ease_1 (1.0f - pos.y);
+      float alpha_y = ease_1 (pos.y);
       float xiyiz0 = Rk::lerp (xiy0z0, xiy1z0, alpha_y);
       float xiyiz1 = Rk::lerp (xiy0z1, xiy1z1, alpha_y);
 
-      float alpha_z = ease_1 (1.0f - pos.z);
+      float alpha_z = ease_1 (pos.z);
       float xiyizi = Rk::lerp (xiyiz0, xiyiz1, alpha_z);
 
       /*if (xiyizi > 1.0f)
         return xiyizi;*/
 
-      return std::abs (xiyizi);
+      auto result = (xiyizi + 1.0f) * 0.5f;
+
+      minfoo = std::min (minfoo, result);
+      maxfoo = std::max (maxfoo, result);
+
+      //log () << result << '\n';
+      return result;
     }
 
   };
 
+  const Co::Vector3 Noise::gradients [16] = {
+    Co::Vector3 (1, 1, 0), Co::Vector3 (-1, 1, 0), Co::Vector3 (1, -1, 0), Co::Vector3 (-1, -1, 0),   
+    Co::Vector3 (1, 0, 1), Co::Vector3 (-1, 0, 1), Co::Vector3 (1, 0, -1), Co::Vector3 (-1, 0, -1),   
+    Co::Vector3 (0, 1, 1), Co::Vector3 (0, -1, 1), Co::Vector3 (0, 1, -1), Co::Vector3 (0, -1, -1), 
+    Co::Vector3 (1, 1, 0), Co::Vector3 (-1, 1, 0), Co::Vector3 (0, -1, 1), Co::Vector3 (0, -1, -1)
+  };
+
+  //
+  // = Chunk ===========================================================================================================
+  //
   class BlockWorld;
 
   class Chunk
@@ -226,8 +233,13 @@ namespace SH
 
     Block blocks [dim][dim][dim];
     
-    Co::GeomCompilation::Ptr compilation;
-    uptr index_count;
+    Co::GeomCompilation::Ptr
+      compilation_load,
+      compilation_draw;
+    uptr
+      index_count_load,
+      index_count_draw;
+    Rk::Mutex mutex;
 
     Rk::Vector3i cpos,
                  bpos;
@@ -254,22 +266,34 @@ namespace SH
       return blocks [bv.x][bv.y][bv.z];
     }
 
-    uint regen_mesh (Co::WorkQueue& queue, const BlockWorld& world, Co::RenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices);
+    uint regen_mesh (
+      Co::WorkQueue&        queue,
+      const BlockWorld&     world,
+      Co::RenderContext&    rc,
+      std::vector <Vertex>& vertices,
+      std::vector <u16>&    indices
+    );
 
     void draw (Co::Frame& frame, const Co::Material& mat)
     {
-      if (!compilation)
-        return;
+      if (!compilation_draw)
+      {
+        auto lock = mutex.get_lock ();
+        compilation_draw = std::move (compilation_load);
+        if (!compilation_draw)
+          return;
+        index_count_draw = index_count_load;
+      }
 
-      Rk::Vector3f fbpos = bpos;
+      //Rk::Vector3f fbpos = bpos;
 
       frame.begin_point_geom (
-        compilation,
-        Co::Spatial (fbpos, nil),
-        Co::Spatial (fbpos, nil)
+        compilation_draw,
+        Co::Spatial (bpos, nil),
+        Co::Spatial (bpos, nil)
       );
 
-      Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
+      Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count_draw);
 
       frame.add_meshes    (&mesh, 1);
       frame.add_materials (&mat,  1);
@@ -282,12 +306,15 @@ namespace SH
 
   }; // class Chunk
 
+  //
+  // = BlockWorld ======================================================================================================
+  //
   class BlockWorld :
     public Co::Entity
   {
     enum
     {
-      world_dim    = 12,
+      world_dim    = 32,
       world_chunks = world_dim * world_dim * world_dim
     };
 
@@ -300,6 +327,8 @@ namespace SH
     Chunk            chunks [world_dim][world_dim][world_dim];
     Co::Texture::Ptr texture;
     Noise            noise;
+
+    static Co::Texture::Ptr sky_tex;
 
     static const Block outside_block;
 
@@ -331,7 +360,7 @@ namespace SH
 
     //enum { chunks_size_mb = sizeof (chunks) / (1024 * 1024) };
 
-    virtual void tick (Co::Frame& frame, float time, float prev_time)
+    virtual void tick (Co::Frame& frame, float time, float prev_time, const Co::KeyState* keyboard, v2f mouse_delta)
     {
       Co::Material material = nil;
       material.diffuse_tex = texture -> get ();
@@ -341,19 +370,26 @@ namespace SH
         for (uint y = 0; y != world_dim; y++)
         {
           for (uint x = 0; x != world_dim; x++)
-            chunk_at (Rk::Vector3i (x, y, z)).draw (frame, material);
+            chunk_at (v3i (x, y, z)).draw (frame, material);
         }
       }
+
+      frame.set_skybox (
+        sky_tex -> get (),
+        v3f (0.0f, 0.0f, 0.0f),
+        1.0f, 1.0f
+      );
     }
 
     BlockWorld (Co::WorkQueue& queue)
     {
-      seed = 923;
-      texture = texture_factory -> create (queue, "Blocks.cotexture", false, false);
+      seed = 10101;
+      texture = texture_factory -> create (queue, "blocks.cotexture", false, false);
+      sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true);
     }
 
   public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap& props)
+    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
     {
       return queue.gc_construct (new BlockWorld (queue));
     }
@@ -368,8 +404,8 @@ namespace SH
         {
           for (int x = 0; x != world_dim; x++)
           {
-            auto& chunk = chunk_at (Rk::Vector3i (x, y, z));
-            chunk.set_pos (Rk::Vector3i (x, y, z));
+            auto& chunk = chunk_at (v3i (x, y, z));
+            chunk.set_pos (v3i (x, y, z));
             chunk.generate_pass_1 (noise);
           }
         }
@@ -380,7 +416,7 @@ namespace SH
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
-            chunk_at (Rk::Vector3i (x, y, z)).generate_pass_2 (*this, noise);
+            chunk_at (v3i (x, y, z)).generate_pass_2 (*this, noise);
         }
       }
 
@@ -398,7 +434,7 @@ namespace SH
         for (int y = 0; y != world_dim; y++)
         {
           for (int x = 0; x != world_dim; x++)
-            triangle_count += chunk_at (Rk::Vector3i (x, y, z)).regen_mesh (queue, *this, rc, 1.0f / 16.0f, vertices, indices);
+            triangle_count += chunk_at (Rk::Vector3i (x, y, z)).regen_mesh (queue, *this, rc, vertices, indices);
         }
       }
 
@@ -413,7 +449,8 @@ namespace SH
 
       log () << "- SH-Game: BlockWorld::load - generated " << triangle_count << " triangles ("
              << size_mb << " MB, "
-             << fill    << "% capacity) \n";
+             << fill    << "% capacity) \n"
+             << "min: " << minfoo << " max: " << maxfoo << '\n';
     }
 
     const Block& block_at (Rk::Vector3i bv) const
@@ -433,11 +470,15 @@ namespace SH
   const Rk::Vector3i BlockWorld::world_extent (world_dim, world_dim, world_dim);
   
   const Block BlockWorld::outside_block (blocktype_void);
+  Co::Texture::Ptr BlockWorld::sky_tex;
 
   void Chunk::generate_pass_1 (const Noise& noise)
   {
-    Co::Vector3 grads [2][2][2];
-    noise.get_gradients (cpos, grads);
+    const uint chunk_period = 2,
+               block_period = chunk_period * dim;
+
+    v3f grads [2][2][2];
+    noise.get_gradients (v3i (cpos.xy () / chunk_period, 0), grads);
     
     for (int z = 0; z != dim; z++)
     {
@@ -445,9 +486,10 @@ namespace SH
       {
         for (int x = 0; x != dim; x++)
         {
-          Co::Vector3 block_pos ((float (x) + 0.5f) / float (dim), (float (y) + 0.5f) / float (dim), (float (z) + 0.5f) / float (dim));
-          float value = noise.get (block_pos, grads);
-          at (Rk::Vector3i (x, y, z)).type = (value > 0.8f) ? blocktype_soil : blocktype_air;
+          v2i flat_pos = bpos.xy () + v2i (x, y);
+          v2f noise_pos = v2f (flat_pos % block_period) / float (block_period);
+          int value = int (112.0f + 16.0f * noise.get (v3f (noise_pos, 0), grads));
+          at (v3i (x, y, z)).type = (z + bpos.z < value) ? blocktype_soil : blocktype_air;
         }
       }
     }
@@ -468,8 +510,12 @@ namespace SH
     }
   }
 
-  uint Chunk::regen_mesh (Co::WorkQueue& queue, const BlockWorld& world, Co::RenderContext& rc, float tg, std::vector <Vertex>& vertices, std::vector <u16>& indices)
+  uint Chunk::regen_mesh (Co::WorkQueue& queue, const BlockWorld& world, Co::RenderContext& rc, std::vector <Vertex>& vertices, std::vector <u16>& indices)
   {
+    //log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
+
+    const float tg = BlockTCoords::t;
+
     uint vertex_count = 0;
 
     for (int z = 0; z != dim; z++)
@@ -478,7 +524,7 @@ namespace SH
       {
         for (int x = 0; x != dim; x++)
         {
-          const auto& block = at (Rk::Vector3i (x, y, z));
+          const auto& block = at (v3i (x, y, z));
 
           if (block.empty ())
             continue;
@@ -495,43 +541,43 @@ namespace SH
 
           //static const float eps = 0.0f;//1.0f / 1024.0f;
 
-          if (world.block_at (bpos + Rk::Vector3i (x + 1, y, z)).empty ())
+          if (world.block_at (bpos + v3i (x + 1, y, z)).empty ())
           {
             // front
-            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.80f, 0.80f, 0.80f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.80f, 0.80f, 0.80f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.80f, 0.80f, 0.80f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.80f, 0.80f, 0.80f));
           }
 
-          if (world.block_at (bpos + Rk::Vector3i (x - 1, y, z)).empty ())
+          if (world.block_at (bpos + v3i (x - 1, y, z)).empty ())
           {
             // back
-            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.60f, 0.60f, 0.60f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.60f, 0.60f, 0.60f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.60f, 0.60f, 0.60f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.60f, 0.60f, 0.60f));
           }
             
-          if (world.block_at (bpos + Rk::Vector3i (x, y + 1, z)).empty ())
+          if (world.block_at (bpos + v3i (x, y + 1, z)).empty ())
           {
             // left
-            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.75f, 0.75f, 0.75f));
-            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.75f, 0.75f, 0.75f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.70f, 0.70f, 0.70f));
           }
             
-          if (world.block_at (bpos + Rk::Vector3i (x, y - 1, z)).empty ())
+          if (world.block_at (bpos + v3i (x, y - 1, z)).empty ())
           {
             // right
-            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.65f, 0.65f, 0.65f));
-            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.65f, 0.65f, 0.65f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.70f, 0.70f, 0.70f));
+            vertices.emplace_back (Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.70f, 0.70f, 0.70f));
           }
             
-          if (world.block_at (bpos + Rk::Vector3i (x, y, z + 1)).empty ())
+          if (world.block_at (bpos + v3i (x, y, z + 1)).empty ())
           {
             // top
             vertices.emplace_back (Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f));
@@ -540,7 +586,7 @@ namespace SH
             vertices.emplace_back (Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f));
           }
             
-          if (world.block_at (bpos + Rk::Vector3i (x, y, z - 1)).empty ())
+          if (world.block_at (bpos + v3i (x, y, z - 1)).empty ())
           {
             // bottom
             vertices.emplace_back (Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f));
@@ -564,7 +610,22 @@ namespace SH
     } // z
 
     if (vertex_count == 0)
+    {
+      log () << "- Empty chunk\n";
       return 0;
+    }
+    
+    /*{
+      auto lock = log ();
+
+      for (auto v = vertices.begin (); v != vertices.end (); v++)
+        lock << "(" << v -> x << " " << v -> y << " " << v -> z << ") ";
+      lock << "\n\n";
+
+      for (auto i = indices.begin (); i != indices.end (); i++)
+        lock << *i << ' ';
+      lock << "\n\n";
+    }*/
 
     auto vertex_buffer = rc.create_buffer (queue, vertices.size () * sizeof (Vertex), vertices.data ()),
          index_buffer  = rc.create_buffer (queue, indices.size ()  * sizeof (u16),    indices.data () );
@@ -575,23 +636,28 @@ namespace SH
       { Co::attrib_colour,   Co::attrib_f32, sizeof (Vertex), 20 },
     };
 
-    compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
+    auto compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
 
     uint vertices_cap = vertices.capacity ();
     vertices.clear ();
     assert (vertices.capacity () == vertices_cap);
 
-    index_count = indices.size ();
+    auto index_count = indices.size ();
     indices.clear ();
 
     uint face_count = vertex_count / 4;
 
-    /*float fill = float (face_count) / float (max_faces) * 100.0f;
-    log << "- Generated chunk at " << fill << "% capacity\n";*/
+    //log () << "- Generated chunk with " << face_count << " faces\n";
+
+    auto lock = mutex.get_lock ();
+
+    compilation_load = std::move (compilation);
+    index_count_load = index_count;
 
     return face_count * 2;
   }
 
   Co::EntityClass <BlockWorld> ent_class ("BlockWorld");
+  Co::EntityClassBase& block_world_class = ent_class;
 
 } // namespace SH

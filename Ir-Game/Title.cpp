@@ -22,7 +22,7 @@ namespace Ir
   {
     Co::Font::Ptr    font;
     Co::Texture::Ptr skybox;
-    float enter_time;
+    float            enter_time;
 
     virtual void precache (Co::WorkQueue& queue);
     virtual bool ready    ();
@@ -85,9 +85,6 @@ namespace Ir
     const Co::UIEvent* ui_events,
     uint               ui_event_count)
   {
-    if (!ready ())
-      return;
-
     Co::Spatial prev, cur;
 
     prev.position = Co::Vector3 (0.0f, 0.0f, 0.0f);
@@ -139,24 +136,6 @@ namespace Ir
       Co::Vector4 (1.0f, 1.0f, 1.0f, 1.0f - t0),
       Co::Vector4 (1.0f, 1.0f, 1.0f, 1.0f - t1)
     );
-
-    for (auto iter = ui_events; iter != ui_events + ui_event_count; iter++)
-    {
-      if (iter -> type == Co::ui_event_mouse_move)
-      {
-        frame.add_label (
-          nullptr,
-          &Co::TexRect (-10, -10, 20, 20, 0, 0, 0, 0), 1,
-          Co::Spatial2D (Co::Vector2 (iter -> a, iter -> b), Co::rotate (prev_time * 10.0f)),
-          Co::Spatial2D (Co::Vector2 (iter -> a, iter -> b), Co::rotate (cur_time  * 10.0f)),
-          nil, nil,
-          Co::Vector4 (glass, 0.7f),
-          Co::Vector4 (glass, 0.7f)
-        );
-
-        break;
-      }
-    }
   }
 
 }

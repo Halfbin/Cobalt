@@ -19,7 +19,7 @@ namespace Co
   {
   public:
     virtual Rk::StringRef name   () const = 0;
-    virtual Entity::Ptr   create (WorkQueue& queue, const PropMap& props) const = 0;
+    virtual Entity::Ptr   create (WorkQueue& queue, const PropMap* props) const = 0;
 
   };
 
@@ -38,7 +38,7 @@ namespace Co
   {
     const Rk::StringRef name_;
 
-    virtual Entity::Ptr create (WorkQueue& queue, const PropMap& props) const
+    virtual Entity::Ptr create (WorkQueue& queue, const PropMap* props) const
     {
       return EntType::create (queue, props);
     }

@@ -44,12 +44,17 @@ extern "C"
   __declspec(dllimport) i32  __stdcall PeekMessageW     (Message*, void*, u32, u32, u32);
   __declspec(dllimport) i32  __stdcall DispatchMessageW (const Message*);
   __declspec(dllimport) i32  __stdcall ShowCursor       (i32);
+  __declspec(dllimport) i32  __stdcall GetKeyboardState (u8*);
+  __declspec(dllimport) i32  __stdcall GetSystemMetrics (i32);
+  __declspec(dllimport) i32  __stdcall GetCursorPos     (Point*);
+  __declspec(dllimport) i32  __stdcall SetCursorPos     (i32, i32);
 }
 
 enum Messages
 {
   wm_size        = 0x0005,
   wm_close       = 0x0010,
+  wm_activateapp = 0x001c,
   wm_keydown     = 0x0100,
   wm_keyup       = 0x0101,
   wm_char        = 0x0103,
@@ -61,6 +66,12 @@ enum Messages
   wm_rbuttonup   = 0x0205,
   wm_mbuttondown = 0x0207,
   wm_mbuttonup   = 0x0208
+};
+
+enum
+{
+  sm_cxscreen = 0,
+  sm_cyscreen = 1,
 };
 
 namespace Co
@@ -108,6 +119,12 @@ namespace Co
 
     keytab [0x90] = key_num_lock;
     keytab [0x91] = key_scroll_lock;
+
+    keytab [0xa0] = key_left_shift;
+    keytab [0xa1] = key_right_shift;
+    keytab [0xa2] = key_left_control;
+    keytab [0xa3] = key_right_control;
+
     keytab [0xba] = key_semicolon;
     keytab [0xbb] = key_equals;
     keytab [0xbc] = key_comma;
@@ -133,12 +150,26 @@ namespace Co
     return client -> handler (message, wp, lp);
   }
 
+  bool prev_ui_enabled;
+
   iptr Client::handler (u32 message, uptr wp, iptr lp)
   {
     switch (message)
     {
       case wm_close:
         engine -> stop ();
+      return 0;
+
+      case wm_activateapp:
+        if (!wp)
+        {
+          prev_ui_enabled = ui_enabled;
+          enable_ui (true);
+        }
+        else
+        {
+          enable_ui (prev_ui_enabled);
+        }
       return 0;
 
       case wm_syskeydown:
@@ -209,11 +240,14 @@ namespace Co
 
             default:;
           };
+
+          break;
         }
         // Game control input
         else
         {
-
+          // nothing atm
+          break;
         }
     }   
 
@@ -241,26 +275,50 @@ namespace Co
     log () << "- Worker thread exiting\n";
   }
 
+  template <typename Interface>
+  std::pair <std::string, std::string> mod (std::string name)
+  {
+    return std::make_pair (Interface::ix_name ().string (), name);
+  }
+
+  std::pair <std::string, std::string> default_mods [] =
+  {
+    mod <Engine>         ("Co-Engine"),
+    mod <WorkQueue>      ("Co-WorkQueue"),
+    mod <Renderer>       ("Co-GLRenderer"),
+    mod <TextureFactory> ("Co-Texture"),
+    mod <ModelFactory>   ("Co-Model"),
+    mod <FontFactory>    ("Co-Font"),
+    mod <Filesystem>     ("Co-Filesystem")
+  };
+
+  static int mid_x, mid_y;
+
   Client::Client (Rk::StringRef config_path) :
     Host (clock, Co::log)
   {
     ui_enabled = true;
 
+    mid_x = GetSystemMetrics (sm_cxscreen) / 2;
+    mid_y = GetSystemMetrics (sm_cyscreen) / 2;
+
     init_key_tab ();
 
-    Rk::StringRef game_name = "Iridium";
-
     // Parse configuration
+    module_config.insert (std::begin (default_mods), std::end (default_mods));
+
+    Rk::StringRef game_name = "SH";
     Rk::StringOutStream game_path;
     game_path << "../" << game_name << "/";
+
+    module_config.insert (mod <Game> (game_path.string () + "Binaries/Co-Game"));
 
     // Load subsystem modules
     get_object (engine);
     get_object (queue);
     get_object (renderer);
-    get_object (filesystem);
-
-    auto game = Rk::Module (game_path.string () + "Binaries/Co-Game" CO_SUFFIX ".dll").create <Game> ();
+    auto filesystem = get_object <Filesystem> ();
+    auto game = get_object <Game> ();
 
     // Initialize subsystems
     Rk::StringWOutStream title;
@@ -294,11 +352,13 @@ namespace Co
 
     // Specific shutdown order is important
     // Kill anything that can own resources
-    engine.reset   ();
-    renderer.reset ();
-
-    // Spin down worker threads
-    queue -> stop ();
+    objects.clear ();    // Release otherwise-unreferenced global objects
+    engine.reset ();     // Destroy engine and game
+    renderer -> stop (); // Flush renderer frames
+    
+    // Now that we're guaranteed to get no more jobs, finish any in the queue, and then
+    // spin down the worker threads
+    queue -> stop (); 
     pool.clear ();
   }
   
@@ -313,22 +373,68 @@ namespace Co
     
     for (;;)
     {
+      // Message pump
       Message msg;
       while (PeekMessageW (&msg, 0, 0, 0, 1))
       {
         DispatchMessageW (&msg);
-        if (clock.time () + 0.01 >= next_update)
-          break;
+        /*if (clock.time () + 0.01 >= next_update)
+          break;*/
       }
       
+      // Keyboard read
+      u8 raw_keystate [256];
+      GetKeyboardState (raw_keystate);
+
+      for (uint vk = 0; vk != 256; vk++)
+      {
+        auto key = keytab [vk];
+        if (key == key_invalid)
+          continue;
+
+        bool down = raw_keystate [vk] >> 7;
+        bool set  = raw_keystate [vk] &  1;
+
+        if (down && vk == 0x57)
+          __asm nop;
+
+        if (down != keyboard [key].down)
+          keyboard [key].changed = true;
+        else
+          keyboard [key].changed = false;
+
+        keyboard [key].down = down;
+        keyboard [key].set  = set;
+      }
+
+      if (keyboard [key_a].down || keyboard [key_d].down)
+        __asm nop;
+
+      // Mouse read
+      v2f mouse_delta (0, 0);
+
+      if (!ui_enabled)
+      {
+        int min_mid = std::min (mid_x, mid_y);
+
+        Point cursor;
+        GetCursorPos (&cursor);
+        mouse_delta = v2f ((cursor.x - mid_x) / float (min_mid), (cursor.y - mid_y) / float (min_mid));
+        SetCursorPos (mid_x, mid_y);
+      }
+
+      // Timing
       engine -> wait ();
 
+      // Update
       bool running = engine -> update (
         next_update,
         window.get_width  (),
         window.get_height (),
         ui_events.data (),
-        ui_events.size ()
+        ui_events.size (),
+        keyboard,
+        mouse_delta
       );
       if (!running)
         break;
@@ -336,27 +442,6 @@ namespace Co
       ui_events.clear ();
     }
   }
-  
-  typedef std::map <std::string, std::string> ModuleConfig;
-  
-  template <typename Interface>
-  ModuleConfig::value_type implements (Rk::StringRef name)
-  {
-    return std::make_pair (Interface::ix_name ().string (), name.string ());
-  }
-
-  ModuleConfig::value_type cfg [] =
-  {
-    implements <Engine>         ("Co-Engine"),
-    implements <WorkQueue>      ("Co-WorkQueue"),
-    implements <Renderer>       ("Co-GLRenderer"),
-    implements <TextureFactory> ("Co-Texture"),
-    implements <ModelFactory>   ("Co-Model"),
-    implements <FontFactory>    ("Co-Font"),
-    implements <Filesystem>     ("Co-Filesystem")
-  };
-
-  ModuleConfig module_config (std::begin (cfg), std::end (cfg));
   
   std::shared_ptr <void> Client::get_object (Rk::StringRef type)
   {
@@ -379,14 +464,8 @@ namespace Co
 
   void Client::enable_ui (bool new_enabled)
   {
-    if (ui_enabled && !new_enabled)
-    {
-      ShowCursor (false);
-    }
-    else if (!ui_enabled && new_enabled)
-    {
-      ShowCursor (true);
-    }
+    if (ui_enabled != new_enabled)
+      ShowCursor (new_enabled);
 
     ui_enabled = new_enabled;
   }

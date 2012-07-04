@@ -39,11 +39,15 @@ namespace Co
     MasterClock              clock;
     Renderer::Ptr            renderer;
     Engine::Ptr              engine;
-    Filesystem::Ptr          filesystem;
+    //Filesystem::Ptr          filesystem;
     
+    std::map <std::string, std::string>
+      module_config;
+
     std::map <std::string, std::shared_ptr <void>>
       objects;
 
+    KeyState              keyboard [key_count];
     bool                  ui_enabled;
     std::vector <UIEvent> ui_events;
 
@@ -55,11 +59,17 @@ namespace Co
     virtual std::shared_ptr <void> get_object (Rk::StringRef type);
 
     template <typename T>
-    void get_object (std::shared_ptr <T>& ptr)
+    std::shared_ptr <T> get_object ()
     {
-      ptr = std::static_pointer_cast <T> (
+      return std::static_pointer_cast <T> (
         get_object (T::ix_name ())
       );
+    }
+
+    template <typename T>
+    void get_object (std::shared_ptr <T>& ptr)
+    {
+      ptr = get_object <T> ();
     }
 
     virtual void enable_ui (bool enabled);

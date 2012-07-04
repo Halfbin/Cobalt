@@ -50,17 +50,13 @@ namespace Co
     const Clock* clock;
     Log*         log_ptr;
 
-    Log::Lock log ()
-    {
-      return log_ptr -> lock ();
-    }
-
     // Internal
     void loop  ();
     
     // Setup and teardown
-    virtual void init (void* hwnd, const Clock& clock, Log& log);
-    void         stop ();
+    virtual void init    (void* hwnd, const Clock& clock, Log& log);
+    void         cleanup ();
+    virtual void stop    ();
 
     // Frame exchange
     virtual Frame* begin_frame (
@@ -76,6 +72,11 @@ namespace Co
     GLRenderer ();
 
   public:
+    Log::Lock log ()
+    {
+      return log_ptr -> lock ();
+    }
+
     static GLRenderer instance;
 
     static std::shared_ptr <GLRenderer> create ();

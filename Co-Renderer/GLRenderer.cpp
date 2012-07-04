@@ -178,7 +178,7 @@ namespace Co
     // The real loop
     for (;;)
     {
-      now = clock -> time () - 0.010f;
+      now = clock -> time () - 0.050f;
 
       // Perhaps it's time to grab a new frame
       while (!frame || now >= frame -> time)
@@ -415,21 +415,26 @@ namespace Co
   }
   catch (...)
   {
-    stop ();
+    cleanup ();
   }
 
   void GLRenderer::stop ()
   {
-    if (thread)
-    {
-      auto lock = ready_frames_mutex.get_lock ();
-      ready_frames.push_back (nullptr);
-      lock = nil;
-      
-      log () << "- GLRenderer stopping\n";
+    if (!thread)
+      return;
 
-      thread.join ();
-    }
+    auto lock = ready_frames_mutex.get_lock ();
+    ready_frames.push_back (nullptr);
+    lock = nil;
+    
+    log () << "- GLRenderer stopping\n";
+
+    thread.join ();
+  }
+  
+  void GLRenderer::cleanup ()
+  {
+    stop ();
 
     if (shared_rc)
     {
@@ -505,7 +510,7 @@ namespace Co
   {
     return std::shared_ptr <GLRenderer> (
       &instance,
-      [] (GLRenderer* p) { p -> stop (); }
+      [] (GLRenderer* p) { p -> cleanup (); }
     );
   }
 

@@ -7,6 +7,8 @@
 #include <Co/WorkQueue.hpp>
 
 // Uses
+#include <Co/RenderContext.hpp>
+
 #include <Rk/Condition.hpp>
 #include <Rk/Module.hpp>
 #include <Rk/Mutex.hpp>
@@ -32,6 +34,7 @@ namespace Co
 
   public:
     QueueImpl ();
+    ~QueueImpl ();
 
     static Ptr create ()
     {
@@ -57,6 +60,7 @@ namespace Co
         load_queue.pop_front ();
         lock = nil;
         job (*this, rc, fs);
+        rc.flush ();
       }
       else if (!trash_queue.empty ())
       {
@@ -95,4 +99,10 @@ namespace Co
     run (true)
   { }
   
+  QueueImpl::~QueueImpl ()
+  {
+    trash_queue.clear ();
+    load_queue.clear ();
+  }
+
 }

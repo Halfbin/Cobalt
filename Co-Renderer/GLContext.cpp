@@ -33,16 +33,6 @@ namespace Co
   {
     auto lock = mutex.get_lock ();
     
-    /*int attribs [] = {
-      WGL_CONTEXT_MAJOR_VERSION, opengl_major,
-      WGL_CONTEXT_MINOR_VERSION, opengl_minor,
-      WGL_CONTEXT_PROFILE_MASK,  WGL_CONTEXT_CORE_PROFILE_BIT, // Ignored for 3.1 and earlier
-    #ifndef NDEBUG
-      WGL_CONTEXT_FLAGS,         WGL_CONTEXT_DEBUG_BIT,
-    #endif
-      0,                         0
-    };*/
-    
     rc = wglCCA (shared_dc, shared_rc, attribs);
     if (!rc)
       throw std::runtime_error ("Error creating render context");

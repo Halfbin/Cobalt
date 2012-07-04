@@ -69,7 +69,7 @@ namespace SH
 
     Spatial spatial;
 
-    virtual void tick (Frame& frame, float time, float prev_time)
+    virtual void tick (Frame& frame, float time, float prev_time, const KeyState* keyboard, v2f mouse_delta)
     {
       Spatial next = spatial;
       next.orientation = Quaternion (time * 2.0f, Vector3 (0.0f, 0.0f, 1.0f));
@@ -108,12 +108,12 @@ namespace SH
           { 0x0020, 0x007f }, // ASCII
           { 0x00a1, 0x0100 }  // Latin-1 Supplement
         };
-        font = font_factory -> create (queue, "DejaVuSans.ttf", 14, fontsize_points, ranges);
+        font = font_factory -> create (queue, "../SH/Fonts/DejaVuSans.ttf", 14, fontsize_points, ranges);
       }
     }
 
   public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap& props)
+    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
     {
       return queue.gc_attach (new TestEntity (queue));
     }
@@ -126,5 +126,6 @@ namespace SH
   Font::Ptr    TestEntity::font;
 
   EntityClass <TestEntity> ent_class ("TestEntity");
+  Co::EntityClassBase& test_entity_class = ent_class;
 
 } // namespace SH

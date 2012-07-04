@@ -28,6 +28,7 @@ namespace SH
   class Game :
     public Co::Game
   {
+
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
 
     virtual Co::EntityClassBase& find_class (Rk::StringRef name);
@@ -64,8 +65,20 @@ namespace SH
     engine.get_object (font_factory);
   }
 
+  extern Co::EntityClassBase
+    & block_world_class,
+    & test_entity_class,
+    & spectator_class;
+
   Co::EntityClassBase& Game::find_class (Rk::StringRef name)
   {
+    if (name == "BlockWorld")
+      return block_world_class;
+    else if (name == "TestEntity")
+      return test_entity_class;
+    else if (name == "Spectator")
+      return spectator_class;
+
     throw std::invalid_argument ("No such class");
   }
 
@@ -73,9 +86,11 @@ namespace SH
   {
     log () << "- SH-Game: Starting\n";
 
-    /*engine.create_entity ("TestEntity", Co::PropMap ());
-    engine.create_entity ("BlockWorld", Co::PropMap ());
-    engine.create_entity ("Spectator",  Co::PropMap ());*/
+    //engine.create_entity ("TestEntity");
+    engine.create_entity ("BlockWorld");
+    engine.create_entity ("Spectator" );
+
+    engine.enable_ui (false);
   }
 
   void Game::stop ()

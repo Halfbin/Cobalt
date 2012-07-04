@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include;D:\Halfbin\Projects\Rk\Include;D:\freetype-2.4.6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;D:\Halfbin\Projects\Rk\Include;D:\Libraries\freetype-2.4.6\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";CO_W_SUFFIX=L"$(CoSuffix)";_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
