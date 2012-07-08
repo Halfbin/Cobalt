@@ -36,14 +36,8 @@ namespace SH
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
     
-    virtual void tick (
-      Co::WorkQueue&     queue,
-      Co::Frame&         frame,
-      float              cur_time,
-      float              prev_time,
-      const Co::UIEvent* ui_events,
-      uint               ui_event_count
-    );
+    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count);
+    virtual void render (Co::Frame& frame, float alpha);
 
   public:
     static Ptr create ()
@@ -98,15 +92,10 @@ namespace SH
     log () << "- SH-Game: Stopping\n";
   }
 
-  void Game::tick (
-    Co::WorkQueue&     queue,
-    Co::Frame&         frame,
-    float              cur_time,
-    float              prev_time,
-    const Co::UIEvent* ui_events,
-    uint               ui_event_count)
-  {
+  void Game::tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count)
+  { }
 
-  }
+  void Game::render (Co::Frame& frame, float alpha)
+  { }
 
 } // namespace SH

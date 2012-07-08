@@ -33,7 +33,8 @@ namespace Co
   {
     std::string   path;
     bool          wrap,
-                  filter;
+                  min_filter,
+                  mag_filter;
     TexImage::Ptr image;
     Rk::Mutex     mutex;
 
@@ -43,18 +44,19 @@ namespace Co
       return std::move (image);
     }
 
-    TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_filter) :
-      path   ("Textures/" + new_path.string ()),
-      wrap   (new_wrap),
-      filter (new_filter)
+    TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
+      path       ("Textures/" + new_path.string ()),
+      wrap       (new_wrap),
+      min_filter (new_min_filter),
+      mag_filter (new_mag_filter)
     { }
     
   public:
     typedef std::shared_ptr <TextureImpl> Ptr;
 
-    static Ptr create (WorkQueue& queue, Rk::StringRef new_path, bool new_wrap, bool new_filter)
+    static Ptr create (WorkQueue& queue, Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter)
     {
-      return queue.gc_construct (new TextureImpl (new_path, new_wrap, new_filter));
+      return queue.gc_construct (new TextureImpl (new_path, new_wrap, new_min_filter, new_mag_filter));
     }
 
     void construct (Ptr& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
@@ -131,7 +133,14 @@ namespace Co
       if (header.flags & texflag_cube_map)
         type = textype_cube;
 
-      TexImage::Ptr new_image = rc.create_tex_image (queue, header.map_count, wrap ? texwrap_wrap : texwrap_clamp, filter, type);
+      TexImage::Ptr new_image = rc.create_tex_image (
+        queue,
+        header.map_count,
+        wrap ? texwrap_wrap : texwrap_clamp,
+        min_filter,
+        mag_filter,
+        type
+      );
 
       u32 offset = 0;
       
@@ -175,12 +184,12 @@ namespace Co
     public TextureFactory,
     public ResourceFactory <std::string, TextureImpl>
   {
-    virtual Texture::Ptr create (WorkQueue& queue, Rk::StringRef path, bool wrap, bool filter)
+    virtual Texture::Ptr create (WorkQueue& queue, Rk::StringRef path, bool wrap, bool min_filter, bool mag_filter)
     {
       auto ptr = find (path.string ());
       if (!ptr)
       {
-        ptr = TextureImpl::create (queue, path, wrap, filter);
+        ptr = TextureImpl::create (queue, path, wrap, min_filter, mag_filter);
         add (path.string (), ptr);
       }
       return std::move (ptr);

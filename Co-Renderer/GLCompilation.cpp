@@ -23,7 +23,10 @@ namespace Co
     elements   (std::static_pointer_cast <GLBuffer> (new_elements)),
     indices    (std::static_pointer_cast <GLBuffer> (new_indices)),
     index_type (new_index_type)
-  { }
+  {
+    // Cheating
+    element_size = attribs.front ().stride;
+  }
   
   GLCompilation::Ptr GLCompilation::create (
     WorkQueue&        work_queue,

@@ -35,12 +35,12 @@ namespace Co
       return comp;
     }
 
-    void draw (Frame& frame, Spatial prev, Spatial cur, const Material* materials, uint material_count)
+    void draw (Frame& frame, Spatial spat, const Material* materials, uint material_count)
     {
       if (!ready ())
         return;
 
-      frame.begin_point_geom (comp, prev, cur);
+      frame.begin_point_geom (comp, spat);
         frame.add_meshes    (meshes,    mesh_count);
         frame.add_materials (materials, material_count);
       frame.end ();

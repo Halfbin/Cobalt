@@ -21,7 +21,7 @@ namespace Co
 
     virtual RenderContext::Ptr create_context () = 0;
 
-    virtual void set_size (uint width, uint height) = 0;
+    //virtual void set_size (uint width, uint height) = 0;
 
   };
 

@@ -25,7 +25,7 @@ namespace Co
   protected:
     virtual void load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size = 0);
 
-    GLTexImage (uint level_count, TexImageWrap wrap, bool filter, TexImageType type);
+    GLTexImage (uint level_count, TexImageWrap wrap, bool min_filter, bool mag_filter, TexImageType type);
     
   public:
     typedef std::shared_ptr <GLTexImage> Ptr;
@@ -34,11 +34,12 @@ namespace Co
       WorkQueue&   queue,
       uint         level_count,
       TexImageWrap wrap,
-      bool         filter,
+      bool         min_filter,
+      bool         mag_filter,
       TexImageType type)
     {
       return Ptr (
-        new GLTexImage (level_count, wrap, filter, type),
+        new GLTexImage (level_count, wrap, min_filter, mag_filter, type),
         queue.make_deleter <GLTexImage> ()
       );
     }

@@ -34,15 +34,9 @@ namespace Co
     virtual void start (Co::Engine& engine) = 0;
     virtual void stop  () = 0;
     
-    virtual void tick (
-      WorkQueue&     queue,
-      Frame&         frame,
-      float          cur_time,
-      float          prev_time,
-      const UIEvent* ui_events,
-      uint           ui_event_count
-    ) = 0;
-    
+    virtual void tick   (float time, float step, WorkQueue& queue, const UIEvent* ui_events, uint ui_event_count) = 0;
+    virtual void render (Frame& frame, float alpha) = 0;
+
   };
 
 } // namespace Co

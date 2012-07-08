@@ -111,24 +111,13 @@ namespace Co
   //
   // Constructor
   //
-  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, bool filter, TexImageType type)
+  GLTexImage::GLTexImage (uint level_count, TexImageWrap wrap, bool min_filter, bool mag_filter, TexImageType type)
   {
     if (level_count == 0)
       throw std::invalid_argument ("level_count is zero");
 
-    GLenum min_filter,
-           mag_filter;
-
-    if (filter)
-    {
-      min_filter = GL_LINEAR;
-      mag_filter = GL_LINEAR;
-    }
-    else
-    {
-      min_filter = GL_NEAREST;
-      mag_filter = GL_NEAREST;
-    }
+    GLenum gl_min_filter = min_filter ? GL_LINEAR : GL_NEAREST,
+           gl_mag_filter = mag_filter ? GL_LINEAR : GL_NEAREST;
 
     if (type == textype_rectangle)
     {
@@ -141,8 +130,8 @@ namespace Co
     {
       target = GL_TEXTURE_2D;
 
-      if (filter && level_count > 1)
-        min_filter = GL_LINEAR_MIPMAP_LINEAR;
+      if (min_filter && level_count > 1)
+        gl_min_filter = GL_LINEAR_MIPMAP_LINEAR;
     }
     else if (type == textype_cube)
     {
@@ -157,7 +146,7 @@ namespace Co
 
     if (type == textype_cube)
     {
-      if (filter)
+      if (min_filter || mag_filter)
         gl_wrap = GL_CLAMP_TO_BORDER;
       else
         gl_wrap = GL_CLAMP_TO_EDGE;
@@ -192,8 +181,8 @@ namespace Co
     if (type == textype_cube)
       glTexParameteri (target, GL_TEXTURE_WRAP_S, gl_wrap);
 
-    glTexParameteri (target, GL_TEXTURE_MIN_FILTER, min_filter);
-    glTexParameteri (target, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glTexParameteri (target, GL_TEXTURE_MIN_FILTER, gl_min_filter);
+    glTexParameteri (target, GL_TEXTURE_MAG_FILTER, gl_mag_filter);
 
     glBindTexture (target, 0);
   }

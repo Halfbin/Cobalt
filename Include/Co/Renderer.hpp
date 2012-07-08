@@ -22,15 +22,15 @@
 namespace Co
 {
   class Renderer :
-    public RenderDevice
+    public RenderDevice,
+    public Frame
   {
   public:
     static Rk::StringRef ix_name () { return "Co::Renderer"; }
     typedef std::shared_ptr <Renderer> Ptr;
 
-    virtual void   init        (void* hwnd, const Clock& clock, Log& log) = 0;
-    virtual void   stop        () = 0;
-    virtual Frame* begin_frame (float prev_time, float current_time) = 0;
+    virtual void init         (void* hwnd, const Clock& clock, Log& log) = 0;
+    virtual void render_frame (u32 width, u32 height) = 0;
 
   };
 

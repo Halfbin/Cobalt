@@ -13,6 +13,7 @@
 #include <Rk/Module.hpp>
 #include <Rk/Mutex.hpp>
 
+#include <vector>
 #include <deque>
 
 namespace Co
@@ -20,17 +21,21 @@ namespace Co
   class QueueImpl :
     public WorkQueue
   {
-    std::deque <LoadFunc>  load_queue;
-    std::deque <TrashFunc> trash_queue;
-    Rk::Mutex              mutex;
-    Rk::Condition          job_queued;
-    bool                   run;
+    std::deque <LoadFunc>        load_queue;
+    std::deque <TrashFunc>       trash_queue;
+    std::vector <CompletionFunc> completion_queue;
+    Rk::Mutex                    mutex,
+                                 completion_mutex;
+    Rk::Condition                job_queued;
+    bool                         run;
 
-    virtual void work (RenderContext& rc, Filesystem& fs);
-    virtual void stop ();
+    virtual void work           (RenderContext& rc, Filesystem& fs);
+    virtual void do_completions ();
+    virtual void stop           ();
 
-    virtual void queue_load  (LoadFunc  load);
-    virtual void queue_trash (TrashFunc trash);
+    virtual void queue_load       (LoadFunc       load);
+    virtual void queue_trash      (TrashFunc      trash);
+    virtual void queue_completion (CompletionFunc comp);
 
   public:
     QueueImpl ();
@@ -52,7 +57,10 @@ namespace Co
     while (run || !trash_queue.empty ())
     {
       while (trash_queue.empty () && load_queue.empty () && run)
+      {
+        rc.flush ();
         job_queued.wait (lock);
+      }
 
       if (run && !load_queue.empty ())
       {
@@ -60,7 +68,6 @@ namespace Co
         load_queue.pop_front ();
         lock = nil;
         job (*this, rc, fs);
-        rc.flush ();
       }
       else if (!trash_queue.empty ())
       {
@@ -72,6 +79,19 @@ namespace Co
 
       lock = mutex.get_lock ();
     }
+  }
+
+  void QueueImpl::do_completions ()
+  {
+    std::vector <CompletionFunc> comps;
+
+    {
+      auto lock = completion_mutex.get_lock ();
+      std::swap (comps, completion_queue);
+    }
+
+    for (auto comp = comps.begin (); comp != comps.end (); comp++)
+      (*comp) ();
   }
 
   void QueueImpl::stop ()
@@ -95,6 +115,12 @@ namespace Co
     job_queued.notify_one ();
   }
 
+  void QueueImpl::queue_completion (CompletionFunc comp)
+  {
+    auto lock = completion_mutex.get_lock ();
+    completion_queue.push_back (std::move (comp));
+  }
+
   QueueImpl::QueueImpl () :
     run (true)
   { }
@@ -103,6 +129,7 @@ namespace Co
   {
     trash_queue.clear ();
     load_queue.clear ();
+    completion_queue.clear ();
   }
 
 }

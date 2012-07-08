@@ -23,16 +23,10 @@ namespace Ir
     virtual void enter    (float time) = 0;
     virtual void leave    () = 0;
 
-    virtual void tick (
-      Co::WorkQueue&     queue,
-      Co::Frame&         frame,
-      float              cur_time,
-      float              prev_time,
-      const Co::UIEvent* ui_events,
-      uint               ui_event_count
-    ) = 0;
+    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count) = 0;
+    virtual void render (Co::Frame& frame, float alpha) = 0;
 
-    static void show_loading_screen (Co::Frame& frame, float time, float prev_time);
+    static void show_loading_screen (Co::Frame& frame, float time, float step);
 
   public:
     void switch_to ()
@@ -57,13 +51,7 @@ namespace Ir
       next = 0;
     }
 
-    static void tick_current (
-      Co::WorkQueue&     queue,
-      Co::Frame&         frame,
-      float              cur_time,
-      float              prev_time,
-      const Co::UIEvent* ui_events,
-      uint               ui_event_count)
+    static void tick_current (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count)
     {
       if (next)
       {
@@ -80,16 +68,21 @@ namespace Ir
         loading = !current -> ready ();
         if (!loading)
         {
-          current -> enter (cur_time);
+          current -> enter (time);
         }
         else
         {
-          show_loading_screen (frame, cur_time, prev_time);
+          //show_loading_screen (frame, time, step);
           return;
         }
       }
 
-      current -> tick (queue, frame, cur_time, prev_time, ui_events, ui_event_count);
+      current -> tick (time, step, queue, ui_events, ui_event_count);
+    }
+
+    static void render_current (Co::Frame& frame, float alpha)
+    {
+      current -> render (frame, alpha);
     }
 
   };

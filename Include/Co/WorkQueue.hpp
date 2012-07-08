@@ -23,16 +23,19 @@ namespace Co
     static Rk::StringRef ix_name () { return "Co::WorkQueue"; }
     typedef std::shared_ptr <WorkQueue> Ptr;
 
-    virtual void work (RenderContext& rc, Filesystem& fs) = 0;
-    virtual void stop () = 0;
+    virtual void work           (RenderContext& rc, Filesystem& fs) = 0;
+    virtual void do_completions () = 0;
+    virtual void stop           () = 0;
 
+    // Asynchronous jobs
     typedef std::function <void (WorkQueue&, RenderContext&, Filesystem&)>
       LoadFunc;
     typedef std::function <void ()>
-      TrashFunc;
+      TrashFunc, CompletionFunc;
 
-    virtual void queue_load  (LoadFunc  load) = 0;
-    virtual void queue_trash (TrashFunc trash) = 0;
+    virtual void queue_load       (LoadFunc       load)  = 0;
+    virtual void queue_trash      (TrashFunc      trash) = 0;
+    virtual void queue_completion (CompletionFunc comp)  = 0;
 
     template <typename T, typename Method>
     void queue_load (const std::shared_ptr <T>& ptr, Method&& method)
@@ -40,6 +43,19 @@ namespace Co
       queue_load (Rk::async_method (ptr, std::forward <Method> (method)));
     }
 
+    template <typename Func, typename T>
+    void queue_load (Func&& func, const std::shared_ptr <T>& ptr)
+    {
+      queue_load (Rk::async_method (ptr, std::forward <Method> (method)));
+    }
+
+    /*template <typename T, typename Method>
+    void queue_completion (const std::shared_ptr <T>& ptr, Method&& method)
+    {
+      queue_completion (Rk::async_method (ptr, std::forward <Method> (method)));
+    }*/
+
+    // Resource management
     template <typename T, typename Nested>
     std::function <void (T*)> make_deleter (Nested nested)
     {

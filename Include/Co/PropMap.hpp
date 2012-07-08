@@ -3,8 +3,8 @@
 // All Rights Reserved.
 //
 
-#ifndef CO_H_PROFILE
-#define CO_H_PROFILE
+#ifndef CO_H_PROPMAP
+#define CO_H_PROPMAP
 
 #include <Co/Spatial.hpp>
 
@@ -19,9 +19,13 @@ namespace Co
     virtual uint          get_uint       (Rk::StringRef key) = 0;
     virtual int           get_int        (Rk::StringRef key) = 0;
     virtual float         get_float      (Rk::StringRef key) = 0;
-    virtual Vector3       get_vector3    (Rk::StringRef key) = 0;
-    virtual Vector4       get_vector4    (Rk::StringRef key) = 0;
-    virtual Quaternion    get_quaternion (Rk::StringRef key) = 0;
+    virtual v2f           get_v2f        (Rk::StringRef key) = 0;
+    virtual v3f           get_v3f        (Rk::StringRef key) = 0;
+    virtual v4f           get_v4f        (Rk::StringRef key) = 0;
+    virtual v2i           get_v2i        (Rk::StringRef key) = 0;
+    virtual v3i           get_v3i        (Rk::StringRef key) = 0;
+    virtual v4i           get_v4i        (Rk::StringRef key) = 0;
+    virtual Quat         get_quaternion (Rk::StringRef key) = 0;
 
   public:
 

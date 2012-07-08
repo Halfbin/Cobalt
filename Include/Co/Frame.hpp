@@ -9,12 +9,13 @@
 #include <Rk/Types.hpp>
 
 #include <Co/GeomCompilation.hpp>
+#include <Co/GeomBuffer.hpp>
 #include <Co/TexImage.hpp>
 #include <Co/Spatial.hpp>
 
 namespace Co
 {
-  //
+    //
   // = Meshes ==========================================================================================================
   //
   enum PrimType :
@@ -54,7 +55,7 @@ namespace Co
   //
   struct Material
   {
-    Vector4       ambient_mat,
+    v4f           ambient_mat,
                   diffuse_mat,
                   specular_mat,
                   emissive_mat;
@@ -104,9 +105,9 @@ namespace Co
   //
   struct Light
   {
-    Vector4 location,
-            diffuse,
-            specular;
+    v4f location,
+        diffuse,
+        specular;
   };
 
   //
@@ -115,41 +116,31 @@ namespace Co
   class Frame
   {
   public:
-    virtual uint get_width  () = 0;
-    virtual uint get_height () = 0;
-
-    virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial prev, Spatial current) = 0;
+    virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial spat) = 0;
     virtual void end              () = 0;
 
     virtual void add_label (
       TexImage::Ptr  texture,
       const TexRect* rects,
       const TexRect* end,
-      Spatial2D      prev,
-      Spatial2D      cur,
-      Vector4        prev_linear_colour,
-      Vector4        cur_linear_colour,
-      Vector4        prev_const_colour,
-      Vector4        cur_const_colour
+      Spatial2D      spat,
+      v4f            linear_colour,
+      v4f            const_colour
     ) = 0;
 
     virtual void add_label (
       TexImage::Ptr  texture,
       const TexRect* rects,
       const TexRect* end,
-      Spatial        prev,
-      Spatial        cur,
-      Vector4        prev_linear_colour,
-      Vector4        cur_linear_colour,
-      Vector4        prev_const_colour,
-      Vector4        cur_const_colour
+      Spatial        spat,
+      v4f            linear_colour,
+      v4f            const_colour
     ) = 0;
 
     virtual void add_lights (const Light* lights, const Light* end) = 0;
-    virtual void set_skybox (TexImage::Ptr cube, Co::Vector3 colour, float prev_alpha, float alpha) = 0;
+    virtual void set_skybox (TexImage::Ptr cube, v3f colour, float alpha) = 0;
 
-    virtual void set_camera (Spatial prev, Spatial current, float prev_fov, float current_fov, float near, float far) = 0;
-    virtual void set_size   (u32 width, u32 height) = 0;
+    virtual void set_camera (Spatial spat, float fov, float near, float far) = 0;
     
     virtual void add_meshes    (const Mesh*     begin, const Mesh*     end) = 0;
     virtual void add_materials (const Material* begin, const Material* end) = 0;
@@ -168,28 +159,22 @@ namespace Co
       TexImage::Ptr  texture,
       const TexRect* rects,
       uint           count,
-      Spatial2D      prev,
-      Spatial2D      cur,
-      Vector4        prev_linear_colour,
-      Vector4        cur_linear_colour,
-      Vector4        prev_const_colour,
-      Vector4        cur_const_colour)
+      Spatial2D      spat,
+      v4f            linear_colour,
+      v4f            const_colour)
     {
-      add_label (texture, rects, rects + count, prev, cur, prev_linear_colour, cur_linear_colour, prev_const_colour, cur_const_colour);
+      add_label (texture, rects, rects + count, spat, linear_colour, const_colour);
     }
 
     void add_label (
       TexImage::Ptr  texture,
       const TexRect* rects,
       uint           count,
-      Spatial        prev,
-      Spatial        current,
-      Vector4        prev_linear_colour,
-      Vector4        cur_linear_colour,
-      Vector4        prev_const_colour,
-      Vector4        cur_const_colour)
+      Spatial        spat,
+      v4f            linear_colour,
+      v4f            const_colour)
     {
-      add_label (texture, rects, rects + count, prev, current, prev_linear_colour, cur_linear_colour, prev_const_colour, cur_const_colour);
+      add_label (texture, rects, rects + count, spat, linear_colour, const_colour);
     }
 
     void add_lights (const Light* begin, uint count)
@@ -197,9 +182,7 @@ namespace Co
       add_lights (begin, begin + count);
     }
 
-    virtual void submit () = 0;
-
-  };
+  }; // Frame
 
 } // namespace Co
 

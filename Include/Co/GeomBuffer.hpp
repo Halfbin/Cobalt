@@ -21,6 +21,17 @@ namespace Co
 
   };
 
+  class StreamBuffer :
+    public GeomBuffer
+  {
+  public:
+    typedef std::shared_ptr <StreamBuffer> Ptr;
+
+    virtual void* begin  (uptr max_size) = 0;
+    virtual bool  commit (uptr size) = 0;
+
+  };
+
 }
 
 #endif

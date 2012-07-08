@@ -56,6 +56,9 @@ namespace Co
     static iptr handler_proxy (GLWindow*, u32, uptr, iptr);
     iptr        handler       (u32, uptr, iptr);
 
+    void update_keyboard ();
+    v2f  update_mouse ();
+
     virtual std::shared_ptr <void> get_object (Rk::StringRef type);
 
     template <typename T>

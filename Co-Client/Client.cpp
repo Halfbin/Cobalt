@@ -354,14 +354,57 @@ namespace Co
     // Kill anything that can own resources
     objects.clear ();    // Release otherwise-unreferenced global objects
     engine.reset ();     // Destroy engine and game
-    renderer -> stop (); // Flush renderer frames
     
     // Now that we're guaranteed to get no more jobs, finish any in the queue, and then
     // spin down the worker threads
     queue -> stop (); 
     pool.clear ();
   }
-  
+
+  //
+  // Input
+  //
+  void Client::update_keyboard ()
+  {
+    u8 raw_keystate [256];
+    GetKeyboardState (raw_keystate);
+
+    for (uint vk = 0; vk != 256; vk++)
+    {
+      auto key = keytab [vk];
+      if (key == key_invalid)
+        continue;
+
+      bool down = raw_keystate [vk] >> 7;
+      bool set  = raw_keystate [vk] &  1;
+
+      if (down && vk == 0x57)
+        __asm nop;
+
+      if (down != keyboard [key].down)
+        keyboard [key].changed = true;
+      else
+        keyboard [key].changed = false;
+
+      keyboard [key].down = down;
+      keyboard [key].set  = set;
+    }
+  }
+
+  v2f Client::update_mouse ()
+  {
+    if (ui_enabled)
+      return v2f (0, 0);
+
+    int min_mid = std::min (mid_x, mid_y);
+
+    Point cursor;
+    GetCursorPos (&cursor);
+    SetCursorPos (mid_x, mid_y);
+
+    return v2f ((cursor.x - mid_x) / float (min_mid), (cursor.y - mid_y) / float (min_mid));
+  }
+
   //
   // run
   //
@@ -369,66 +412,21 @@ namespace Co
   {
     window.show ();
 
-    float next_update = engine -> start ();
+    engine -> start ();
     
     for (;;)
     {
       // Message pump
       Message msg;
       while (PeekMessageW (&msg, 0, 0, 0, 1))
-      {
         DispatchMessageW (&msg);
-        /*if (clock.time () + 0.01 >= next_update)
-          break;*/
-      }
       
-      // Keyboard read
-      u8 raw_keystate [256];
-      GetKeyboardState (raw_keystate);
-
-      for (uint vk = 0; vk != 256; vk++)
-      {
-        auto key = keytab [vk];
-        if (key == key_invalid)
-          continue;
-
-        bool down = raw_keystate [vk] >> 7;
-        bool set  = raw_keystate [vk] &  1;
-
-        if (down && vk == 0x57)
-          __asm nop;
-
-        if (down != keyboard [key].down)
-          keyboard [key].changed = true;
-        else
-          keyboard [key].changed = false;
-
-        keyboard [key].down = down;
-        keyboard [key].set  = set;
-      }
-
-      if (keyboard [key_a].down || keyboard [key_d].down)
-        __asm nop;
-
-      // Mouse read
-      v2f mouse_delta (0, 0);
-
-      if (!ui_enabled)
-      {
-        int min_mid = std::min (mid_x, mid_y);
-
-        Point cursor;
-        GetCursorPos (&cursor);
-        mouse_delta = v2f ((cursor.x - mid_x) / float (min_mid), (cursor.y - mid_y) / float (min_mid));
-        SetCursorPos (mid_x, mid_y);
-      }
-
-      // Timing
-      engine -> wait ();
+      // Input
+      update_keyboard ();
+      auto mouse_delta = update_mouse ();
 
       // Update
       bool running = engine -> update (
-        next_update,
         window.get_width  (),
         window.get_height (),
         ui_events.data (),
@@ -436,6 +434,7 @@ namespace Co
         keyboard,
         mouse_delta
       );
+
       if (!running)
         break;
 

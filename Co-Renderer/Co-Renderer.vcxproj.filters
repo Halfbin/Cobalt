@@ -16,9 +16,6 @@
     <Filter Include="GLContext">
       <UniqueIdentifier>{b748b0a0-6fd9-44c9-9f77-8a57c1523ee7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GLFrame">
-      <UniqueIdentifier>{7392d953-9b1a-4e3b-b32c-e4963278decd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GLTexImage">
       <UniqueIdentifier>{cd7ecfb6-3f61-4cd1-88e4-a764e4731360}</UniqueIdentifier>
     </Filter>
@@ -48,9 +45,6 @@
     <ClInclude Include="GLRenderer.hpp">
       <Filter>GLRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="GLFrame.hpp">
-      <Filter>GLFrame</Filter>
-    </ClInclude>
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GLTexImage.hpp">
       <Filter>GLTexImage</Filter>
@@ -73,9 +67,6 @@
     <ClInclude Include="..\Include\Co\GeomBuffer.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\GeomCompilation.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\RenderContext.hpp">
       <Filter>API</Filter>
     </ClInclude>
@@ -91,6 +82,9 @@
     <ClInclude Include="GLContext.hpp">
       <Filter>GLContext</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\GeomCompilation.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GLCompilation.cpp">
@@ -104,9 +98,6 @@
     </ClCompile>
     <ClCompile Include="GLContext.cpp">
       <Filter>GLContext</Filter>
-    </ClCompile>
-    <ClCompile Include="GLFrame.cpp">
-      <Filter>GLFrame</Filter>
     </ClCompile>
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="GLTexImage.cpp">

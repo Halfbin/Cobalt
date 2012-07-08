@@ -134,12 +134,10 @@ namespace Co
 
   static void draw_ui_text (
     Frame&           frame,
-    Vector2          prev_pos,
-    Vector2          cur_pos,
+    v2f              pos,
     Font&            font,
     Rk::U16StringRef text,
-    Vector4          prev_colour,
-    Vector4          cur_colour)
+    v4f              colour)
   {
     if (!font.ready ())
       return;
@@ -183,12 +181,9 @@ namespace Co
       font.image (),
       rects,
       text.length (),
-      Spatial2D (prev_pos, Co::Complex (1, 0)),
-      Spatial2D (cur_pos,  Co::Complex (1, 0)),
-      prev_colour,
-      cur_colour,
-      Vector4 (0, 0, 0, 0),
-      Vector4 (0, 0, 0, 0)
+      Spatial2D (pos,  Co::Complex (1, 0)),
+      colour,
+      v4f (0, 0, 0, 0)
     );
   }
 

@@ -31,9 +31,6 @@ namespace Co
     u32 tex = program.link_uniform ("tex");
     glUniform1i (tex, texunit_tex);
 
-    //set_linear_colour (Vector4 (1, 1, 1, 1));
-    //set_const_colour  (Vector4 (0, 0, 0, 0));
-
     program.done ();
 
     // Create VAO

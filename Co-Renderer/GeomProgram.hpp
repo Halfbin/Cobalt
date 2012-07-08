@@ -27,6 +27,9 @@ namespace Co
         model_to_clip;
 
   public:
+    typedef std::shared_ptr <GeomProgram> Ptr;
+    static inline Ptr create () { return std::make_shared <GeomProgram> (); }
+
     enum
     {
       attrib_position = Co::attrib_position,
@@ -71,6 +74,8 @@ namespace Co
     }
 
   };
+
+  extern GeomProgram geom_program;
 
 }
 

@@ -37,14 +37,8 @@ namespace Ir
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
     
-    virtual void tick (
-      Co::WorkQueue&     queue,
-      Co::Frame&         frame,
-      float              cur_time,
-      float              prev_time,
-      const Co::UIEvent* ui_events,
-      uint               ui_event_count
-    );
+    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count);
+    virtual void render (Co::Frame& frame, float alpha);
 
   public:
     static Ptr create ()
@@ -78,17 +72,16 @@ namespace Ir
     State::finish ();
   }
 
-  void Game::tick (
-    Co::WorkQueue&     queue,
-    Co::Frame&         frame,
-    float              cur_time,
-    float              prev_time,
-    const Co::UIEvent* ui_events,
-    uint               ui_event_count)
+  void Game::tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count)
   {
-    State::tick_current (queue, frame, cur_time, prev_time, ui_events, ui_event_count);
+    State::tick_current (time, step, queue, ui_events, ui_event_count);
   }
   
+  void Game::render (Co::Frame& frame, float alpha)
+  {
+    State::render_current (frame, alpha);
+  }
+
   Co::EntityClassBase& Game::find_class (Rk::StringRef name)
   {
     throw std::invalid_argument ("No such class");
@@ -96,21 +89,21 @@ namespace Ir
 
   void State::show_loading_screen (Co::Frame& frame, float time, float prev_time)
   {
-    Co::TexRect square (
+    /*Co::TexRect square (
       -10, -10, 20, 20,
         0,   0,  1,  1
     );
 
-    Co::Vector4 col (1.0f, 1.0f, 1.0f, 1.0f);
+    v4f col (1.0f, 1.0f, 1.0f, 1.0f);
 
     frame.add_label (
       nullptr,
       &square, 1,
-      Co::Spatial2D (Co::Vector2 (20, 20), Co::rotate (prev_time * 5.0f)),
-      Co::Spatial2D (Co::Vector2 (20, 20), Co::rotate (time      * 5.0f)),
+      Co::Spatial2D (v2f (20, 20), Co::rotate (prev_time * 5.0f)),
+      Co::Spatial2D (v2f (20, 20), Co::rotate (time      * 5.0f)),
       nil, nil,
       col, col
-    );
+    );*/
   }
 
 } // namespace Ir

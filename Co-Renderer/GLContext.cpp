@@ -65,7 +65,12 @@ namespace Co
   //
   GeomBuffer::Ptr GLContext::create_buffer (WorkQueue& queue, uptr size, const void* data)
   {
-    return GLBuffer::create (queue, size, data);
+    return GLBuffer::create (queue, false, size, data);
+  }
+
+  StreamBuffer::Ptr GLContext::create_stream (WorkQueue& queue, uptr size)
+  {
+    return GLBuffer::create (queue, true, size);
   }
 
   //
@@ -89,10 +94,11 @@ namespace Co
     WorkQueue&   queue,
     uint         level_count,
     TexImageWrap wrap,
-    bool         filter,
+    bool         min_filter,
+    bool         mag_filter,
     TexImageType type)
   {
-    return GLTexImage::create (queue, level_count, wrap, filter, type);
+    return GLTexImage::create (queue, level_count, wrap, min_filter, mag_filter, type);
   }
 
   //

@@ -15,23 +15,17 @@
 
 namespace Co
 {
-  typedef Rk::Vector2f         Vector2;
-  typedef Rk::Vector3f         Vector3;
-  typedef Rk::Vector4f         Vector4;
-  typedef Rk::Quaternionf      Quaternion;
-  typedef Rk::Matrix2f         Matrix2;
-  typedef Rk::Matrix3f         Matrix3;
-  typedef Rk::Matrix4f         Matrix4;
+  typedef Rk::Quaternionf      Quat;
   typedef std::complex <float> Complex;
 
-  static inline Vector2 right (const Complex& ori)
+  static inline v2f right (const Complex& ori)
   {
-    return Vector2 (ori.real (), -ori.imag ());
+    return v2f (ori.real (), -ori.imag ());
   }
 
-  static inline Vector2 down (const Complex& ori)
+  static inline v2f down (const Complex& ori)
   {
-    return Vector2 (ori.imag (), ori.real ());
+    return v2f (ori.imag (), ori.real ());
   }
 
   static inline Complex rotate (float angle)
@@ -41,8 +35,8 @@ namespace Co
 
   struct Spatial
   {
-    Vector3    position;
-    Quaternion orientation;
+    v3f  position;
+    Quat orientation;
 
     Spatial ()
     { }
@@ -52,18 +46,18 @@ namespace Co
       orientation (nil)
     { } 
     
-    Spatial (Vector3 pos, Quaternion ori) :
+    Spatial (v3f pos, Quat ori) :
       position    (pos),
       orientation (ori)
     { }
     
-    Matrix4 to_matrix () const
+    mat4f to_matrix () const
     {
-      Matrix4 mat;
-      mat.column (0) = Vector4 (orientation.forward (), 0.0f);
-      mat.column (1) = Vector4 (orientation.left (),    0.0f);
-      mat.column (2) = Vector4 (orientation.up (),      0.0f);
-      mat.column (3) = Vector4 (position,               1.0f);
+      mat4f mat;
+      mat.column (0) = v4f (orientation.forward (), 0.0f);
+      mat.column (1) = v4f (orientation.left (),    0.0f);
+      mat.column (2) = v4f (orientation.up (),      0.0f);
+      mat.column (3) = v4f (position,               1.0f);
       return mat;
     }
 
@@ -79,7 +73,7 @@ namespace Co
 
   struct Spatial2D
   {
-    Vector2 position;
+    v2f     position;
     Complex orientation;
 
     Spatial2D (const Nil&) :
@@ -87,17 +81,17 @@ namespace Co
       orientation (1.0f, 0.0f)
     { } 
     
-    Spatial2D (Vector2 pos = nil, Complex ori = Complex (1.0f, 0.0f)) :
+    Spatial2D (v2f pos = nil, Complex ori = Complex (1.0f, 0.0f)) :
       position    (pos),
       orientation (ori)
     { }
     
-    Matrix3 to_matrix () const
+    mat3f to_matrix () const
     {
-      Matrix3 mat;
-      mat.column (0) = Vector3 (right (orientation), 0.0f);
-      mat.column (1) = Vector3 (down  (orientation), 0.0f);
-      mat.column (2) = Vector3 (position,            1.0f);
+      mat3f mat;
+      mat.column (0) = v3f (right (orientation), 0.0f);
+      mat.column (1) = v3f (down  (orientation), 0.0f);
+      mat.column (2) = v3f (position,            1.0f);
       return mat;
     }
 

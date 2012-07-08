@@ -50,12 +50,14 @@ namespace Co
       InputSink::Ptr input_sink;
       int            mouse_x,
                      mouse_y;
+      v2f            mouse_motion;
 
       // Timing
-      static const float frame_rate,
-                         frame_interval;
-      float              time,
-                         prev_time;
+      static const float tick_rate,
+                         tick_interval;
+      float              prev_real_time,
+                         sim_time,
+                         time_accumulator;
 
       // Termination
       bool running;
@@ -64,13 +66,11 @@ namespace Co
       std::vector <Entity::Ptr> entities;
 
       // Simulation control
-      virtual void  init        (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr);
-      virtual float start       ();
-      virtual void  post_events (const UIEvent* events, const UIEvent* end);
-      virtual void  wait        ();
-      virtual bool  update      (float&, uint, uint, const UIEvent*, uint, const KeyState*, v2f);
-      virtual void  stop        ();
-      virtual void  enable_ui   (bool enable);
+      virtual void init      (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr);
+      virtual void start     ();
+      virtual bool update    (uint, uint, const UIEvent*, uint, const KeyState*, v2f);
+      virtual void stop      ();
+      virtual void enable_ui (bool enable);
 
       // Object creation
       virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props);
@@ -92,8 +92,8 @@ namespace Co
 
     RK_MODULE_FACTORY (EngineImpl);
 
-    const float EngineImpl::frame_rate     = 60.0f,
-                EngineImpl::frame_interval = 1.0f / frame_rate;
+    const float EngineImpl::tick_rate     = 50.0f,
+                EngineImpl::tick_interval = 1.0f / tick_rate;
 
     void EngineImpl::init (Host& new_host, Renderer::Ptr new_renderer, WorkQueue& new_queue, Game::Ptr new_game)
     {
@@ -115,7 +115,7 @@ namespace Co
       game -> init (*this, *queue, host -> log);
     }
 
-    float EngineImpl::start () 
+    void EngineImpl::start () 
     {
       if (running)
         throw std::logic_error ("Engine already running");
@@ -125,28 +125,14 @@ namespace Co
       game -> start (*this);
 
       running = true;
-      prev_time = get_time ();
-      time = prev_time + frame_interval;
-      return time;
+      prev_real_time   = get_time ();
+      sim_time         = 0.0f;
+      time_accumulator = 0.0f;
+
+      mouse_motion = v2f (0, 0);
     }
 
-    void EngineImpl::wait ()
-    {
-      float now = get_time ();
-
-      if (now < time)
-      {
-        if (time - now >= 0.003f)
-        {
-          uint delay = uint ((time - now - 0.002f) * 0.001f);
-          if (delay) Sleep (delay);
-        }
-        
-        while (get_time () < time) { }
-      }
-    }
-
-    bool EngineImpl::update (float& next_update, uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta)
+    bool EngineImpl::update (uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta)
     {
       if (!running)
       {
@@ -154,19 +140,41 @@ namespace Co
         return false;
       }
 
-      Frame* frame = renderer -> begin_frame (prev_time, time);
-      
-      frame -> set_size (width, height);
-      
-      game -> tick (*queue, *frame, time, prev_time, ui_events, ui_event_count);
+      queue -> do_completions ();
+
+      mouse_motion += mouse_delta;
+      mouse_delta = mouse_motion / time_accumulator;
+
+      while (time_accumulator >= 1.0f)
+      {
+        game -> tick (sim_time, tick_interval, *queue, ui_events, ui_event_count);
+        ui_event_count = 0;
+
+        for (auto ent = entities.begin (); ent != entities.end (); ent++)
+          (*ent) -> tick (sim_time, tick_interval, *queue, keyboard, mouse_delta);
+
+        sim_time += tick_interval;
+        time_accumulator -= 1.0f;
+        mouse_motion -= mouse_delta;
+      }
+
+      Frame& frame = *renderer;
+      float  alpha = time_accumulator;
+
+      game -> render (frame, alpha);
 
       for (auto ent = entities.begin (); ent != entities.end (); ent++)
-        (*ent) -> tick (*frame, time, prev_time, keyboard, mouse_delta);
-      
-      frame -> submit ();
+        (*ent) -> render (frame, alpha);
 
-      prev_time = time;
-      time      += frame_interval;
+      renderer -> render_frame (width, height);
+
+      float real_time = get_time ();
+      float delta_real_time = real_time - prev_real_time;
+      prev_real_time = real_time;
+
+      if (delta_real_time > 0.25f)
+        delta_real_time = 0.25f;
+      time_accumulator += delta_real_time / tick_interval;
 
       return true;
     }
@@ -180,12 +188,6 @@ namespace Co
     void EngineImpl::enable_ui (bool enable)
     {
       host -> enable_ui (enable);
-    }
-
-    void EngineImpl::post_events (const UIEvent* begin, const UIEvent* end)
-    {
-      if (!begin || end < begin)
-        throw std::invalid_argument ("Invalid range");
     }
 
     Entity::Ptr EngineImpl::create_entity (Rk::StringRef class_name, const PropMap* props)

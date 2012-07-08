@@ -48,6 +48,11 @@ namespace Co
       const void* data = 0
     ) = 0;
 
+    virtual StreamBuffer::Ptr create_stream (
+      WorkQueue& queue,
+      uptr       size
+    ) = 0;
+
     virtual GeomCompilation::Ptr create_compilation (
       WorkQueue&        queue,
       const GeomAttrib* attribs,
@@ -72,7 +77,8 @@ namespace Co
       WorkQueue&   queue,
       uint         level_count,
       TexImageWrap wrap,
-      bool         filter,
+      bool         min_filter,
+      bool         mag_filter,
       TexImageType type
     ) = 0;
 

@@ -45,7 +45,7 @@ namespace Co
     static Rk::StringRef ix_name () { return "Co::TextureFactory"; }
     typedef std::shared_ptr <TextureFactory> Ptr;
 
-    virtual Texture::Ptr create (WorkQueue& queue, Rk::StringRef path, bool wrap, bool filter) = 0;
+    virtual Texture::Ptr create (WorkQueue& queue, Rk::StringRef path, bool wrap, bool min_filter, bool mag_filter) = 0;
 
   };
 

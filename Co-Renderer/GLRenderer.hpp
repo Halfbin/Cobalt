@@ -14,8 +14,15 @@
 #include <Rk/Thread.hpp>
 #include <Rk/Mutex.hpp>
 
+#include "SkyboxProgram.hpp"
+#include "GeomProgram.hpp"
+#include "RectProgram.hpp"
+
+#include "GLCompilation.hpp"
+#include "GLTexImage.hpp"
 #include "GLContext.hpp"
-#include "GLFrame.hpp"
+
+#include <vector>
 
 namespace Co
 {
@@ -25,50 +32,169 @@ namespace Co
   class GLRenderer :
     public Renderer
   {
-    // Frame queueing and rendering
-    static const uint frame_count = 10;
-    typedef Rk::FixedQueue <GLFrame*, frame_count> FrameQueue;
+    // Frame data
+    struct PointGeom
+    {
+      GLCompilation::Ptr comp;
+      Spatial            spat;
+      u32                mesh_count,
+                         material_count;
 
-    GLFrame    frames [frame_count];
-    FrameQueue free_frames;
-    Rk::Mutex  free_frames_mutex;
-    FrameQueue ready_frames;
-    Rk::Mutex  ready_frames_mutex;
-    Rk::Thread thread;
+      PointGeom (GLCompilation::Ptr comp, Spatial spat) :
+        comp           (std::move (comp)),
+        spat           (spat),
+        mesh_count     (0),
+        material_count (0)
+      { }
+      
+    };
+
+    struct Label
+    {
+      GLTexImage::Ptr tex;
+      u32             first,
+                      count;
+      v4f             linear_colour,
+                      const_colour;
+
+      Label (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        v4f             linear_colour,
+        v4f             const_colour
+      ) :
+        tex            (std::move (tex)),
+        first          (first),
+        count          (count),
+        linear_colour  (linear_colour),
+        const_colour   (const_colour)
+      { }
+      
+    };
+
+    struct Label2D :
+      Label
+    {
+      Spatial2D spat;
+      
+      Label2D (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        Spatial2D       spat,
+        v4f             linear_colour,
+        v4f             const_colour
+      ) :
+        Label (std::move (tex), first, count, linear_colour, const_colour),
+        spat  (spat)
+      { }
+      
+    };
+
+    struct Label3D :
+      Label
+    {
+      Spatial spat;
+      
+      Label3D (
+        GLTexImage::Ptr tex,
+        u32             first,
+        u32             count,
+        Spatial         spat,
+        v4f             linear_colour,
+        v4f             const_colour
+      ) :
+        Label (std::move (tex), first, count, linear_colour, const_colour),
+        spat  (spat)
+      { }
+      
+    };
+
+    std::vector <PointGeom>  geoms;
+    std::vector <Mesh>       meshes;
+    std::vector <Material>   materials;
+    std::vector <Label2D>    labels_2d;
+    std::vector <Label3D>    labels_3d;
+    std::vector <TexRect>    rects;
+    std::vector <Light>      lights;
+
+    // Skybox
+    GLTexImage::Ptr skybox_tex;
+    v3f             skybox_colour;
+    float           skybox_alpha;
+
+    // Camera
+    Spatial camera_spat;
+    float   camera_fov,
+            camera_near,
+            camera_far;
+
+    // Viewport
+    u32 width,
+        height;
 
     // Render device
-    void*     target;
-    void*     shared_dc;
-    int       format;
-    void*     shared_rc;
-    WGLCCA    wglCreateContextAttribs;
-    Rk::Mutex device_mutex;
-    uint      width,
-              height;
+    void*          target;
+    void*          shared_dc;
+    int            format;
+    void*          shared_rc;
+    WGLCCA         wglCreateContextAttribs;
+    Rk::Mutex      device_mutex;
+    GLContext::Ptr true_context;
 
     // Subsystems
-    const Clock* clock;
-    Log*         log_ptr;
+    const Clock*       clock;
+    Log*               log_ptr;
+    GeomProgram::Ptr   geom_program;
+    RectProgram::Ptr   rect_program;
+    SkyboxProgram::Ptr skybox_program;
 
-    // Internal
-    void loop  ();
-    
     // Setup and teardown
     virtual void init    (void* hwnd, const Clock& clock, Log& log);
     void         cleanup ();
-    virtual void stop    ();
-
+    
     // Frame exchange
-    virtual Frame* begin_frame (
-      float prev_time,
-      float current_time
+    virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial spat);
+    virtual void end              ();
+
+    virtual void add_label (
+      TexImage::Ptr  texture,
+      const TexRect* rects,
+      const TexRect* end,
+      Spatial2D      spat,
+      v4f            linear_colour,
+      v4f            const_colour
     );
+
+    virtual void add_label (
+      TexImage::Ptr  texture,
+      const TexRect* rects,
+      const TexRect* end,
+      Spatial        spat,
+      v4f            linear_colour,
+      v4f            const_colour
+    );
+
+    virtual void add_lights (const Light* lights, const Light* end);
+    virtual void set_skybox (TexImage::Ptr cube, v3f colour, float alpha);
+
+    virtual void set_camera (Spatial spat, float fov, float near, float far);
+    
+    virtual void add_meshes    (const Mesh*     begin, const Mesh*     end);
+    virtual void add_materials (const Material* begin, const Material* end);
+    
+    virtual void render_frame (u32 width, u32 height);
+
+    // Rendering
+    void render_geoms     (Rk::Matrix4f model_to_clip);
+    void render_labels_3d ();
+    void render_labels_2d ();
 
     // Device
     GLContext::Ptr             create_context_impl ();
     virtual RenderContext::Ptr create_context      ();
-    virtual void               set_size            (uint width, uint height);
-
+    
     GLRenderer ();
 
   public:
@@ -80,8 +206,6 @@ namespace Co
     static GLRenderer instance;
 
     static std::shared_ptr <GLRenderer> create ();
-
-    void submit_frame (GLFrame* frame);
 
   }; // class GLRenderer
 

@@ -28,6 +28,9 @@ namespace Co
         vao;
 
   public:
+    typedef std::shared_ptr <RectProgram> Ptr;
+    static inline Ptr create () { return std::make_shared <RectProgram> (); }
+
     enum
     {
       attrib_rect    = 0,
@@ -42,19 +45,19 @@ namespace Co
     void use  ();
     void done ();
 
-    void set_ui_to_clip (Rk::Matrix3f xform)
+    void set_ui_to_clip (mat3f xform)
     {
       glUniformMatrix3fv (ui_to_clip, 1, true, xform.raw ());
       check_gl ("glUniformMatrix3x2fv");
     }
 
-    void set_linear_colour (Vector4 colour)
+    void set_linear_colour (v4f colour)
     {
       glUniform4f (linear_colour, colour.x, colour.y, colour.z, colour.w);
       check_gl ("glUniform4f");
     }
 
-    void set_const_colour (Vector4 colour)
+    void set_const_colour (v4f colour)
     {
       glUniform4f (const_colour, colour.x, colour.y, colour.z, colour.w);
       check_gl ("glUniform4f");
@@ -92,6 +95,7 @@ namespace Co
     
   };
 
+  extern RectProgram rect_program;
 }
 
 #endif

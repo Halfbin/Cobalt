@@ -14,9 +14,6 @@
 #include <Rk/Guard.hpp>
 #include <Rk/File.hpp>
 
-#include "SkyboxProgram.hpp"
-#include "GeomProgram.hpp"
-#include "RectProgram.hpp"
 #include "GLTexImage.hpp"
 #include "GL.hpp"
 
@@ -134,102 +131,14 @@ namespace Co
     format    = 0;
     shared_rc = 0;
     wglCreateContextAttribs = 0;
-  }
 
-  //
-  // Rendering loop
-  //
-  extern "C"
-  {
-    __declspec(dllimport) void* __stdcall GetCurrentThread  ();
-    __declspec(dllimport) i32   __stdcall SetThreadPriority (void*, u32);
-  }
-
-  void GLRenderer::loop () try
-  {
-    log () << "- GLRenderer running\n";
-
-    auto context = create_context_impl ();
-
-    // Set up shaders
-    SkyboxProgram skybox_program;
-    GeomProgram   geom_program;
-    RectProgram   rect_program;
-
-    //SetThreadPriority (GetCurrentThread (), 31); // THREAD_PRIORITY_TIME_CRITICAL
-
-    if (wglewIsSupported ("WGL_EXT_swap_control"))
-    {
-      auto wglSwapInterval = (i32 (__stdcall*) (i32)) wglGetProcAddress ("wglSwapIntervalEXT");
-      wglSwapInterval (0);
-    }
-
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_CULL_FACE);
-    glEnable (GL_FRAMEBUFFER_SRGB);
-    glEnable (GL_MULTISAMPLE);
-    check_gl ("glEnable");
-
-    uint frames = 0;
-    GLFrame* frame = 0;
-    
-    float now;
-    
-    // The real loop
-    for (;;)
-    {
-      now = clock -> time () - 0.050f;
-
-      // Perhaps it's time to grab a new frame
-      while (!frame || now >= frame -> time)
-      {
-        // Is there a new frame?
-        auto lock = ready_frames_mutex.get_lock ();
-        if (ready_frames.empty ())
-          continue; // Keep trying
-
-        // Grab the new frame
-        auto new_frame = ready_frames.pop_front ();
-        lock = nil;
-
-        // Do we have an old frame?
-        if (frame)
-        {
-          // Recycle it
-          auto lock = free_frames_mutex.get_lock ();
-          free_frames.push_back (frame);
-        }
-
-        // Null frame indicates renderer shutdown
-        if (!new_frame)
-          return;
-
-        // Use our new frame for rendering
-        frame = new_frame;
-      }
-      
-      // Animate smoothly
-      float alpha = 0.0f;
-      if (now >= frame -> prev_time)
-        alpha = (now - frame -> prev_time) / (frame -> time - frame -> prev_time);
-      
-      if (alpha > 1.0f || alpha < 0.0f)
-        __asm nop;
-
-      frame -> render (alpha, skybox_program, geom_program, rect_program);
-      
-      context -> present ();
-      frames++;
-    }
-  }
-  catch (const std::exception& e)
-  {
-    log () << "X Exception caught in renderer:\n"
-           << "X " << e.what () << '\n';
-  }
-  catch (...)
-  {
-    log () << "X Exception caught in renderer\n";
+    geoms.reserve     (5000);
+    meshes.reserve    (5000);
+    materials.reserve (5000);
+    labels_2d.reserve (2000);
+    labels_3d.reserve (2000);
+    rects.reserve     (5000);
+    lights.reserve    (8);
   }
 
   //
@@ -251,7 +160,7 @@ namespace Co
     if (!new_target)
       throw std::invalid_argument ("Renderer::init - Null pointer");
 
-    if (target || thread)
+    if (target)
       throw std::logic_error ("Renderer::init - Renderer already initialized");
 
     target = new_target;
@@ -391,7 +300,7 @@ namespace Co
       ReleaseDC (target, dummy_dc);
       throw Rk::WinError ("Error making shared context current");
     }
-    auto curent_guard = Rk::guard (
+    auto current_guard = Rk::guard (
       [] { wglMakeCurrent (0, 0); }
     );
 
@@ -400,41 +309,35 @@ namespace Co
     if (fail)
       throw std::runtime_error ("Error initializing GLEW");
     
-    // Done with OpenGL, at last. Initialize frame queues and start the rendering thread.
-    ready_frames.clear ();
-    free_frames.clear ();
+    // Done with OpenGL, at last.
+    current_guard.relieve ();
 
-    for (uint i = 0; i != frame_count; i++)
-      free_frames.push_back (&frames [i]);
+    true_context = create_context_impl ();
+    
+    geom_program   = GeomProgram::create ();
+    rect_program   = RectProgram::create ();
+    skybox_program = SkyboxProgram::create ();
+    
+    if (wglewIsSupported ("WGL_EXT_swap_control"))
+    {
+      auto wglSwapInterval = (i32 (__stdcall*) (i32)) wglGetProcAddress ("wglSwapIntervalEXT");
+      wglSwapInterval (0);
+    }
 
-    log () << "- GLRenderer starting\n";
-
-    thread.execute (
-      [this] { loop (); }
-    );
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_FRAMEBUFFER_SRGB);
+    glEnable (GL_MULTISAMPLE);
+    check_gl ("glEnable");
   }
   catch (...)
   {
     cleanup ();
   }
-
-  void GLRenderer::stop ()
-  {
-    if (!thread)
-      return;
-
-    auto lock = ready_frames_mutex.get_lock ();
-    ready_frames.push_back (nullptr);
-    lock = nil;
-    
-    log () << "- GLRenderer stopping\n";
-
-    thread.join ();
-  }
   
   void GLRenderer::cleanup ()
   {
-    stop ();
+    true_context.reset ();
 
     if (shared_rc)
     {
@@ -456,15 +359,6 @@ namespace Co
   }
 
   //
-  // Device size
-  //
-  void GLRenderer::set_size (uint new_width, uint new_height)
-  {
-    width  = new_width;
-    height = new_height;
-  }
-
-  //
   // Context creation
   //
   GLContext::Ptr GLRenderer::create_context_impl ()
@@ -479,33 +373,342 @@ namespace Co
   {
     return create_context_impl ();
   }
-  
-  //
-  // Frame specification
-  //
-  Frame* GLRenderer::begin_frame (float prev_time, float current_time)
-  {
-    if (!thread)
-      throw std::logic_error ("Renderer::begin_frame - Renderer not running");
 
-    GLFrame* frame = nullptr;
-    while (!frame)
+  //
+  // = Rendering =======================================================================================================
+  //
+  void GLRenderer::render_geoms (mat4f world_to_clip)
+  {
+    glEnable (GL_DEPTH_TEST);
+    //glDisable (GL_CULL_FACE);
+
+    auto cur_mesh = meshes.begin    ();
+    auto cur_mat  = materials.begin ();
+
+    GLCompilation::Ptr prev_comp = nullptr;
+
+    for (auto geom = geoms.begin (); geom != geoms.end (); geom++)
     {
-      auto lock = free_frames_mutex.get_lock ();
-      if (!free_frames.empty ())
-        frame = free_frames.pop_front ();
+      if (!geom -> comp)
+      {
+        cur_mesh += geom -> mesh_count;
+        cur_mat  += geom -> material_count;
+        continue;
+      }
+
+      if (geom -> comp != prev_comp)
+      {
+        if (prev_comp)
+          prev_comp -> done ();
+        bool ok = geom -> comp -> use ();
+        prev_comp = geom -> comp;
+      }
+
+      static const GLenum index_types [4] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT };
+      static const uptr   index_sizes [4] = { 0, 1, 2, 4 };
+      
+      IndexType comp_index_type = geom -> comp -> get_index_type ();
+      GLenum index_type = index_types [comp_index_type];
+      uptr   index_size = index_sizes [comp_index_type];
+
+      geom_program -> set_model_to_clip (
+        world_to_clip *
+        Rk::affine_xform (
+          geom -> spat.position,
+          geom -> spat.orientation
+        )
+      );
+      
+      auto end_mesh = cur_mesh + geom -> mesh_count;
+      while (cur_mesh != end_mesh)
+      {
+        const Mesh& mesh = *cur_mesh++;
+
+        auto tex = static_cast <GLTexImage*> ((cur_mat + mesh.material) -> diffuse_tex.get ());
+        if (tex)
+          tex -> bind (geom_program -> texunit_diffuse);
+        else
+          GLTexImage::unbind (geom_program -> texunit_diffuse);
+
+        static const GLenum prim_types [7] = {
+          GL_POINTS,
+          GL_LINES,
+          GL_LINE_LOOP,
+          GL_LINE_STRIP,
+          GL_TRIANGLES,
+          GL_TRIANGLE_STRIP,
+          GL_TRIANGLE_FAN
+        };
+        GLenum prim_type = prim_types [mesh.prim_type];
+
+        if (index_type)
+        {
+          uptr offset = index_size * mesh.base_index + geom -> comp -> index_base ();
+          glDrawElementsBaseVertex (
+            prim_type,
+            mesh.element_count,
+            index_type,
+            (void*) offset,
+            mesh.base_element + geom -> comp -> element_base ()
+          );
+          check_gl ("glDrawElementsBaseVertex");
+        }
+        else
+        {
+          glDrawArrays (prim_type, mesh.base_element, mesh.element_count);
+          check_gl ("glDrawArrays");
+        }
+      } // while (meshes)
+      
+      cur_mat += geom -> material_count;
+    } // for (point_geoms)
+
+    GLCompilation::done ();
+  }
+
+  void GLRenderer::render_labels_3d ()
+  {
+
+  }
+
+  void GLRenderer::render_labels_2d ()
+  {
+    glDisable (GL_DEPTH_TEST);
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    for (auto label = labels_2d.begin (); label != labels_2d.end (); label++)
+    {
+      if (label -> tex)
+        label -> tex -> bind (rect_program -> texunit_tex);
+      else
+        GLTexImage::unbind (rect_program -> texunit_tex);
+
+      rect_program -> set_linear_colour (label -> linear_colour);
+      rect_program -> set_const_colour  (label -> const_colour);
+      rect_program -> set_transform     (label -> spat);
+      uptr offset = label -> first * 32;
+
+      //glDrawArraysInstancedBaseInstance ( // DAMNIT
+
+      glVertexAttribIPointer (rect_program -> attrib_rect, 4, GL_INT, 32, (void*) uptr (offset + 0));
+      check_gl ("glVertexAttribIPointer");
+
+      glVertexAttribIPointer (rect_program -> attrib_tcoords, 4, GL_INT, 32, (void*) uptr (offset + 16));
+      check_gl ("glVertexAttribIPointer");
+
+      glDrawArraysInstanced (GL_TRIANGLE_STRIP, 0, 4, label -> count);
+      check_gl ("glDrawArraysInstanced");
+    }
+
+    glDisable (GL_BLEND);
+  }
+
+  void GLRenderer::render_frame (u32 width, u32 height)
+  {
+    // Setup for drawing
+    auto back = pow (v3f (0.00f, 0.26f, 0.51f), 2.2f);
+    glClearColor (back.x, back.y, back.z, 1.0f);
+    glViewport (0, 0, width, height);
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    check_gl ("glClear");
+
+    // Transformations
+    auto world_to_eye = Rk::world_to_eye_xform (
+      camera_spat.position,
+      camera_spat.orientation
+    );
+    
+    float aspect = float (width) / float (height);
+
+    auto eye_to_clip = Rk::eye_to_clip_xform (
+      camera_fov / aspect,
+      aspect,
+      camera_near, camera_far
+    );
+    
+    auto world_to_clip = eye_to_clip * world_to_eye;
+    
+    auto ui_to_clip = Rk::ui_to_clip_xform (
+      float (width),
+      float (height)
+    );
+    
+    // Render skybox
+    if (skybox_tex)
+    {
+      auto sky_to_eye = Rk::world_to_eye_xform (
+        v3f (0, 0, 0),
+        camera_spat.orientation
+      );
+
+      auto sky_to_clip = eye_to_clip * sky_to_eye;
+
+      skybox_tex -> bind (skybox_program -> texunit_cube);
+      skybox_program -> render (sky_to_clip, skybox_colour, skybox_alpha);
     }
     
-    frame -> reset (prev_time, current_time);
-    return frame;
+    // Render point geometries
+    geom_program -> use ();
+    render_geoms (world_to_clip);
+    geom_program -> done ();
+
+    // Adjust textured rectangles
+    for (auto rect = rects.begin (); rect != rects.end (); rect++)
+    {
+      *rect = TexRect (
+        rect -> x,
+        rect -> y,
+        rect -> x + rect -> w,
+        rect -> y + rect -> h,
+        rect -> s,
+        rect -> t,
+        rect -> s + rect -> tw,
+        rect -> t + rect -> th
+      );
+    }
+
+    // Render rectangles
+    rect_program -> use ();
+    rect_program -> set_ui_to_clip (ui_to_clip);
+    rect_program -> upload_rects (rects.data (), rects.size ());
+
+    //render_labels_3d ();
+    render_labels_2d ();
+
+    rect_program -> done ();
+
+    true_context -> present ();
+
+    geoms.clear ();
+    meshes.clear ();
+    materials.clear ();
+    labels_2d.clear ();
+    labels_3d.clear ();
+    rects.clear ();
+    lights.clear ();
+
+    skybox_tex = nullptr;
   }
 
-  void GLRenderer::submit_frame (GLFrame* frame)
+  //
+  // = Frame building ==================================================================================================
+  //
+  void GLRenderer::begin_point_geom (GeomCompilation::Ptr comp, Spatial spat)
   {
-    auto lock = ready_frames_mutex.get_lock ();
-    ready_frames.push_back (frame);
+    geoms.push_back (
+      PointGeom (
+        std::static_pointer_cast <GLCompilation> (comp),
+        spat
+      )
+    );
   }
 
+  void GLRenderer::add_meshes (const Mesh* begin, const Mesh* end)
+  {
+    if (geoms.empty ())
+      throw std::logic_error ("No current geom");
+    auto size = Rk::check_range (begin, end);
+    if (!size)
+      return;
+    
+    meshes.insert (meshes.end (), begin, end);
+    geoms.back ().mesh_count += size;
+  }
+
+  void GLRenderer::add_materials (const Material* begin, const Material* end)
+  {
+    if (geoms.empty ())
+      throw std::logic_error ("No current geom");
+    auto size = Rk::check_range (begin, end);
+    if (!size)
+      return;
+
+    materials.insert (materials.end (), begin, end);
+    geoms.back ().material_count += size;
+  }
+
+  void GLRenderer::end ()
+  {
+
+  }
+
+  void GLRenderer::add_label (
+    TexImage::Ptr  texture,
+      const TexRect* begin,
+      const TexRect* end,
+      Spatial2D      spat,
+      v4f            linear_colour,
+      v4f            const_colour)
+  {
+    auto size = Rk::check_range (begin, end);
+    if (!size)
+      return;
+
+    labels_2d.push_back (
+      Label2D (
+        std::static_pointer_cast <GLTexImage> (texture),
+        rects.size (),
+        size,
+        spat,
+        linear_colour,
+        const_colour
+      )
+    );
+    rects.insert (rects.end (), begin, end);
+  }
+  
+  void GLRenderer::add_label (
+    TexImage::Ptr  texture,
+      const TexRect* begin,
+      const TexRect* end,
+      Spatial        spat,
+      v4f            linear_colour,
+      v4f            const_colour)
+  {
+    auto size = Rk::check_range (begin, end);
+    if (!size)
+      return;
+
+    labels_3d.push_back (
+      Label3D (
+        std::static_pointer_cast <GLTexImage> (texture),
+        rects.size (),
+        size,
+        spat,
+        linear_colour,
+        const_colour
+      )
+    );
+    rects.insert (rects.end (), begin, end);
+  }
+
+  void GLRenderer::add_lights (const Light* begin, const Light* end)
+  {
+    if (!Rk::check_range (begin, end))
+      return;
+
+    lights.insert (lights.end (), begin, end);
+  }
+  
+  void GLRenderer::set_skybox (TexImage::Ptr cube, v3f colour, float alpha)
+  {
+    skybox_tex    = std::static_pointer_cast <GLTexImage> (cube);
+    skybox_colour = colour;
+    skybox_alpha  = alpha;
+  }
+
+  void GLRenderer::set_camera (Spatial spat, float fov, float near, float far)
+  {
+    camera_spat = spat;
+    camera_fov  = fov;
+    camera_near = near;
+    camera_far  = far;
+  }
+
+  //
+  // = Module ==========================================================================================================
+  //
   std::shared_ptr <GLRenderer> GLRenderer::create ()
   {
     return std::shared_ptr <GLRenderer> (

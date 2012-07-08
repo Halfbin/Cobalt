@@ -52,13 +52,13 @@ namespace Co
     glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, index_buf);
     check_gl ("glBindBuffer");
 
-    static const Co::Vector3 vertices [6] = {
-      Co::Vector3 ( 1,  0,  0), // 0 front
-      Co::Vector3 ( 0,  1,  0), // 1 left
-      Co::Vector3 (-1,  0,  0), // 2 back
-      Co::Vector3 ( 0, -1,  0), // 3 right
-      Co::Vector3 ( 0,  0,  1), // 4 top
-      Co::Vector3 ( 0,  0, -1), // 5 bottom
+    static const v3f vertices [6] = {
+      v3f ( 1,  0,  0), // 0 front
+      v3f ( 0,  1,  0), // 1 left
+      v3f (-1,  0,  0), // 2 back
+      v3f ( 0, -1,  0), // 3 right
+      v3f ( 0,  0,  1), // 4 top
+      v3f ( 0,  0, -1), // 5 bottom
     };
 
     static const u16 indices [24] = {
@@ -111,7 +111,7 @@ namespace Co
     index_buf = 0;
   }
 
-  void SkyboxProgram::render (Rk::Matrix4f xform, Vector3 colour, float alpha)
+  void SkyboxProgram::render (mat4f xform, v3f colour, float alpha)
   {
     program.use ();
 

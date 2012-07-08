@@ -27,13 +27,11 @@ namespace Co
     static Rk::StringRef ix_name () { return "Co::Engine"; }
     typedef std::shared_ptr <Engine> Ptr;
 
-    virtual void  init        (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr) = 0;
-    virtual float start       () = 0;
-    virtual void  post_events (const UIEvent* events, const UIEvent* end) = 0;
-    virtual void  wait        () = 0;
-    virtual bool  update      (float& time, uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta) = 0;
-    virtual void  stop        () = 0;
-    virtual void  enable_ui   (bool enable) = 0;
+    virtual void init      (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr) = 0;
+    virtual void start     () = 0;
+    virtual bool update    (uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta) = 0;
+    virtual void stop      () = 0;
+    virtual void enable_ui (bool enable) = 0;
 
     virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props = 0) = 0;
     

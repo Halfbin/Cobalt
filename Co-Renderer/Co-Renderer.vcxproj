@@ -23,7 +23,6 @@
     <ClInclude Include="GLBuffer.hpp" />
     <ClInclude Include="GLCompilation.hpp" />
     <ClInclude Include="GLContext.hpp" />
-    <ClInclude Include="GLFrame.hpp" />
     <ClInclude Include="GLRenderer.hpp" />
     <ClInclude Include="GLShader.hpp" />
     <ClInclude Include="GLTexImage.hpp" />
@@ -35,7 +34,6 @@
     <ClCompile Include="GLBuffer.cpp" />
     <ClCompile Include="GLCompilation.cpp" />
     <ClCompile Include="GLContext.cpp" />
-    <ClCompile Include="GLFrame.cpp" />
     <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLTexImage.cpp" />
     <ClCompile Include="GLRenderer.cpp" />
@@ -148,12 +146,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>RK_API=__declspec(dllimport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

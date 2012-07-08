@@ -12,7 +12,7 @@
 #include <Co/Filesystem.hpp>
 #include <Co/WorkQueue.hpp>
 #include <Co/TexImage.hpp>
-#include <Co/Profile.hpp>
+//#include <Co/Profile.hpp>
 
 #include <Rk/StringOutStream.hpp>
 #include <Rk/AsyncMethod.hpp>
@@ -618,7 +618,7 @@ namespace Co
     Rk::Image image;
     auto mets = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
     
-    auto tex = rc.create_tex_image (queue, 1, texwrap_clamp, false, textype_rectangle);
+    auto tex = rc.create_tex_image (queue, 1, texwrap_clamp, false, false, textype_rectangle);
     tex -> load_map (0, 0, image.data, texformat_a8, image.width, image.height, image.size ());
 
     auto lock = mutex.get_lock ();
