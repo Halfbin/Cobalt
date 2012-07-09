@@ -84,7 +84,7 @@ namespace Co
           case chunk_type ('H', 'E', 'A', 'D'):
             if (header.version)
               throw std::runtime_error ("Texture has more than one HEAD");
-            file -> read (&header, Rk::minimum (loader.size, sizeof (header)));
+            file -> read (&header, std::min (uptr (loader.size), sizeof (header)));
             if (header.version != 0x20111206)
               throw std::runtime_error ("Texture is of an unsupported version");
             if (header.flags & ~u8 (texflag_mask))

@@ -37,21 +37,21 @@ namespace SH
   
   struct BlockTCoords
   {
-    static const float t;
+    static const u8 t;
 
-    v2f top, sides, bottom;
+    v2u8 top, sides, bottom;
 
     BlockTCoords () { }
 
-    BlockTCoords (float ts, float tt, float ss, float st, float bs, float bt) :
-      top    (t * v2f (ts, tt)),
-      sides  (t * v2f (ss, st)),
-      bottom (t * v2f (bs, bt))
+    BlockTCoords (u8 ts, u8 tt, u8 ss, u8 st, u8 bs, u8 bt) :
+      top    (t * v2u8 (ts, tt)),
+      sides  (t * v2u8 (ss, st)),
+      bottom (t * v2u8 (bs, bt))
     { }
     
   };
 
-  const float BlockTCoords::t = 1.0f / 16.0f;
+  const u8 BlockTCoords::t = 16;
 
   class BlockTCoordsSet
   {
@@ -60,9 +60,9 @@ namespace SH
   public:
     BlockTCoordsSet ()
     {
-      tcoords [blocktype_air  ] = BlockTCoords (0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-      tcoords [blocktype_soil ] = BlockTCoords (2.0f, 0.0f, 2.0f, 0.0f, 2.0f, 0.0f);
-      tcoords [blocktype_grass] = BlockTCoords (0.0f, 0.0f, 3.0f, 0.0f, 2.0f, 0.0f);
+      tcoords [blocktype_air  ] = BlockTCoords (0, 0, 0, 0, 0, 0);
+      tcoords [blocktype_soil ] = BlockTCoords (2, 0, 2, 0, 2, 0);
+      tcoords [blocktype_grass] = BlockTCoords (0, 0, 3, 0, 2, 0);
     }
 
     const BlockTCoords& operator [] (u8 index) const
@@ -92,19 +92,22 @@ namespace SH
 
   struct Vertex
   {
-    float x, y, z;
-    float s, t;
-    float r, g, b;
+    u8 x, y, z;
+    u8 s, t;
+    u8 r, g, b;
 
-    Vertex () { }
+    Vertex ()
+    { }
 
-    Vertex (int x, int y, int z, float s, float t, float r, float g, float b) :
-      x (float (x)), y (float (y)), z (float (z)),
+    Vertex (u8 x, u8 y, u8 z, u8 s, u8 t, u8 r, u8 g, u8 b) :
+      x (x), y (y), z (z),
       s (s), t (t),
       r (r), g (g), b (b)
     { }
-      
+    
   };
+
+  enum { vertex_size = sizeof (Vertex) };
 
   //
   // = Chunk ===========================================================================================================
@@ -124,8 +127,11 @@ namespace SH
       max_faces        = ((dim * dim * dim + 1) / 2) * 6,
       max_vertices     = max_faces * 4,
       max_indices      = max_faces * 6,
+
       max_vertex_bytes = max_vertices * sizeof (Vertex),
-      max_index_bytes  = max_indices  * 2
+      max_index_bytes  = max_indices  * 2,
+      max_bytes        = max_vertex_bytes + max_index_bytes,
+      max_kbytes       = max_bytes >> 10
     };
 
     // Resources
@@ -158,13 +164,13 @@ namespace SH
 
     void init (Co::WorkQueue& queue, Co::RenderContext& rc)
     {
-      vertex_buffer = rc.create_stream (queue, 2 * max_vertex_bytes),
-      index_buffer  = rc.create_stream (queue, 2 * max_index_bytes);
+      vertex_buffer = rc.create_stream (queue, max_vertex_bytes / 4),
+      index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
       
       static const Co::GeomAttrib attribs [3] = {
-        { Co::attrib_position, Co::attrib_f32, 32,  0 },
-        { Co::attrib_tcoords,  Co::attrib_f32, 32, 12 },
-        { Co::attrib_colour,   Co::attrib_f32, 32, 20 },
+        { Co::attrib_position, Co::attrib_u8,  8, 0 },
+        { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
+        { Co::attrib_colour,   Co::attrib_u8n, 8, 5 },
       };
 
       compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
@@ -174,13 +180,10 @@ namespace SH
 
     void slice (uint limit)
     {
-      for (int z = dim - 1; z != limit - 1; z--)
+      for (int x = 0; x != dim; x++)
       {
         for (int y = 0; y != dim; y++)
-        {
-          for (int x = 0; x != dim; x++)
-            blocks [x][y][z].type = blocktype_air;
-        }
+          blocks [x][y][limit - bpos.z].type = blocktype_air;
       }
 
       dirty = true;
@@ -239,8 +242,14 @@ namespace SH
   {
     enum
     {
-      world_dim    = 8,
-      world_chunks = world_dim * world_dim * world_dim
+      world_dim    = 16,
+      world_chunks = world_dim * world_dim * world_dim,
+    };
+
+    enum : u64
+    {
+      max_kbytes = world_chunks * Chunk::max_kbytes,
+      max_mbytes = max_kbytes >> 10
     };
 
     // Parameters
@@ -253,29 +262,12 @@ namespace SH
 
     static Co::Texture::Ptr texture, sky_tex;
 
-    const Chunk::Ptr& chunk_at (v3i cv)
-    {
-      if (
-        cv.x >= world_dim || cv.x < 0 ||
-        cv.y >= world_dim || cv.y < 0 ||
-        cv.z >= world_dim || cv.z < 0)
-      {
-        static const Chunk::Ptr null = nullptr;
-        return null;
-      }
-
-      return stage [cv.x][cv.y][cv.z];
-    }
-
     void do_slice ()
     {
-      for (int z = 1; z != 5; z++)
+      for (int x = 0; x != world_dim; x++)
       {
         for (int y = 0; y != world_dim; y++)
-        {
-          for (int x = 0; x != world_dim; x++)
-            chunk_at (v3i (x, y, z)) -> slice (slice);
-        }
+          stage [x][y][slice >> 4] -> slice (slice);
       }
 
       slice--;
@@ -283,19 +275,19 @@ namespace SH
 
     virtual void tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta)
     {
-      /*if (time > last_slice + 5.0f && slice > 8)
+      if (time >= last_slice + 1.0f && slice > 45)
       {
         do_slice ();
-        last_slice += 5.0f;
-      }*/
+        last_slice += 1.0f;
+      }
 
       //Co::Profiler tick ("tick", *log_ptr);
 
-      for (int z = 0; z != world_dim; z++)
+      for (int x = 0; x != world_dim; x++)
       {
         for (int y = 0; y != world_dim; y++)
         {
-          for (int x = 0; x != world_dim; x++)
+          for (int z = 0; z != world_dim; z++)
           {
             auto& chunk = chunk_at (v3i (x, y, z));
 
@@ -319,15 +311,30 @@ namespace SH
       Co::Material material = nil;
       material.diffuse_tex = texture -> get ();
 
-      for (int z = 0; z != world_dim; z++)
+      bool loaded [world_dim][world_dim][world_dim];
+
+      for (int x = 0; x != world_dim; x++)
       {
         for (int y = 0; y != world_dim; y++)
         {
-          for (int x = 0; x != world_dim; x++)
-          {
-            auto& chunk = chunk_at (v3i (x, y, z));
+          for (int z = 0; z != world_dim; z++)
+            loaded [x][y][z] = stage [x][y][z] -> loaded;
+        }
+      }
 
-            if (!chunk -> loaded)
+      for (int x = 1; x != world_dim - 1; x++)
+      {
+        for (int y = 1; y != world_dim - 1; y++)
+        {
+          for (int z = 1; z != world_dim - 1; z++)
+          {
+            auto& chunk = stage [x][y][z];
+
+            bool ok = loaded [x][y][z];
+            ok = ok && loaded [x - 1][y][z] && loaded [x + 1][y][z];
+            ok = ok && loaded [x][y - 1][z] && loaded [x][y + 1][z];
+            ok = ok && loaded [x][y][z - 1] && loaded [x][y][z + 1];
+            if (!ok)
               continue;
 
             if (chunk -> dirty)
@@ -350,8 +357,8 @@ namespace SH
     {
       seed = 10101;
 
-      slice = 15;
-      last_slice = 5.0f;
+      slice = 80;
+      last_slice = 10.0f;
 
       texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
       sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);
@@ -370,6 +377,20 @@ namespace SH
     static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
     {
       return queue.gc_attach (new BlockWorld (queue));
+    }
+
+    const Chunk::Ptr& chunk_at (v3i cv)
+    {
+      if (
+        cv.x >= world_dim || cv.x < 0 ||
+        cv.y >= world_dim || cv.y < 0 ||
+        cv.z >= world_dim || cv.z < 0)
+      {
+        static const Chunk::Ptr null = nullptr;
+        return null;
+      }
+
+      return stage [cv.x][cv.y][cv.z];
     }
 
     Block block_at (v3i bv)
@@ -393,11 +414,11 @@ namespace SH
   //
   void Chunk::generate_impl (u32 seed)
   {
-    for (int z = 0; z != dim; z++)
+    for (int x = 0; x != dim; x++)
     {
       for (int y = 0; y != dim; y++)
       {
-        for (int x = 0; x != dim; x++)
+        for (int z = 0; z != dim; z++)
         {
           v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / dim);
           float value = 64.0f + 16.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 3, 0.25f);
@@ -410,138 +431,276 @@ namespace SH
   //
   // = regen_mesh ======================================================================================================
   //
+  inline uint bit_count (u16 word)
+  {
+    return (uint) __popcnt16 (short (word));
+    #if 0
+      u16 count = word;
+      count = ((count >> 1) & 0x5555) + (count & 0x5555);
+      count = ((count >> 2) & 0x3333) + (count & 0x3333);
+      count = ((count >> 4) & 0x0f0f) + (count & 0x0f0f);
+      count = ((count >> 8) & 0x00ff) + (count & 0x00ff);
+      return count;
+    #endif
+  }
+
+  struct Test
+  {
+    Test ()
+    {
+      for (uint i = 0; i != 0x10000; i++)
+      {
+        const u16 bits = i & 0xffff;
+
+        uint transitions_a = 0;
+        bool prev = (bits & 1) == 1;
+        for (uint j = 1; j != 16; j++)
+        {
+          bool cur = ((bits >> j) & 1) == 1;
+          if (cur != prev)
+          {
+            prev = cur;
+            transitions_a++;
+          }
+        }
+
+        u16 trans = (bits ^ _rotr16 (bits, 1)) & 0x7fff;//((bits >> 1) | 0x8000);
+        uint transitions_b = bit_count (trans);
+
+        assert (transitions_a == transitions_b);
+      }
+    }
+
+  } test;
+
   void Chunk::regen_mesh (BlockWorld& world)
   {
-    //log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
+    log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
 
-    const float tg = BlockTCoords::t;
+    // Figure out how many faces will be generated
+    u16 transp [3 * dim * dim];
 
-    auto vertices = (Vertex*) vertex_buffer -> begin (max_vertex_bytes);
+    // Fill transp with 1s for transparent blocks, 0s for opaque ones
+    int i = 0;
+
+    for (int y = 0; y != dim; y++)
+    {
+      for (int z = 0; z != dim; z++, i++)
+      {
+        transp [i] = 0;
+        for (int x = 0; x != dim; x++)
+          transp [i] |= u16 (blocks [x][y][z].empty ()) << x;
+      }
+    }
+
+    for (int x = 0; x != dim; x++)
+    {
+      for (int z = 0; z != dim; z++, i++)
+      {
+        transp [i] = 0;
+        for (int y = 0; y != dim; y++)
+          transp [i] |= u16 (blocks [x][y][z].empty ()) << y;
+      }
+    }
+
+    for (int x = 0; x != dim; x++)
+    {
+      for (int y = 0; y != dim; y++, i++)
+      {
+        transp [i] = 0;
+        for (int z = 0; z != dim; z++)
+          transp [i] |= u16 (blocks [x][y][z].empty ()) << z;
+      }
+    }
+
+    // Now we find transitions in each direction
+    uint face_count = 0;
+
+    for (uint j = 0; j != i; j++)
+    {
+      u16 bits = transp [j];
+      u16 trans = (bits ^ _rotr16 (bits, 1)) & 0x7fff;
+      // If there are n transitions in bits, then trans contains n 1-bits
+      face_count += bit_count (trans);
+    }
+
+    // Finally add transitions between this chunk and the next
+    // This gets ugly
+    auto front = world.chunk_at (cpos + v3i (1, 0, 0));
+    for (int y = 0; y != dim; y++)
+    {
+      for (int z = 0; z != dim; z++)
+      {
+        if (!blocks [dim - 1][y][z].empty () && front -> blocks [0][y][z].empty ())
+          face_count++;
+      }
+    }
+
+    auto back = world.chunk_at (cpos + v3i (-1, 0, 0));
+    for (int y = 0; y != dim; y++)
+    {
+      for (int z = 0; z != dim; z++)
+      {
+        if (!blocks [0][y][z].empty () && back -> blocks [dim - 1][y][z].empty ())
+          face_count++;
+      }
+    }
+
+    auto left = world.chunk_at (cpos + v3i (0, 1, 0));
+    for (int x = 0; x != dim; x++)
+    {
+      for (int z = 0; z != dim; z++)
+      {
+        if (!blocks [x][dim - 1][z].empty () && left -> blocks [x][0][z].empty ())
+          face_count++;
+      }
+    }
+
+    auto right = world.chunk_at (cpos + v3i (0, -1, 0));
+    for (int x = 0; x != dim; x++)
+    {
+      for (int z = 0; z != dim; z++)
+      {
+        if (!blocks [x][0][z].empty () && right -> blocks [x][dim - 1][z].empty ())
+          face_count++;
+      }
+    }
+
+    auto top = world.chunk_at (cpos + v3i (0, 0, 1));
+    for (int x = 0; x != dim; x++)
+    {
+      for (int y = 0; y != dim; y++)
+      {
+        if (!blocks [x][y][dim - 1].empty () && top -> blocks [x][y][0].empty ())
+          face_count++;
+      }
+    }
+
+    auto bottom = world.chunk_at (cpos + v3i (0, 0, -1));
+    for (int x = 0; x != dim; x++)
+    {
+      for (int y = 0; y != dim; y++)
+      {
+        if (!blocks [x][y][0].empty () && bottom -> blocks [x][y][dim - 1].empty ())
+          face_count++;
+      }
+    }
+    
+    if (face_count == 0)
+    {
+      dirty = false;
+      return;
+    }
+
+    // Only map as much as we need
+    uint vertex_count = face_count * 4;
+    auto vertices = (Vertex*) vertex_buffer -> begin (vertex_count * sizeof (Vertex));
     if (!vertices)
       return;
 
-    auto indices = (u16*) index_buffer -> begin (max_index_bytes);
+    index_count = face_count * 6;
+    auto indices = (u16*) index_buffer -> begin (index_count * 2);
     if (!indices)
     {
       vertex_buffer -> commit (0);
       return;
     }
 
-    uint face_count = 0;
-
-    for (int z = 0; z != dim; z++)
+    for (int x = 0; x != dim; x++)
     {
       for (int y = 0; y != dim; y++)
       {
-        for (int x = 0; x != dim; x++)
+        for (int z = 0; z != dim; z++)
         {
-          const auto block = at (v3i (x, y, z));
+          const auto block = blocks [x][y][z];
 
           if (block.empty ())
             continue;
 
-          // 0, 0, 0, is the back right bottom
-
           auto tcoords = block_tcoords [block.type];
-          float side_s = tcoords.sides.x,
-                side_t = tcoords.sides.y,
-                top_s  = tcoords.top.x,
-                top_t  = tcoords.top.y,
-                bot_s  = tcoords.bottom.x,
-                bot_t  = tcoords.bottom.y;
-
+          const i8 side_s = tcoords.sides.x,
+                   side_t = tcoords.sides.y,
+                   top_s  = tcoords.top.x,
+                   top_t  = tcoords.top.y,
+                   bot_s  = tcoords.bottom.x,
+                   bot_t  = tcoords.bottom.y,
+                   tg     = BlockTCoords::t;
+          
           if (world.block_at (bpos + v3i (x + 1, y, z)).empty ())
           {
             // front
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 0.80f, 0.80f, 0.80f);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 0.80f, 0.80f, 0.80f);
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 0.80f, 0.80f, 0.80f);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 0.80f, 0.80f, 0.80f);
-            face_count++;
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 205, 205, 205);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 205, 205, 205);
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 205, 205, 205);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 205, 205, 205);
           }
 
           if (world.block_at (bpos + v3i (x - 1, y, z)).empty ())
           {
             // back
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 0.60f, 0.60f, 0.60f);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 0.60f, 0.60f, 0.60f);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 0.60f, 0.60f, 0.60f);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 0.60f, 0.60f, 0.60f);
-            face_count++;
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 154, 154, 154);
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 154, 154, 154);
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 154, 154, 154);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 154, 154, 154);
           }
             
           if (world.block_at (bpos + v3i (x, y + 1, z)).empty ())
           {
             // left
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 0.70f, 0.70f, 0.70f);
-            face_count++;
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 179, 179, 179);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 179, 179, 179);
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 179, 179, 179);
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 179, 179, 179);
           }
             
           if (world.block_at (bpos + v3i (x, y - 1, z)).empty ())
           {
             // right
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 0.70f, 0.70f, 0.70f);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 0.70f, 0.70f, 0.70f);
-            face_count++;
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 179, 179, 179);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 179, 179, 179);
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 179, 179, 179);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 179, 179, 179);
           }
             
           if (world.block_at (bpos + v3i (x, y, z + 1)).empty ())
           {
             // top
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 1.0f, 1.0f, 1.0f);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 1.0f, 1.0f, 1.0f);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 1.0f, 1.0f, 1.0f);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 1.0f, 1.0f, 1.0f);
-            face_count++;
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 255, 255, 255);
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 255, 255, 255);
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 255, 255, 255);
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 255, 255, 255);
           }
             
           if (world.block_at (bpos + v3i (x, y, z - 1)).empty ())
           {
             // bottom
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 0.5f, 0.5f, 0.5f);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 0.5f, 0.5f, 0.5f);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 0.5f, 0.5f, 0.5f);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 0.5f, 0.5f, 0.5f);
-            face_count++;
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 128, 128, 128);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 128, 128, 128);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 128, 128, 128);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 128, 128, 128);
           }
-        } // x
+        } // z
       } // y
-    } // z
+    } // x
 
-    uint vertex_count = 0;
-    while (face_count--)
+    for (uint i = 0; i != vertex_count; i += 4)
     {
-      *indices++ = vertex_count + 0;
-      *indices++ = vertex_count + 1;
-      *indices++ = vertex_count + 2;
-      *indices++ = vertex_count + 1;
-      *indices++ = vertex_count + 3;
-      *indices++ = vertex_count + 2;
-      vertex_count += 4;
+      *indices++ = i + 0;
+      *indices++ = i + 1;
+      *indices++ = i + 2;
+      *indices++ = i + 1;
+      *indices++ = i + 3;
+      *indices++ = i + 2;
     }
 
-    if (vertex_count != 0)
-    {
-      index_count = (vertex_count / 2) * 3;
+    bool ok = vertex_buffer -> commit (vertex_count * sizeof (Vertex));
+    if (!ok)
+      return;
 
-      bool ok = vertex_buffer -> commit (vertex_count * sizeof (Vertex));
-      if (!ok)
-        return;
-
-      ok = index_buffer  -> commit (index_count  * 2);
-      if (!ok)
-        return;
-    }
-    else
-    {
-      index_count = 0;
-    }
-
+    ok = index_buffer -> commit (index_count * 2);
+    if (!ok)
+      return;
+    
     dirty = false;
   }
 

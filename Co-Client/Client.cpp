@@ -40,14 +40,17 @@ struct Message
 
 extern "C"
 {
-  __declspec(dllimport) void __stdcall PostQuitMessage  (u32);
-  __declspec(dllimport) i32  __stdcall PeekMessageW     (Message*, void*, u32, u32, u32);
-  __declspec(dllimport) i32  __stdcall DispatchMessageW (const Message*);
-  __declspec(dllimport) i32  __stdcall ShowCursor       (i32);
-  __declspec(dllimport) i32  __stdcall GetKeyboardState (u8*);
-  __declspec(dllimport) i32  __stdcall GetSystemMetrics (i32);
-  __declspec(dllimport) i32  __stdcall GetCursorPos     (Point*);
-  __declspec(dllimport) i32  __stdcall SetCursorPos     (i32, i32);
+  #define fromdll __declspec(dllimport)
+  fromdll void  __stdcall PostQuitMessage   (u32);
+  fromdll i32   __stdcall PeekMessageW      (Message*, void*, u32, u32, u32);
+  fromdll i32   __stdcall DispatchMessageW  (const Message*);
+  fromdll i32   __stdcall ShowCursor        (i32);
+  fromdll i32   __stdcall GetKeyboardState  (u8*);
+  fromdll i32   __stdcall GetSystemMetrics  (i32);
+  fromdll i32   __stdcall GetCursorPos      (Point*);
+  fromdll i32   __stdcall SetCursorPos      (i32, i32);
+  fromdll void* __stdcall GetCurrentThread  ();
+  fromdll i32   __stdcall SetThreadPriority (void*, i32);
 }
 
 enum Messages
@@ -257,6 +260,9 @@ namespace Co
   void Client::worker (RenderDevice& device, Filesystem& fs)
   {
     log () << "- Worker thread starting\n";
+
+    SetThreadPriority (GetCurrentThread (), -1);
+
     auto rc = device.create_context ();
     
     for (;;)
@@ -377,9 +383,6 @@ namespace Co
 
       bool down = raw_keystate [vk] >> 7;
       bool set  = raw_keystate [vk] &  1;
-
-      if (down && vk == 0x57)
-        __asm nop;
 
       if (down != keyboard [key].down)
         keyboard [key].changed = true;

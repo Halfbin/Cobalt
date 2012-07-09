@@ -26,24 +26,22 @@ namespace Co
       glBufferData (GL_ARRAY_BUFFER, size, data, stream ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
       check_gl ("glBufferData");
     }
-
-    glBindBuffer (GL_ARRAY_BUFFER, 0);
   }
 
-  void* GLBuffer::begin (uptr max_size)
+  void* GLBuffer::begin (uptr reserve)
   {
-    if (!max_size)
+    if (!reserve)
       throw std::invalid_argument ("Cannot map zero-length range");
 
-    if (max_size > capacity)
+    if (reserve > capacity)
       throw std::invalid_argument ("Cannot map range larger than buffer");
 
-    max_size = Rk::align (max_size, stream_align);
+    reserve = Rk::align (reserve, stream_align);
 
     glBindBuffer (GL_ARRAY_BUFFER, name);
     check_gl ("glBindBuffer");
 
-    if (map_offset += max_size > capacity)
+    if (map_offset + reserve > capacity)
     {
       glBufferData (GL_ARRAY_BUFFER, capacity, 0, GL_DYNAMIC_DRAW);
       check_gl ("glBufferData");
@@ -53,7 +51,7 @@ namespace Co
     void* map = glMapBufferRange (
       GL_ARRAY_BUFFER,
       map_offset,
-      max_size,
+      reserve,
       GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
     );
 
@@ -68,7 +66,7 @@ namespace Co
     glBindBuffer (GL_ARRAY_BUFFER, 0);
     check_gl ("glBindBuffer");
 
-    map_length = max_size;
+    map_length = reserve;
     
     return map;
   }
@@ -119,7 +117,7 @@ namespace Co
     glGenBuffers (1, &name);
     check_gl ("glGenBuffers");
 
-    load_data (data, streaming ? size : capacity);
+    load_data (data, stream ? capacity : size);
   }
 
 } // namespace Co

@@ -23,9 +23,15 @@ namespace Co
   enum AttribType : u8
   {
     attrib_i8 = 0,
+    attrib_u8,
     attrib_i16,
     attrib_i32,
-    attrib_f32
+    attrib_f32,
+
+    attrib_norm_begin_ = attrib_f32,
+
+    attrib_i8n,
+    attrib_u8n
   };
   
   struct GeomAttrib

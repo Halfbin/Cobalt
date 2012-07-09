@@ -36,15 +36,14 @@ namespace Co
     GeomBuffer::Ptr   new_indices,
     IndexType         new_index_type)
   {
-    return Ptr (
+    return work_queue.gc_attach (
       new GLCompilation (
         new_attribs,
         new_attribs_end,
         new_elements,
         new_indices,
         new_index_type
-      ),
-      work_queue.make_deleter <GLCompilation> ()
+      )
     );
   }
 
@@ -73,14 +72,26 @@ namespace Co
 
     for (auto attrib = attribs.begin (); attrib != attribs.end (); attrib++)
 		{
-      static const uint types [4] = { GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT, GL_FLOAT };
-      uint type = types [attrib -> type];
+      static const uint types [7] =
+      {
+        GL_BYTE,
+        GL_UNSIGNED_BYTE,
+        GL_SHORT,
+        GL_INT,
+        GL_FLOAT,
+
+        GL_BYTE,
+        GL_UNSIGNED_BYTE
+      };
+      
+      uint type   = types [attrib -> type];
+      bool normal = attrib -> type > attrib_norm_begin_;
 
       glVertexAttribPointer (
 				attrib -> index,
 				((attrib -> index == attrib_tcoords) ? 2 : 3),
 				type,
-				false,
+				normal,
 				attrib -> stride,
 				(void*) uptr (attrib -> offset)
 			);
