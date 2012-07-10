@@ -3,12 +3,16 @@
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="TestEntity.cpp" />
-    <ClCompile Include="BlockWorld.cpp" />
     <ClCompile Include="Spectator.cpp" />
+    <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="Noise.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="Noise.hpp" />
+    <ClInclude Include="Chunk.hpp" />
+    <ClInclude Include="Block.hpp" />
+    <ClInclude Include="World.hpp" />
   </ItemGroup>
 </Project>

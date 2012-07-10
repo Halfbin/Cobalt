@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011 Roadkill Software
+// Copyright (C) 2012 Roadkill Software
 // All Rights Reserved.
 //
 
@@ -60,14 +60,14 @@ namespace SH
   }
 
   extern Co::EntityClassBase
-    & block_world_class,
+    & world_class,
     & test_entity_class,
     & spectator_class;
 
   Co::EntityClassBase& Game::find_class (Rk::StringRef name)
   {
-    if (name == "BlockWorld")
-      return block_world_class;
+    if (name == "World")
+      return world_class;
     else if (name == "TestEntity")
       return test_entity_class;
     else if (name == "Spectator")
@@ -81,7 +81,7 @@ namespace SH
     log () << "- SH-Game: Starting\n";
 
     //engine.create_entity ("TestEntity");
-    engine.create_entity ("BlockWorld");
+    engine.create_entity ("World");
     engine.create_entity ("Spectator" );
 
     engine.enable_ui (false);

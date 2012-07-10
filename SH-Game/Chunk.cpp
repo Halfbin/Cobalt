@@ -1,40 +1,18 @@
 //
-// Copyright (C) 2011 Roadkill Software
+// Copyright (C) 2012 Roadkill Software
 // All Rights Reserved.
 //
 
 // Implements
-#include <Co/Entity.hpp>
+#include "Chunk.hpp"
 
 // Uses
-#include <Co/GeomCompilation.hpp>
-#include <Co/RenderContext.hpp>
-#include <Co/EntityClass.hpp>
-#include <Co/GeomBuffer.hpp>
-#include <Co/Profile.hpp>
-#include <Co/Frame.hpp>
-
-#include <Rk/AsyncMethod.hpp>
-#include <Rk/Exception.hpp>
-#include <Rk/Lerp.hpp>
-
-#include <vector>
-
+#include "World.hpp"
 #include "Common.hpp"
 #include "Noise.hpp"
 
 namespace SH
 {
-  enum BlockType :
-    u8
-  {
-    blocktype_air   = 0x00,
-    blocktype_soil  = 0x01,
-    blocktype_grass = 0x02,
-
-    blocktype_void  = 0xff
-  };
-  
   struct BlockTCoords
   {
     static const u8 t;
@@ -72,24 +50,6 @@ namespace SH
 
   } block_tcoords;
 
-  class Block
-  {
-  public:
-    BlockType type;
-
-    Block () { }
-
-    Block (BlockType new_type) :
-      type (new_type)
-    { }
-    
-    bool empty () const
-    {
-      return type == blocktype_air;
-    }
-
-  };
-
   struct Vertex
   {
     u8 x, y, z;
@@ -107,307 +67,83 @@ namespace SH
     
   };
 
-  enum { vertex_size = sizeof (Vertex) };
+  enum
+  {
+    vertex_size = sizeof (Vertex),
+    max_vertex_bytes = Chunk::max_vertices * vertex_size,
+    max_index_bytes  = Chunk::max_indices  * 2
+  };
 
   //
   // = Chunk ===========================================================================================================
   //
-  class BlockWorld;
-
-  class Chunk
+  void Chunk::init (Co::WorkQueue& queue, Co::RenderContext& rc)
   {
-    void generate_impl (u32 seed);
-
-  public:
-    typedef std::shared_ptr <Chunk> Ptr;
-
-    enum
-    {
-      dim              = 16,
-      max_faces        = ((dim * dim * dim + 1) / 2) * 6,
-      max_vertices     = max_faces * 4,
-      max_indices      = max_faces * 6,
-
-      max_vertex_bytes = max_vertices * sizeof (Vertex),
-      max_index_bytes  = max_indices  * 2,
-      max_bytes        = max_vertex_bytes + max_index_bytes,
-      max_kbytes       = max_bytes >> 10
-    };
-
-    // Resources
-    Co::GeomCompilation::Ptr compilation;
-    Co::StreamBuffer::Ptr    vertex_buffer,
-                             index_buffer;
-
-    // State
-    Block     blocks [dim][dim][dim];
-    uptr      index_count;
-    bool      loaded,
-              loading,
-              dirty;
-    v3i       cpos,
-              bpos;
-
-    Chunk (v3i cpos) :
-      index_count (0),
-      loaded  (false),
-      loading (false),
-      dirty   (false),
-      cpos    (cpos),
-      bpos    (cpos * uint (dim))
-    { }
-    
-    Block& at (v3i bv)
-    {
-      return blocks [bv.x][bv.y][bv.z];
-    }
-
-    void init (Co::WorkQueue& queue, Co::RenderContext& rc)
-    {
-      vertex_buffer = rc.create_stream (queue, max_vertex_bytes / 4),
-      index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
+    vertex_buffer = rc.create_stream (queue, max_vertex_bytes / 4),
+    index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
       
-      static const Co::GeomAttrib attribs [3] = {
-        { Co::attrib_position, Co::attrib_u8,  8, 0 },
-        { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
-        { Co::attrib_colour,   Co::attrib_u8n, 8, 5 },
-      };
+    static const Co::GeomAttrib attribs [3] = {
+      { Co::attrib_position, Co::attrib_u8,  8, 0 },
+      { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
+      { Co::attrib_colour,   Co::attrib_u8n, 8, 5 },
+    };
 
-      compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
-    }
+    compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
+  }
 
-    void regen_mesh (BlockWorld& world);
-
-    void slice (uint limit)
-    {
-      for (int x = 0; x != dim; x++)
-      {
-        for (int y = 0; y != dim; y++)
-          blocks [x][y][limit - bpos.z].type = blocktype_air;
-      }
-
-      dirty = true;
-    }
-
-    void draw (Co::Frame& frame, const Co::Material& mat)
-    {
-      if (index_count == 0)
-        return;
-
-      frame.begin_point_geom (
-        compilation,
-        Co::Spatial (bpos, nil)
-      );
-
-      Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
-
-      frame.add_meshes    (&mesh, 1);
-      frame.add_materials (&mat,  1);
-
-      frame.end ();
-    }
-
-    void generate (Ptr self, Co::WorkQueue& queue, u32 seed)
-    {
-      if (loaded || loading)
-        return;
-
-      loading = true;
-      queue.queue_load (
-        [self, seed] (Co::WorkQueue& queue, Co::RenderContext& rc, Co::Filesystem&)
-        {
-          self -> init (queue, rc);
-          self -> generate_impl (seed);
-
-          // Fuck you c++
-          auto self_copy = self;
-          queue.queue_completion (
-            [self_copy]
-            {
-              self_copy -> loaded = true;
-              self_copy -> dirty  = true;
-            }
-          );
-        }
-      );
-    }
-
-  }; // class Chunk
-  
-  //
-  // = BlockWorld ======================================================================================================
-  //
-  class BlockWorld :
-    public Co::Entity
+  void Chunk::slice (uint limit)
   {
-    enum
+    for (int x = 0; x != dim; x++)
     {
-      world_dim    = 16,
-      world_chunks = world_dim * world_dim * world_dim,
-    };
-
-    enum : u64
-    {
-      max_kbytes = world_chunks * Chunk::max_kbytes,
-      max_mbytes = max_kbytes >> 10
-    };
-
-    // Parameters
-    u64 seed;
-
-    // State
-    Chunk::Ptr stage [world_dim][world_dim][world_dim];
-    uint       slice;
-    float      last_slice;
-
-    static Co::Texture::Ptr texture, sky_tex;
-
-    void do_slice ()
-    {
-      for (int x = 0; x != world_dim; x++)
-      {
-        for (int y = 0; y != world_dim; y++)
-          stage [x][y][slice >> 4] -> slice (slice);
-      }
-
-      slice--;
+      for (int y = 0; y != dim; y++)
+        blocks [x][y][limit - bpos.z].type = blocktype_air;
     }
 
-    virtual void tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta)
-    {
-      if (time >= last_slice + 1.0f && slice > 45)
-      {
-        do_slice ();
-        last_slice += 1.0f;
-      }
+    dirty = true;
+  }
 
-      //Co::Profiler tick ("tick", *log_ptr);
+  void Chunk::draw (Co::Frame& frame, const Co::Material& mat)
+  {
+    if (index_count == 0)
+      return;
 
-      for (int x = 0; x != world_dim; x++)
+    frame.begin_point_geom (
+      compilation,
+      Co::Spatial (bpos, nil)
+    );
+
+    Co::Mesh mesh (Co::prim_triangles, 0, 0, 0, index_count);
+
+    frame.add_meshes    (&mesh, 1);
+    frame.add_materials (&mat,  1);
+
+    frame.end ();
+  }
+
+  void Chunk::generate (Ptr self, Co::WorkQueue& queue, u32 seed)
+  {
+    if (loaded || loading)
+      return;
+
+    loading = true;
+    queue.queue_load (
+      [self, seed] (Co::WorkQueue& queue, Co::RenderContext& rc, Co::Filesystem&)
       {
-        for (int y = 0; y != world_dim; y++)
-        {
-          for (int z = 0; z != world_dim; z++)
+        self -> init (queue, rc);
+        self -> generate_impl (seed);
+
+        // Fuck you c++
+        auto self_copy = self;
+        queue.queue_completion (
+          [self_copy]
           {
-            auto& chunk = chunk_at (v3i (x, y, z));
-
-            if (!chunk -> loaded)
-            {
-              if (!chunk -> loading)
-                chunk -> generate (chunk, queue, seed);
-              continue;
-            }
-
-            // ...
+            self_copy -> loaded = true;
+            self_copy -> dirty  = true;
           }
-        }
+        );
       }
-
-      //tick.done ();
-    }
-
-    virtual void render (Co::Frame& frame, float alpha)
-    {
-      Co::Material material = nil;
-      material.diffuse_tex = texture -> get ();
-
-      bool loaded [world_dim][world_dim][world_dim];
-
-      for (int x = 0; x != world_dim; x++)
-      {
-        for (int y = 0; y != world_dim; y++)
-        {
-          for (int z = 0; z != world_dim; z++)
-            loaded [x][y][z] = stage [x][y][z] -> loaded;
-        }
-      }
-
-      for (int x = 1; x != world_dim - 1; x++)
-      {
-        for (int y = 1; y != world_dim - 1; y++)
-        {
-          for (int z = 1; z != world_dim - 1; z++)
-          {
-            auto& chunk = stage [x][y][z];
-
-            bool ok = loaded [x][y][z];
-            ok = ok && loaded [x - 1][y][z] && loaded [x + 1][y][z];
-            ok = ok && loaded [x][y - 1][z] && loaded [x][y + 1][z];
-            ok = ok && loaded [x][y][z - 1] && loaded [x][y][z + 1];
-            if (!ok)
-              continue;
-
-            if (chunk -> dirty)
-              chunk -> regen_mesh (*this);
-            
-            if (chunk -> index_count > 0)
-              chunk -> draw (frame, material);
-          }
-        }
-      }
-
-      frame.set_skybox (
-        sky_tex -> get (),
-        v3f (0.0f, 0.0f, 0.0f),
-        1.0f
-      );
-    }
-
-    BlockWorld (Co::WorkQueue& queue)
-    {
-      seed = 10101;
-
-      slice = 80;
-      last_slice = 10.0f;
-
-      texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
-      sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);
-
-      for (int z = 0; z != world_dim; z++)
-      {
-        for (int y = 0; y != world_dim; y++)
-        {
-          for (int x = 0; x != world_dim; x++)
-            stage [x][y][z] = std::make_shared <Chunk> (v3i (x, y, z));
-        }
-      }
-    }
-
-  public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
-    {
-      return queue.gc_attach (new BlockWorld (queue));
-    }
-
-    const Chunk::Ptr& chunk_at (v3i cv)
-    {
-      if (
-        cv.x >= world_dim || cv.x < 0 ||
-        cv.y >= world_dim || cv.y < 0 ||
-        cv.z >= world_dim || cv.z < 0)
-      {
-        static const Chunk::Ptr null = nullptr;
-        return null;
-      }
-
-      return stage [cv.x][cv.y][cv.z];
-    }
-
-    Block block_at (v3i bv)
-    {
-      v3i cv (bv.x >> 4, bv.y >> 4, bv.z >> 4) ;
-      bv = v3i (bv.x & 0xf, bv.y & 0xf, bv.z & 0xf);
-
-      if (cv.x >= world_dim || cv.y >= world_dim || cv.z >= world_dim || cv.x < 0 || cv.y < 0 || cv.z < 0)
-        return Block (blocktype_void);
-      else
-        return chunk_at (cv) -> at (bv);
-    }
-
-  };
-
-  Co::Texture::Ptr BlockWorld::sky_tex,
-                   BlockWorld::texture;
+    );
+  }
 
   //
   // = Chunk generation ================================================================================================
@@ -420,9 +156,20 @@ namespace SH
       {
         for (int z = 0; z != dim; z++)
         {
-          v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / dim);
+          /*v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / dim);
           float value = 64.0f + 16.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 3, 0.25f);
-          blocks [x][y][z].type = (z + bpos.z < value) ? blocktype_soil : blocktype_air;
+          blocks [x][y][z].type = (z + bpos.z < value) ? blocktype_soil : blocktype_air;*/
+
+          v3f self_pos = cpos + v3f (x, y, z) * (1.0f / dim);
+          bool self = -0.2f < noise_perlin_harmonic (self_pos, seed, 0.5f, 3, 0.8f);
+
+          v3f over_pos = cpos + v3f (x, y, z + 1) * (1.0f / dim);
+          bool over = -0.2f < noise_perlin_harmonic (over_pos, seed, 0.5f, 3, 0.8f);
+
+          if (self)
+            blocks [x][y][z].type = over ? blocktype_soil : blocktype_grass;
+          else
+            blocks [x][y][z].type = blocktype_air;
         }
       }
     }
@@ -473,7 +220,7 @@ namespace SH
 
   } test;
 
-  void Chunk::regen_mesh (BlockWorld& world)
+  void Chunk::regen_mesh (World& world)
   {
     log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
 
@@ -703,8 +450,5 @@ namespace SH
     
     dirty = false;
   }
-
-  Co::EntityClass <BlockWorld> ent_class ("BlockWorld");
-  Co::EntityClassBase& block_world_class = ent_class;
 
 } // namespace SH
