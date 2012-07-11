@@ -41,6 +41,7 @@ namespace SH
       tcoords [blocktype_air  ] = BlockTCoords (0, 0, 0, 0, 0, 0);
       tcoords [blocktype_soil ] = BlockTCoords (2, 0, 2, 0, 2, 0);
       tcoords [blocktype_grass] = BlockTCoords (0, 0, 3, 0, 2, 0);
+      tcoords [blocktype_stone] = BlockTCoords (1, 0, 1, 0, 1, 0);
     }
 
     const BlockTCoords& operator [] (u8 index) const
@@ -49,6 +50,14 @@ namespace SH
     }
 
   } block_tcoords;
+
+  static const v3u8
+    t_light (255, 255, 255),
+    f_light (207, 207, 207),
+    r_light (159, 159, 159),
+    l_light (159, 159, 159),
+    b_light (111, 111, 111),
+    u_light ( 63,  63,  63);
 
   struct Vertex
   {
@@ -59,10 +68,10 @@ namespace SH
     Vertex ()
     { }
 
-    Vertex (u8 x, u8 y, u8 z, u8 s, u8 t, u8 r, u8 g, u8 b) :
+    Vertex (u8 x, u8 y, u8 z, u8 s, u8 t, v3u8 rgb) :
       x (x), y (y), z (z),
       s (s), t (t),
-      r (r), g (g), b (b)
+      r (rgb.x), g (rgb.y), b (rgb.z)
     { }
     
   };
@@ -81,7 +90,7 @@ namespace SH
   {
     vertex_buffer = rc.create_stream (queue, max_vertex_bytes / 4),
     index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
-      
+    
     static const Co::GeomAttrib attribs [3] = {
       { Co::attrib_position, Co::attrib_u8,  8, 0 },
       { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
@@ -150,26 +159,74 @@ namespace SH
   //
   void Chunk::generate_impl (u32 seed)
   {
-    for (int x = 0; x != dim; x++)
+    // Land
+    if (bpos.z > 85)
     {
-      for (int y = 0; y != dim; y++)
+      for (int x = 0; x != dim; x++)
       {
-        for (int z = 0; z != dim; z++)
+        for (int y = 0; y != dim; y++)
         {
-          /*v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / dim);
-          float value = 64.0f + 16.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 3, 0.25f);
-          blocks [x][y][z].type = (z + bpos.z < value) ? blocktype_soil : blocktype_air;*/
-
-          v3f self_pos = cpos + v3f (x, y, z) * (1.0f / dim);
-          bool self = -0.2f < noise_perlin_harmonic (self_pos, seed, 0.5f, 3, 0.8f);
-
-          v3f over_pos = cpos + v3f (x, y, z + 1) * (1.0f / dim);
-          bool over = -0.2f < noise_perlin_harmonic (over_pos, seed, 0.5f, 3, 0.8f);
-
-          if (self)
-            blocks [x][y][z].type = over ? blocktype_soil : blocktype_grass;
-          else
+          for (int z = 0; z != dim; z++)
             blocks [x][y][z].type = blocktype_air;
+        }
+      }
+    }
+    else if (bpos.z > 25)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / dim);
+          int level = int (64.0f + 22.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 3, 0.25f));
+          level -= bpos.z;
+
+          int depth = int (8.0f + 10.0f * noise_perlin_harmonic (noise_pos, seed + 20, 0.3f, 3, 0.25f));
+          depth = level - depth;
+
+          int z = 0;
+
+          while (z < std::min (depth, int (dim)))
+            blocks [x][y][z++].type = blocktype_stone;
+
+          while (z < std::min (level, int (dim)))
+            blocks [x][y][z++].type = blocktype_soil;
+
+          if (level >= 0 && level < dim)
+            blocks [x][y][z++].type = blocktype_grass;
+
+          while (z < dim)
+            blocks [x][y][z++].type = blocktype_air;
+        }
+      }
+    }
+    else
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          for (int z = 0; z != dim; z++)
+            blocks [x][y][z].type = blocktype_stone;
+        }
+      }
+    }
+
+    // Caves
+    if (bpos.z < 65)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          for (int z = 0; z != dim; z++)
+          {
+            v3f noise_pos = cpos + v3f (x, y, z) * (1.0f / dim);
+            bool cut = -0.2f > noise_perlin_harmonic (noise_pos, seed, 0.5f, 3, 0.8f);
+
+            if (cut)
+              blocks [x][y][z].type = blocktype_air;
+          }
         }
       }
     }
@@ -191,7 +248,7 @@ namespace SH
     #endif
   }
 
-  struct Test
+  /*struct Test
   {
     Test ()
     {
@@ -218,7 +275,7 @@ namespace SH
       }
     }
 
-  } test;
+  } test;*/
 
   void Chunk::regen_mesh (World& world)
   {
@@ -353,6 +410,8 @@ namespace SH
       return;
     }
 
+    uint check_face_count = 0;
+
     for (int x = 0; x != dim; x++)
     {
       for (int y = 0; y != dim; y++)
@@ -376,59 +435,67 @@ namespace SH
           if (world.block_at (bpos + v3i (x + 1, y, z)).empty ())
           {
             // front
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, 205, 205, 205);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, 205, 205, 205);
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, 205, 205, 205);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, 205, 205, 205);
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, f_light);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, f_light);
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, f_light);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, f_light);
+            check_face_count++;
           }
 
           if (world.block_at (bpos + v3i (x - 1, y, z)).empty ())
           {
             // back
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, 154, 154, 154);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, 154, 154, 154);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, 154, 154, 154);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, 154, 154, 154);
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, b_light);
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, b_light);
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, b_light);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, b_light);
+            check_face_count++;
           }
             
           if (world.block_at (bpos + v3i (x, y + 1, z)).empty ())
           {
             // left
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, 179, 179, 179);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, 179, 179, 179);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, 179, 179, 179);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, 179, 179, 179);
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, l_light);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, l_light);
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, l_light);
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, l_light);
+            check_face_count++;
           }
             
           if (world.block_at (bpos + v3i (x, y - 1, z)).empty ())
           {
             // right
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, 179, 179, 179);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, 179, 179, 179);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, 179, 179, 179);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, 179, 179, 179);
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, r_light);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, r_light);
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, r_light);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, r_light);
+            check_face_count++;
           }
             
           if (world.block_at (bpos + v3i (x, y, z + 1)).empty ())
           {
             // top
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, 255, 255, 255);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, 255, 255, 255);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, 255, 255, 255);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, 255, 255, 255);
+            *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, t_light);
+            *vertices++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, t_light);
+            *vertices++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, t_light);
+            *vertices++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, t_light);
+            check_face_count++;
           }
             
           if (world.block_at (bpos + v3i (x, y, z - 1)).empty ())
           {
             // bottom
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, 128, 128, 128);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, 128, 128, 128);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, 128, 128, 128);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, 128, 128, 128);
+            *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, u_light);
+            *vertices++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, u_light);
+            *vertices++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, u_light);
+            *vertices++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, u_light);
+            check_face_count++;
           }
         } // z
       } // y
     } // x
+
+    assert (check_face_count == face_count);
 
     for (uint i = 0; i != vertex_count; i += 4)
     {

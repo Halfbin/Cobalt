@@ -17,6 +17,7 @@ namespace SH
     blocktype_air   = 0x00,
     blocktype_soil  = 0x01,
     blocktype_grass = 0x02,
+    blocktype_stone = 0x03,
 
     blocktype_void  = 0xff
   };

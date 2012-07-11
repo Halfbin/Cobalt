@@ -10,6 +10,8 @@
 #include <Rk/Vector3.hpp>
 #include <Rk/Lerp.hpp>
 
+#include <algorithm>
+
 namespace SH
 {
   class RandomGen
@@ -95,18 +97,26 @@ namespace SH
     return dot (p - cell, noise_grads_3d [index & 0x1f]);
   }
 
+  extern float perlin_2d_min,
+               perlin_2d_max;
+
   static float noise_perlin (v2f p, u32 seed)
   {
     v2i cell (p);
     cell -= v2i ((p.x < 0.0f) ? 1 : 0, (p.y < 0.0f) ? 1 : 0);
     
-    return bilerp (
+    float result = bilerp (
       noise_grad (p, cell + v2i (0, 0), seed),
       noise_grad (p, cell + v2i (1, 0), seed),
       noise_grad (p, cell + v2i (0, 1), seed),
       noise_grad (p, cell + v2i (1, 1), seed),
       ease (p - cell)
     );
+
+    perlin_2d_min = std::min (perlin_2d_min, result);
+    perlin_2d_max = std::max (perlin_2d_max, result);
+
+    return result;
   }
 
   static float noise_perlin (v3f p, u32 seed)

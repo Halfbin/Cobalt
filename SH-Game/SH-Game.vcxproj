@@ -80,7 +80,10 @@
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</BasicRuntimeChecks>
       <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</BufferSecurityCheck>
     </ClCompile>
-    <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="Chunk.cpp">
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</BasicRuntimeChecks>
+      <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</BufferSecurityCheck>
+    </ClCompile>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Noise.cpp" />
     <ClCompile Include="Spectator.cpp" />

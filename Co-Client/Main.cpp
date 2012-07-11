@@ -44,6 +44,8 @@ namespace Co
       log_exception (log, "in main thread");
     }
 
+    modules.clear ();
+
     log_file << "* Shutdown complete\n"
              << "- Co-Client" CO_SUFFIX " exiting\n";
 

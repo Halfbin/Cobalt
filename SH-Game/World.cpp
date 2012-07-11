@@ -106,7 +106,7 @@ namespace SH
 
   World::World (Co::WorkQueue& queue)
   {
-    seed = 10101;
+    seed = 0xfeedbeef;
 
     slice = 80;
     last_slice = 10.0f;
