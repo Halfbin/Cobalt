@@ -618,9 +618,8 @@ namespace Co
     Rk::Image image;
     auto mets = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
     
-    auto tex = rc.create_tex_image (queue, 1, texwrap_clamp, false, false, textype_rectangle);
-    tex -> load_map (0, 0, image.data, texformat_a8, image.width, image.height, image.size ());
-
+    auto tex = rc.create_tex_rectangle (queue, texformat_a8, image.width, image.height, texwrap_clamp, image.data, image.size ());
+    
     auto lock = mutex.get_lock ();
     font_height = face -> size -> metrics.y_ppem;
     this -> mets = std::move (mets);

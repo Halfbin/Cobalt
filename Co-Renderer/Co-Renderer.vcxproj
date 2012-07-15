@@ -18,6 +18,7 @@
     <ClInclude Include="..\Include\Co\RenderDevice.hpp" />
     <ClInclude Include="..\Include\Co\Renderer.hpp" />
     <ClInclude Include="..\Include\Co\TexImage.hpp" />
+    <ClInclude Include="BlockGeomProgram.hpp" />
     <ClInclude Include="GeomProgram.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GLBuffer.hpp" />
@@ -30,6 +31,7 @@
     <ClInclude Include="SkyboxProgram.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BlockGeomProgram.cpp" />
     <ClCompile Include="GeomProgram.cpp" />
     <ClCompile Include="GLBuffer.cpp" />
     <ClCompile Include="GLCompilation.cpp" />
@@ -106,6 +108,26 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="BlockGeom-Fragment.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="BlockGeom-Vertex.glsl">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying %(Filename)%(Extension)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
     </CustomBuild>
   </ItemGroup>

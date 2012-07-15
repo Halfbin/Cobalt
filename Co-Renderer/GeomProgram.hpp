@@ -75,8 +75,6 @@ namespace Co
 
   };
 
-  extern GeomProgram geom_program;
-
 }
 
 #endif

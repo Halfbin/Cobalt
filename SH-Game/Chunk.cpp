@@ -53,17 +53,18 @@ namespace SH
 
   static const v3u8
     t_light (255, 255, 255),
-    f_light (207, 207, 207),
-    r_light (159, 159, 159),
-    l_light (159, 159, 159),
-    b_light (111, 111, 111),
-    u_light ( 63,  63,  63);
+    f_light (208, 208, 208),
+    r_light (160, 160, 160),
+    l_light (160, 160, 160),
+    b_light (112, 112, 112),
+    u_light ( 64,  64,  64);
 
   struct Vertex
   {
-    u8 x, y, z;
-    u8 s, t;
-    u8 r, g, b;
+    u8 x, y, z, w;
+    u8 s, t, p, q;
+    u8 r, g, b, a;
+    u8 i, j, k, m;
 
     Vertex ()
     { }
@@ -92,9 +93,9 @@ namespace SH
     index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
     
     static const Co::GeomAttrib attribs [3] = {
-      { Co::attrib_position, Co::attrib_u8,  8, 0 },
-      { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
-      { Co::attrib_colour,   Co::attrib_u8n, 8, 5 },
+      { Co::attrib_position, Co::attrib_u8,  16, 0 },
+      { Co::attrib_tcoords,  Co::attrib_u8n, 16, 4 },
+      { Co::attrib_colour,   Co::attrib_u8n, 16, 8 },
     };
 
     compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);

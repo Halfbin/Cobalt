@@ -38,8 +38,8 @@ void main ()
 {
   //vec4 n = xformed_normal;
   
-  vec4 texel_diffuse  = pow (texture (tex_diffuse,  xformed_tcoords), gamma);/*,
-       /*texel_specular = texture (tex_specular, xformed_tcoords),
+  vec4 texel_diffuse  = /*pow (*/texture (tex_diffuse,  xformed_tcoords)/*, gamma)*/;/*,
+       texel_specular = texture (tex_specular, xformed_tcoords),
        texel_emission = texture (tex_emission, xformed_tcoords),
        texel_exponent = texture (tex_exponent, xformed_tcoords),
        texel_normal   = texture (tex_normal,   xformed_tcoords);*/

@@ -90,17 +90,58 @@ namespace Co
   //
   // Texture creation
   //
-  TexImage::Ptr GLContext::create_tex_image (
+  TexImage::Ptr GLContext::create_tex_image_2d (
     WorkQueue&   queue,
-    uint         level_count,
+    TexFormat    format,
+    u32          width,
+    u32          height,
+    u32          level_count,
     TexImageWrap wrap,
     bool         min_filter,
     bool         mag_filter,
-    TexImageType type)
+    const void*  data,
+    uptr         size)
   {
-    return GLTexImage::create (queue, level_count, wrap, min_filter, mag_filter, type);
+    return queue.gc_attach (new GLTexImage (format, width, height, level_count, wrap, min_filter, mag_filter, data, size));
   }
 
+  TexImage::Ptr GLContext::create_tex_rectangle (
+    WorkQueue&   queue,
+    TexFormat    format,
+    u32          width,
+    u32          height,
+    TexImageWrap wrap,
+    const void*  data,
+    uptr         size)
+  {
+    return queue.gc_attach (new GLTexImage (format, width, height, wrap, data, size));
+  }
+  
+  TexImage::Ptr GLContext::create_tex_cube (
+    WorkQueue& queue,
+    TexFormat  format,
+    u32        width,
+    u32        height,
+    bool       min_filter,
+    bool       mag_filter)
+  {
+    return queue.gc_attach (new GLTexImage (format, width, height, min_filter, mag_filter));
+  }
+  
+  TexImage::Ptr GLContext::create_tex_array (
+    WorkQueue&   queue,
+    TexFormat    format,
+    u32          width,
+    u32          height,
+    u32          layer_count,
+    u32          level_count,
+    TexImageWrap wrap,
+    bool         min_filter,
+    bool         mag_filter)
+  {
+    return queue.gc_attach (new GLTexImage (format, width, height, layer_count, level_count, wrap, min_filter, mag_filter));
+  }
+  
   //
   // Flush
   //

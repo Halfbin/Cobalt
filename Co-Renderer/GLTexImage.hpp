@@ -19,30 +19,58 @@ namespace Co
   class GLTexImage :
     public TexImage
   {
-    u32 name,
-        target;
-
-  protected:
-    virtual void load_map (u32 sub_image, u32 level, const void* data, TexFormat format, u32 width, u32 height, uptr size = 0);
-
-    GLTexImage (uint level_count, TexImageWrap wrap, bool min_filter, bool mag_filter, TexImageType type);
+    u32       name,
+              target,
+              width,
+              height,
+              layer_count;
+    TexFormat format;
     
+  protected:
+    virtual uptr load_map (u32 sub_image, u32 level, const void* data, uptr size = 0);
+
   public:
     typedef std::shared_ptr <GLTexImage> Ptr;
 
-    static inline Ptr create (
-      WorkQueue&   queue,
-      uint         level_count,
+    GLTexImage (
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          level_count,
       TexImageWrap wrap,
       bool         min_filter,
       bool         mag_filter,
-      TexImageType type)
-    {
-      return Ptr (
-        new GLTexImage (level_count, wrap, min_filter, mag_filter, type),
-        queue.make_deleter <GLTexImage> ()
-      );
-    }
+      const void*  data = nullptr,
+      uptr         size = 0
+    );
+
+    GLTexImage (
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      TexImageWrap wrap,
+      const void*  data = nullptr,
+      uptr         size = 0
+    );
+
+    GLTexImage (
+      TexFormat format,
+      u32       width,
+      u32       height,
+      bool      min_filter,
+      bool      mag_filter
+    );
+
+    GLTexImage (
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          layer_count,
+      u32          level_count,
+      TexImageWrap wrap,
+      bool         min_filter,
+      bool         mag_filter
+    );
 
     ~GLTexImage ();
     

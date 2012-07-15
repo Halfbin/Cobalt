@@ -13,30 +13,6 @@
 
 namespace Co
 {
-  enum TexImageWrap :
-    u32
-  {
-    texwrap_clamp = 0,
-    texwrap_wrap  = 1
-  };
-  
-  enum TexImageType :
-    u32
-  {
-    textype_2d        = 0,
-    textype_rectangle = 1,
-    textype_cube      = 2
-  };
-  
-  enum IndexType :
-    u32
-  {
-    index_none = 0,
-    index_u8,
-    index_u16,
-    index_u32
-  };
-  
   class RenderContext
   {
   public:
@@ -73,13 +49,48 @@ namespace Co
       return create_compilation (queue, std::begin (attribs), std::end (attribs), elements, indices, index_type);
     }
 
-    virtual TexImage::Ptr create_tex_image (
+    virtual TexImage::Ptr create_tex_image_2d (
       WorkQueue&   queue,
-      uint         level_count,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          level_count,
       TexImageWrap wrap,
       bool         min_filter,
       bool         mag_filter,
-      TexImageType type
+      const void*  data = nullptr,
+      uptr         size = 0
+    ) = 0;
+
+    virtual TexImage::Ptr create_tex_rectangle (
+      WorkQueue&   queue,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      TexImageWrap wrap,
+      const void*  data = nullptr,
+      uptr         size = 0
+    ) = 0;
+
+    virtual TexImage::Ptr create_tex_cube (
+      WorkQueue& queue,
+      TexFormat  format,
+      u32        width,
+      u32        height,
+      bool       min_filter,
+      bool       mag_filter
+    ) = 0;
+
+    virtual TexImage::Ptr create_tex_array (
+      WorkQueue&   queue,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          layer_count,
+      u32          level_count,
+      TexImageWrap wrap,
+      bool         min_filter,
+      bool         mag_filter
     ) = 0;
 
     virtual void flush () = 0;

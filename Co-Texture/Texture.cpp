@@ -43,6 +43,9 @@ namespace Co
       auto lock = mutex.get_lock ();
       return std::move (image);
     }
+    
+  public:
+    typedef std::shared_ptr <TextureImpl> Ptr;
 
     TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
       path       ("Textures/" + new_path.string ()),
@@ -51,14 +54,6 @@ namespace Co
       mag_filter (new_mag_filter)
     { }
     
-  public:
-    typedef std::shared_ptr <TextureImpl> Ptr;
-
-    static Ptr create (WorkQueue& queue, Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter)
-    {
-      return queue.gc_construct (new TextureImpl (new_path, new_wrap, new_min_filter, new_mag_filter));
-    }
-
     void construct (Ptr& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
     {
       using Rk::ChunkLoader;
@@ -73,7 +68,7 @@ namespace Co
 
       TextureHeader header = { 0 };
       u32 width, height;
-      std::unique_ptr <u8 []> buffer;
+      std::vector <u8> buffer;
       
       auto loader = Rk::make_chunk_loader (*file);
 
@@ -85,9 +80,9 @@ namespace Co
             if (header.version)
               throw std::runtime_error ("Texture has more than one HEAD");
             file -> read (&header, std::min (uptr (loader.size), sizeof (header)));
-            if (header.version != 0x20111206)
+            if (header.version != 0x20120711)
               throw std::runtime_error ("Texture is of an unsupported version");
-            if (header.flags & ~u8 (texflag_mask))
+            if (header.flags & ~u8 (texflag_mask_))
               throw std::runtime_error ("Texture contains invalid flags");
             if (header.map_count == 0)
               throw std::runtime_error ("Texture contains no maps");
@@ -104,8 +99,8 @@ namespace Co
           case chunk_type ('D', 'A', 'T', 'A'):
             if (!header.version)
               throw std::runtime_error ("Texture has DATA before HEAD");
-            buffer.reset (new u8 [loader.size]);
-            file -> read (buffer.get (), loader.size);
+            buffer.resize (loader.size);
+            file -> read (buffer.data (), buffer.size ());
           break;
           
           default:
@@ -116,7 +111,7 @@ namespace Co
       if (!header.version)
         throw std::runtime_error ("Texture has no chunks");
 
-      if (!buffer)
+      if (buffer.empty ())
         throw std::runtime_error ("Texture has no DATA");
       
       /*TexImageFilter filter_type;
@@ -129,45 +124,70 @@ namespace Co
       if (filter && header.type != textype_cube && header.map_count > 1)
         filter_type = texfilter_trilinear;*/
 
-      TexImageType type = textype_2d;
-      if (header.flags & texflag_cube_map)
-        type = textype_cube;
-
-      TexImage::Ptr new_image = rc.create_tex_image (
-        queue,
-        header.map_count,
-        wrap ? texwrap_wrap : texwrap_clamp,
-        min_filter,
-        mag_filter,
-        type
-      );
-
-      u32 offset = 0;
-      
-      uint sub_image_count = 1;
-      if (header.flags & texflag_cube_map)
-        sub_image_count = 6;
-
-      for (uint sub_image = 0; sub_image != sub_image_count; sub_image++)
+      /*if (header.flags & texflag_cube_map)
       {
-        u32 w = width,
-            h = height;
+        
+      }*/
 
-        for (uint level = 0; level != header.map_count; level++)
+      TexImage::Ptr new_image;
+      
+      if (header.flags & texflag_cube_map) // cube map
+      {
+        if (header.layer_count != 0)
+          throw std::runtime_error ("Texture is a cube map, but has multiple layers");
+
+        new_image = rc.create_tex_cube (
+          queue,
+          (TexFormat) header.format,
+          width,
+          height,
+          min_filter,
+          mag_filter
+        );
+
+        uptr offset = 0;
+
+        for (uint face = 0; face != 6; face++)
         {
-          u32 size;
+          for (uint level = 0; level != header.map_count; level++)
+            offset += new_image -> load_map (face, level, buffer.data () + offset, buffer.size () - offset);
+        }
+      }
+      else if (header.layer_count == 0) // 2d
+      {
+        new_image = rc.create_tex_image_2d (
+          queue,
+          (TexFormat) header.format,
+          width,
+          height,
+          header.map_count,
+          wrap ? texwrap_wrap : texwrap_clamp,
+          min_filter,
+          mag_filter,
+          buffer.data (),
+          buffer.size ()
+        );
+      }
+      else // array
+      {
+        new_image = rc.create_tex_array (
+          queue,
+          (TexFormat) header.format,
+          width,
+          height,
+          header.layer_count,
+          header.map_count,
+          wrap ? texwrap_wrap : texwrap_clamp,
+          min_filter,
+          mag_filter
+        );
 
-          if (header.format == texformat_dxt1)
-            size = w / 4 * h / 4 * 8;
-          /*else if (header.format == texformat_bgr888)
-            size = Rk::align (header.width * 3, 4) * header.height;*/
-          else if (header.format == texformat_rgba8888)
-            size = w * h * 4;
+        uptr offset = 0;
 
-          new_image -> load_map (sub_image, level, buffer.get () + offset, (TexFormat) header.format, w, h, size);
-          offset += size;
-          w /= 2;
-          h /= 2;
+        for (uint layer = 0; layer != header.layer_count; layer++)
+        {
+          for (uint level = 0; level != header.map_count; level++)
+            offset += new_image -> load_map (layer, level, buffer.data () + offset, buffer.size () - offset);
         }
       }
 
@@ -184,12 +204,17 @@ namespace Co
     public TextureFactory,
     public ResourceFactory <std::string, TextureImpl>
   {
-    virtual Texture::Ptr create (WorkQueue& queue, Rk::StringRef path, bool wrap, bool min_filter, bool mag_filter)
+    virtual Texture::Ptr create (
+      WorkQueue&    queue,
+      Rk::StringRef path,
+      bool          wrap,
+      bool          min_filter,
+      bool          mag_filter)
     {
       auto ptr = find (path.string ());
       if (!ptr)
       {
-        ptr = TextureImpl::create (queue, path, wrap, min_filter, mag_filter);
+        ptr = queue.gc_construct (new TextureImpl (path, wrap, min_filter, mag_filter));
         add (path.string (), ptr);
       }
       return std::move (ptr);

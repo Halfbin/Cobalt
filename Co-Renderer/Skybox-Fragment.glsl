@@ -25,9 +25,9 @@ void main ()
 {
   gl_FragColor = vec4 (
     mix (
-      blend_colour.rgb,
-      pow (texture (tex_cube, cube_dir).rgb, gamma),
-      pow (blend_colour.a, gamma)
+      pow (blend_colour.rgb, gamma),
+      texture (tex_cube, cube_dir).rgb,
+      blend_colour.a
     ),
     1
   );

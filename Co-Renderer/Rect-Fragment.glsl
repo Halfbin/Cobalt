@@ -26,7 +26,7 @@ const float gamma = 2.2f;
 void main ()
 {
   vec4 texel    = texelFetch (tex, ivec2 (xformed_tcoords));
-  vec4 linear   = linear_colour * vec4 (pow (texel.rgb, gamma), texel.a);
+  vec4 linear   = linear_colour * texel;//vec4 (/*pow (*/texel.rgb/*, gamma)*/, texel.a);
   vec4 constant = vec4 (pow (const_colour.rgb, gamma), 1.0f);
   gl_FragColor = mix (linear, constant, const_colour.a);
 }

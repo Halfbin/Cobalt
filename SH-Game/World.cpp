@@ -15,9 +15,9 @@ namespace SH
 {
   void World::do_slice ()
   {
-    for (int x = 0; x != world_dim; x++)
+    for (int x = 0; x != stage_dim; x++)
     {
-      for (int y = 0; y != world_dim; y++)
+      for (int y = 0; y != stage_dim; y++)
         stage [x][y][slice >> 4] -> slice (slice);
     }
 
@@ -34,11 +34,11 @@ namespace SH
 
     //Co::Profiler tick ("tick", *log_ptr);
 
-    for (int x = 0; x != world_dim; x++)
+    for (int x = 0; x != stage_dim; x++)
     {
-      for (int y = 0; y != world_dim; y++)
+      for (int y = 0; y != stage_dim; y++)
       {
-        for (int z = 0; z != world_dim; z++)
+        for (int z = 0; z != stage_dim; z++)
         {
           auto& chunk = chunk_at (v3i (x, y, z));
 
@@ -62,29 +62,31 @@ namespace SH
     Co::Material material = nil;
     material.diffuse_tex = texture -> get ();
 
-    bool loaded [world_dim][world_dim][world_dim];
+    bool loaded [stage_dim][stage_dim][stage_dim];
 
-    for (int x = 0; x != world_dim; x++)
+    for (int x = 0; x != stage_dim; x++)
     {
-      for (int y = 0; y != world_dim; y++)
+      for (int y = 0; y != stage_dim; y++)
       {
-        for (int z = 0; z != world_dim; z++)
+        for (int z = 0; z != stage_dim; z++)
           loaded [x][y][z] = stage [x][y][z] -> loaded;
       }
     }
 
-    for (int x = 1; x != world_dim - 1; x++)
+    for (int x = 1; x != stage_dim - 1; x++)
     {
-      for (int y = 1; y != world_dim - 1; y++)
+      for (int y = 1; y != stage_dim - 1; y++)
       {
-        for (int z = 1; z != world_dim - 1; z++)
+        for (int z = 1; z != stage_dim - 1; z++)
         {
           auto& chunk = stage [x][y][z];
 
-          bool ok = loaded [x][y][z];
-          ok = ok && loaded [x - 1][y][z] && loaded [x + 1][y][z];
-          ok = ok && loaded [x][y - 1][z] && loaded [x][y + 1][z];
-          ok = ok && loaded [x][y][z - 1] && loaded [x][y][z + 1];
+          bool ok =
+            loaded [x][y][z]
+            && loaded [x - 1][y][z] && loaded [x + 1][y][z]
+            && loaded [x][y - 1][z] && loaded [x][y + 1][z]
+            && loaded [x][y][z - 1] && loaded [x][y][z + 1];
+
           if (!ok)
             continue;
 
@@ -114,11 +116,11 @@ namespace SH
     texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
     sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);
 
-    for (int z = 0; z != world_dim; z++)
+    for (int z = 0; z != stage_dim; z++)
     {
-      for (int y = 0; y != world_dim; y++)
+      for (int y = 0; y != stage_dim; y++)
       {
-        for (int x = 0; x != world_dim; x++)
+        for (int x = 0; x != stage_dim; x++)
           stage [x][y][z] = std::make_shared <Chunk> (v3i (x, y, z));
       }
     }
@@ -127,9 +129,9 @@ namespace SH
   const Chunk::Ptr& World::chunk_at (v3i cv)
   {
     if (
-      cv.x >= world_dim || cv.x < 0 ||
-      cv.y >= world_dim || cv.y < 0 ||
-      cv.z >= world_dim || cv.z < 0)
+      cv.x >= stage_dim || cv.x < 0 ||
+      cv.y >= stage_dim || cv.y < 0 ||
+      cv.z >= stage_dim || cv.z < 0)
     {
       static const Chunk::Ptr null = nullptr;
       return null;
@@ -143,7 +145,7 @@ namespace SH
     v3i cv (bv.x >> 4, bv.y >> 4, bv.z >> 4) ;
     bv = v3i (bv.x & 0xf, bv.y & 0xf, bv.z & 0xf);
 
-    if (cv.x >= world_dim || cv.y >= world_dim || cv.z >= world_dim || cv.x < 0 || cv.y < 0 || cv.z < 0)
+    if (cv.x >= stage_dim || cv.y >= stage_dim || cv.z >= stage_dim || cv.x < 0 || cv.y < 0 || cv.z < 0)
       return Block (blocktype_void);
     else
       return chunk_at (cv) -> at (bv);

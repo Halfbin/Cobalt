@@ -27,8 +27,8 @@ namespace SH
   {
     enum
     {
-      world_dim    = 12,
-      world_chunks = world_dim * world_dim * world_dim,
+      stage_dim    = 20,
+      stage_chunks = stage_dim * stage_dim * stage_dim,
     };
 
     /*enum : u64
@@ -38,10 +38,10 @@ namespace SH
     };*/
 
     // Parameters
-    u64 seed;
+    u32 seed;
 
     // State
-    Chunk::Ptr stage [world_dim][world_dim][world_dim];
+    Chunk::Ptr stage [stage_dim][stage_dim][stage_dim];
     uint       slice;
     float      last_slice;
 

@@ -56,13 +56,48 @@ namespace Co
       IndexType         index_type
     );
 
-    virtual TexImage::Ptr create_tex_image (
+    virtual TexImage::Ptr create_tex_image_2d (
       WorkQueue&   queue,
-      uint         level_count,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          level_count,
       TexImageWrap wrap,
       bool         min_filter,
       bool         mag_filter,
-      TexImageType type
+      const void*  data = nullptr,
+      uptr         size = 0
+    );
+
+    virtual TexImage::Ptr create_tex_rectangle (
+      WorkQueue&   queue,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      TexImageWrap wrap,
+      const void*  data = nullptr,
+      uptr         size = 0
+    );
+
+    virtual TexImage::Ptr create_tex_cube (
+      WorkQueue& queue,
+      TexFormat  format,
+      u32        width,
+      u32        height,
+      bool       min_filter,
+      bool       mag_filter
+    );
+
+    virtual TexImage::Ptr create_tex_array (
+      WorkQueue&   queue,
+      TexFormat    format,
+      u32          width,
+      u32          height,
+      u32          layer_count,
+      u32          level_count,
+      TexImageWrap wrap,
+      bool         min_filter,
+      bool         mag_filter
     );
 
     virtual void flush ();

@@ -10,8 +10,7 @@
 
 namespace Co
 {
-  enum TexFormat :
-    u8
+  enum TexFormat : u8
   {
     texformat_rgb565 = 0,
     texformat_bgr565,
@@ -32,16 +31,14 @@ namespace Co
     texformat_count
   };
   
-  enum TexFlags :
-    u8
+  enum TexFlags : u8
   {
     texflag_cube_map = 0x01,
 
-    texflag_mask = 0x01
+    texflag_mask_ = 0x01
   };
   
-  enum TexFace :
-    u16
+  enum TexFace : u16
   {
     texface_front  = 0,
     texface_back   = 1,
@@ -70,13 +67,16 @@ namespace Co
 
   struct TextureHeader
   {
-    u32       version;   // 4
-    u8        flags;     // 5
-    u8        map_count; // 6
-    TexFormat format;    // 8
-    u16       width,     // 10
-              height;    // 12
+    u32       version;     // 4
+    u8        flags;       // 5
+    u8        map_count;   // 6
+    u8        layer_count; // 7
+    u8        format;      // 8
+    u16       width,       // 10
+              height;      // 12
   };
+  enum { texture_header_size = sizeof (TextureHeader) };
+
   static_assert (sizeof (TextureHeader) == 12, "TextureHeader miscompiled");
   
 }

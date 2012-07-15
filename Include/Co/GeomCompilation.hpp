@@ -33,6 +33,14 @@ namespace Co
     attrib_i8n,
     attrib_u8n
   };
+
+  enum IndexType : u32
+  {
+    index_none = 0,
+    index_u8,
+    index_u16,
+    index_u32
+  };
   
   struct GeomAttrib
   {
