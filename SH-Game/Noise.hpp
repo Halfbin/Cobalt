@@ -85,7 +85,7 @@ namespace SH
 
   inline float noise_grad (v2f p, v2i cell, u32 seed)
   {
-    u32 index = (x_noise * cell.x) ^ (y_noise * cell.y) ^ (seed_noise * seed);
+    u32 index = hash (cell) ^ (seed_noise * seed);
     return dot (p - cell, noise_grads_2d [index & 0xff]);
   }
 
@@ -93,7 +93,7 @@ namespace SH
 
   inline float noise_grad (v3f p, v3i cell, u32 seed)
   {
-    u32 index = (x_noise * cell.x) ^ (y_noise * cell.y) ^ (z_noise * cell.z) ^ (seed_noise * seed);
+    u32 index = hash (cell) ^ (seed_noise * seed);
     return dot (p - cell, noise_grads_3d [index & 0x1f]);
   }
 
@@ -102,8 +102,7 @@ namespace SH
 
   static float noise_perlin (v2f p, u32 seed)
   {
-    v2i cell (p);
-    cell -= v2i ((p.x < 0.0f) ? 1 : 0, (p.y < 0.0f) ? 1 : 0);
+    v2i cell = floor (p);
     
     float result = bilerp (
       noise_grad (p, cell + v2i (0, 0), seed),
@@ -121,8 +120,7 @@ namespace SH
 
   static float noise_perlin (v3f p, u32 seed)
   {
-    v3i cell (p);
-    cell -= v3i ((p.x < 0.0f) ? 1 : 0, (p.y < 0.0f) ? 1 : 0, (p.z < 0.0f) ? 1 : 0);
+    v3i cell = floor (p);
     
     return trilerp (
       noise_grad (p, cell + v3i (0, 0, 0), seed),

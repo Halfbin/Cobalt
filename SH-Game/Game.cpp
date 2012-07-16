@@ -73,7 +73,7 @@ namespace SH
 
     //engine.create_entity ("TestEntity");
     engine.create_entity ("World");
-    engine.create_entity ("Spectator" );
+    engine.create_entity ("Spectator");
 
     engine.enable_ui (false);
   }

@@ -74,7 +74,7 @@ namespace SH
 
     void init       (Co::WorkQueue& queue, Co::RenderContext& rc);
     void generate   (Ptr self, Co::WorkQueue& queue, u32 seed);
-    void regen_mesh (World& world);
+    void regen_mesh (World& world, v3i stage_cpos);
     void draw       (Co::Frame& frame, const Co::Material& mat);
 
     void slice (uint limit);

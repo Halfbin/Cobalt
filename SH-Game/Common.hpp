@@ -33,6 +33,8 @@ namespace SH
   extern Co::ModelFactory::Ptr   model_factory;
   extern Co::FontFactory::Ptr    font_factory;
   
+  extern Co::Spatial view_cur, view_next;
+
 }
 
 #endif

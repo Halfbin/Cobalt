@@ -278,7 +278,7 @@ namespace SH
 
   } test;*/
 
-  void Chunk::regen_mesh (World& world)
+  void Chunk::regen_mesh (World& world, v3i stage_cpos)
   {
     log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
 
@@ -331,63 +331,81 @@ namespace SH
 
     // Finally add transitions between this chunk and the next
     // This gets ugly
-    auto front = world.chunk_at (cpos + v3i (1, 0, 0));
-    for (int y = 0; y != dim; y++)
-    {
-      for (int z = 0; z != dim; z++)
-      {
-        if (!blocks [dim - 1][y][z].empty () && front -> blocks [0][y][z].empty ())
-          face_count++;
-      }
-    }
-
-    auto back = world.chunk_at (cpos + v3i (-1, 0, 0));
-    for (int y = 0; y != dim; y++)
-    {
-      for (int z = 0; z != dim; z++)
-      {
-        if (!blocks [0][y][z].empty () && back -> blocks [dim - 1][y][z].empty ())
-          face_count++;
-      }
-    }
-
-    auto left = world.chunk_at (cpos + v3i (0, 1, 0));
-    for (int x = 0; x != dim; x++)
-    {
-      for (int z = 0; z != dim; z++)
-      {
-        if (!blocks [x][dim - 1][z].empty () && left -> blocks [x][0][z].empty ())
-          face_count++;
-      }
-    }
-
-    auto right = world.chunk_at (cpos + v3i (0, -1, 0));
-    for (int x = 0; x != dim; x++)
-    {
-      for (int z = 0; z != dim; z++)
-      {
-        if (!blocks [x][0][z].empty () && right -> blocks [x][dim - 1][z].empty ())
-          face_count++;
-      }
-    }
-
-    auto top = world.chunk_at (cpos + v3i (0, 0, 1));
-    for (int x = 0; x != dim; x++)
+    auto front = world.chunk_at (stage_cpos + v3i (1, 0, 0));
+    if (front)
     {
       for (int y = 0; y != dim; y++)
       {
-        if (!blocks [x][y][dim - 1].empty () && top -> blocks [x][y][0].empty ())
-          face_count++;
+        for (int z = 0; z != dim; z++)
+        {
+          if (!blocks [dim - 1][y][z].empty () && front -> blocks [0][y][z].empty ())
+            face_count++;
+        }
       }
     }
 
-    auto bottom = world.chunk_at (cpos + v3i (0, 0, -1));
-    for (int x = 0; x != dim; x++)
+    auto back = world.chunk_at (stage_cpos + v3i (-1, 0, 0));
+    if (front)
     {
       for (int y = 0; y != dim; y++)
       {
-        if (!blocks [x][y][0].empty () && bottom -> blocks [x][y][dim - 1].empty ())
-          face_count++;
+        for (int z = 0; z != dim; z++)
+        {
+          if (!blocks [0][y][z].empty () && back -> blocks [dim - 1][y][z].empty ())
+            face_count++;
+        }
+      }
+    }
+
+    auto left = world.chunk_at (stage_cpos + v3i (0, 1, 0));
+    if (left)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int z = 0; z != dim; z++)
+        {
+          if (!blocks [x][dim - 1][z].empty () && left -> blocks [x][0][z].empty ())
+            face_count++;
+        }
+      }
+    }
+
+    auto right = world.chunk_at (stage_cpos + v3i (0, -1, 0));
+    if (right)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int z = 0; z != dim; z++)
+        {
+          if (!blocks [x][0][z].empty () && right -> blocks [x][dim - 1][z].empty ())
+            face_count++;
+        }
+      }
+    }
+
+    auto top = world.chunk_at (stage_cpos + v3i (0, 0, 1));
+    if (top)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          if (!blocks [x][y][dim - 1].empty () && top -> blocks [x][y][0].empty ())
+            face_count++;
+        }
+      }
+    }
+
+    auto bottom = world.chunk_at (stage_cpos + v3i (0, 0, -1));
+    if (bottom)
+    {
+      for (int x = 0; x != dim; x++)
+      {
+        for (int y = 0; y != dim; y++)
+        {
+          if (!blocks [x][y][0].empty () && bottom -> blocks [x][y][dim - 1].empty ())
+            face_count++;
+        }
       }
     }
     
@@ -413,6 +431,8 @@ namespace SH
 
     uint check_face_count = 0;
 
+    auto stage_bpos = stage_cpos * int (Chunk::dim);
+
     for (int x = 0; x != dim; x++)
     {
       for (int y = 0; y != dim; y++)
@@ -433,7 +453,7 @@ namespace SH
                    bot_t  = tcoords.bottom.y,
                    tg     = BlockTCoords::t;
           
-          if (world.block_at (bpos + v3i (x + 1, y, z)).empty ())
+          if (world.block_at (stage_bpos + v3i (x + 1, y, z)).empty ())
           {
             // front
             *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, f_light);
@@ -443,7 +463,7 @@ namespace SH
             check_face_count++;
           }
 
-          if (world.block_at (bpos + v3i (x - 1, y, z)).empty ())
+          if (world.block_at (stage_bpos + v3i (x - 1, y, z)).empty ())
           {
             // back
             *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, b_light);
@@ -453,7 +473,7 @@ namespace SH
             check_face_count++;
           }
             
-          if (world.block_at (bpos + v3i (x, y + 1, z)).empty ())
+          if (world.block_at (stage_bpos + v3i (x, y + 1, z)).empty ())
           {
             // left
             *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, l_light);
@@ -463,7 +483,7 @@ namespace SH
             check_face_count++;
           }
             
-          if (world.block_at (bpos + v3i (x, y - 1, z)).empty ())
+          if (world.block_at (stage_bpos + v3i (x, y - 1, z)).empty ())
           {
             // right
             *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, r_light);
@@ -473,7 +493,7 @@ namespace SH
             check_face_count++;
           }
             
-          if (world.block_at (bpos + v3i (x, y, z + 1)).empty ())
+          if (world.block_at (stage_bpos + v3i (x, y, z + 1)).empty ())
           {
             // top
             *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, t_light);
@@ -483,7 +503,7 @@ namespace SH
             check_face_count++;
           }
             
-          if (world.block_at (bpos + v3i (x, y, z - 1)).empty ())
+          if (world.block_at (stage_bpos + v3i (x, y, z - 1)).empty ())
           {
             // bottom
             *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, u_light);

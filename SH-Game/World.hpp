@@ -17,6 +17,8 @@
 
 #include "Chunk.hpp"
 
+#include <unordered_map>
+
 namespace SH
 {
   //
@@ -25,29 +27,28 @@ namespace SH
   class World :
     public Co::Entity
   {
+  public:
     enum
     {
-      stage_dim    = 20,
+      stage_dim    = 15,
+      stage_radius = stage_dim / 2,
       stage_chunks = stage_dim * stage_dim * stage_dim,
     };
 
-    /*enum : u64
-    {
-      max_kbytes = world_chunks * Chunk::max_kbytes,
-      max_mbytes = max_kbytes >> 10
-    };*/
-
+  private:
     // Parameters
     u32 seed;
 
     // State
+    typedef std::unordered_map <v3i, Chunk::Ptr> Cache;
+
     Chunk::Ptr stage [stage_dim][stage_dim][stage_dim];
-    uint       slice;
-    float      last_slice;
+    Cache      cache;
+    v3i        view_cur_cpos;
+    
+    Chunk::Ptr load_chunk (v3i cpos);
 
     static Co::Texture::Ptr texture, sky_tex;
-
-    void do_slice ();
 
     virtual void tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta);
 

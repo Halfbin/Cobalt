@@ -11,24 +11,27 @@
 
 namespace SH
 {
-  void World::do_slice ()
-  {
-    for (int x = 0; x != stage_dim; x++)
-    {
-      for (int y = 0; y != stage_dim; y++)
-        stage [x][y][slice >> 4] -> slice (slice);
-    }
+  Co::Spatial view_cur,
+              view_next;
 
-    slice--;
-  }
+  static const v3i stage_corner (World::stage_radius, World::stage_radius, World::stage_radius);
 
   void World::tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta)
   {
-    /*if (time >= last_slice + 1.0f && slice > 45)
+    v3i view_next_cpos = floor (view_next.position / float (Chunk::dim));
+    v3i stage_mins = view_next_cpos - stage_corner;
+
+    if (view_next_cpos != view_cur_cpos)
     {
-      do_slice ();
-      last_slice += 1.0f;
-    }*/
+      for (int x = 0; x != stage_dim; x++)
+      {
+        for (int y = 0; y != stage_dim; y++)
+        {
+          for (int z = 0; z != stage_dim; z++)
+            stage [x][y][z] = load_chunk (v3i (x, y, z) + stage_mins);
+        }
+      }
+    }
 
     //Co::Profiler tick ("tick", *log_ptr);
 
@@ -38,7 +41,10 @@ namespace SH
       {
         for (int z = 0; z != stage_dim; z++)
         {
-          auto& chunk = chunk_at (v3i (x, y, z));
+          auto& chunk = stage [x][y][z];
+
+          if (!chunk)
+            chunk = load_chunk (v3i (x, y, z) + stage_mins);
 
           if (!chunk -> loaded)
           {
@@ -55,8 +61,31 @@ namespace SH
     //tick.done ();
   }
 
+  Chunk::Ptr World::load_chunk (v3i cpos)
+  {
+    auto iter = cache.find (cpos);
+
+    if (iter == cache.end ())
+    {
+      auto chunk = std::make_shared <Chunk> (cpos);
+      cache.insert (std::make_pair (cpos, chunk));
+      return std::move (chunk);
+    }
+    else
+    {
+      return iter -> second;
+    }
+  }
+
   void World::render (Co::Frame& frame, float alpha)
   {
+    // TODO:
+    //   Frustum cull chunks
+    //   Sort chunks front to back
+    //   Occlusion culling (oh boy)
+
+    //auto view = lerp (view_cur, view_next, alpha);
+
     Co::Material material = nil;
     material.diffuse_tex = texture -> get ();
 
@@ -67,7 +96,10 @@ namespace SH
       for (int y = 0; y != stage_dim; y++)
       {
         for (int z = 0; z != stage_dim; z++)
-          loaded [x][y][z] = stage [x][y][z] -> loaded;
+        {
+          auto& chunk = stage [x][y][z];
+          loaded [x][y][z] = chunk && chunk -> loaded;
+        }
       }
     }
 
@@ -89,7 +121,7 @@ namespace SH
             continue;
 
           if (chunk -> dirty)
-            chunk -> regen_mesh (*this);
+            chunk -> regen_mesh (*this, v3i (x, y, z));
             
           if (chunk -> index_count > 0)
             chunk -> draw (frame, material);
@@ -106,22 +138,12 @@ namespace SH
 
   World::World (Co::WorkQueue& queue, const Co::PropMap* props)
   {
-    seed = 0xfeedbeef;
+    view_cur_cpos = v3i (0, 0, 0);
 
-    slice = 80;
-    last_slice = 10.0f;
+    seed = 0xfeedbeef;
 
     texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
     sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);
-
-    for (int z = 0; z != stage_dim; z++)
-    {
-      for (int y = 0; y != stage_dim; y++)
-      {
-        for (int x = 0; x != stage_dim; x++)
-          stage [x][y][z] = std::make_shared <Chunk> (v3i (x, y, z));
-      }
-    }
   }
 
   const Chunk::Ptr& World::chunk_at (v3i cv)
