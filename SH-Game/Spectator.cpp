@@ -3,12 +3,7 @@
 // All Rights Reserved.
 //
 
-// Implements
-#include <Co/Entity.hpp>
-
-// Uses
-#include <Co/EntityClass.hpp>
-#include <Co/Frame.hpp>
+#include "Common.hpp"
 
 namespace SH
 {
@@ -53,25 +48,19 @@ namespace SH
       frame.set_camera (lerp (cur, next, alpha), 90.0f, 0.1f, 1000.0f);
     }
 
-    Spectator ()
+  public:
+    Spectator (Co::WorkQueue&, const Co::PropMap*)
     {
       cur.position = v3f (0.0f, 0.0f, 80.0f);
       cur.orientation = Co::Quat (0.785f, v3f (0, 0, 1));
       next = cur;
     }
-    
-  public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
-    {
-      return Ptr (
-        new Spectator (),
-        queue.make_deleter <Spectator> ()
-      );
-    }
 
   };
 
-  Co::EntityClass <Spectator> ent_class ("Spectator");
-  Co::EntityClassBase& spectator_class = ent_class;
+  Co::Entity::Ptr create_spectator (Co::WorkQueue& queue, const Co::PropMap* props)
+  {
+    return queue.gc_attach (new Spectator (queue, props));
+  }
 
 }

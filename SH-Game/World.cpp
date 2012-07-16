@@ -7,8 +7,6 @@
 #include "World.hpp"
 
 // Uses
-#include <Co/EntityClass.hpp>
-
 #include "Common.hpp"
 
 namespace SH
@@ -106,7 +104,7 @@ namespace SH
     );
   }
 
-  World::World (Co::WorkQueue& queue)
+  World::World (Co::WorkQueue& queue, const Co::PropMap* props)
   {
     seed = 0xfeedbeef;
 
@@ -154,7 +152,9 @@ namespace SH
   Co::Texture::Ptr World::sky_tex,
                    World::texture;
 
-  Co::EntityClass <World> ent_class ("World");
-  Co::EntityClassBase& world_class = ent_class;
+  Co::Entity::Ptr create_world (Co::WorkQueue& queue, const Co::PropMap* props)
+  {
+    return queue.gc_attach (new World (queue, props));
+  }
 
 } // namespace SH

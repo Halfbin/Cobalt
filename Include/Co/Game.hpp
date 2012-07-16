@@ -7,9 +7,10 @@
 #define CO_H_GAME
 
 // Uses
-#include <Co/EntityClass.hpp>
 #include <Co/WorkQueue.hpp>
+#include <Co/PropMap.hpp>
 #include <Co/UIInput.hpp>
+#include <Co/Entity.hpp>
 #include <Co/Frame.hpp>
 #include <Co/Log.hpp>
 
@@ -29,7 +30,7 @@ namespace Co
 
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Log& new_log) = 0;
 
-    virtual EntityClassBase& find_class (Rk::StringRef name) = 0;
+    virtual Entity::Ptr create_entity (Rk::StringRef name, WorkQueue& queue, const PropMap* props = 0) = 0;
 
     virtual void start (Co::Engine& engine) = 0;
     virtual void stop  () = 0;

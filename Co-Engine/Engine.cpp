@@ -8,7 +8,6 @@
 #include <Co/Module.hpp>
 
 // Uses
-#include <Co/EntityClass.hpp>
 #include <Co/InputSink.hpp>
 
 #include <Rk/Module.hpp>
@@ -195,10 +194,17 @@ namespace Co
       if (!class_name)
         throw std::invalid_argument ("class_name is nil");
 
-      auto& factory = game -> find_class (class_name);
-      auto ent = factory.create (*queue, props);
-      entities.push_back (ent);
-      return std::move (ent);
+      auto ent = game -> create_entity (class_name, *queue, props);
+
+      if (ent)
+      {
+        entities.push_back (ent);
+        return std::move (ent);
+      }
+      else
+      {
+        Rk::raise () << "No such entity class " << class_name;
+      }
     }
 
     std::shared_ptr <void> EngineImpl::get_object (Rk::StringRef type)

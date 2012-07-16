@@ -7,7 +7,6 @@
 #include <Co/Entity.hpp>
 
 // Uses
-#include <Co/EntityClass.hpp>
 #include <Co/WorkQueue.hpp>
 #include <Co/Spatial.hpp>
 #include <Co/Texture.hpp>
@@ -60,7 +59,8 @@ namespace SH
     virtual void render (Co::Frame& frame, float alpha)
     { }
 
-    TestEntity (Co::WorkQueue& queue)
+  public:
+    TestEntity (Co::WorkQueue& queue, const Co::PropMap*)
     {
       spatial.position = v3f (75.0f, 66.0f, 75.0f);
       spatial.orientation = nil;
@@ -78,20 +78,16 @@ namespace SH
       }
     }
 
-  public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
-    {
-      return queue.gc_attach (new TestEntity (queue));
-    }
-
-  }; // class TestEntity
+  }; // TestEntity
 
   Co::Model::Ptr   TestEntity::model;
   Co::Texture::Ptr TestEntity::tex;
   Co::Material     TestEntity::mat;
   Co::Font::Ptr    TestEntity::font;
 
-  Co::EntityClass <TestEntity> ent_class ("TestEntity");
-  Co::EntityClassBase& test_entity_class = ent_class;
+  Co::Entity::Ptr create_test_entity (Co::WorkQueue& queue, const Co::PropMap* props)
+  {
+    return queue.gc_attach (new TestEntity (queue, props));
+  }
 
 } // namespace SH

@@ -31,7 +31,7 @@ namespace SH
 
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
 
-    virtual Co::EntityClassBase& find_class (Rk::StringRef name);
+    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*);
 
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
@@ -59,21 +59,12 @@ namespace SH
     engine.get_object (font_factory);
   }
 
-  extern Co::EntityClassBase
-    & world_class,
-    & test_entity_class,
-    & spectator_class;
-
-  Co::EntityClassBase& Game::find_class (Rk::StringRef name)
+  Co::Entity::Ptr Game::create_entity (Rk::StringRef type, Co::WorkQueue& queue, const Co::PropMap* props)
   {
-    if (name == "World")
-      return world_class;
-    else if (name == "TestEntity")
-      return test_entity_class;
-    else if (name == "Spectator")
-      return spectator_class;
-
-    throw std::invalid_argument ("No such class");
+    if      (type == "World")       return create_world (queue, props);
+    else if (type == "Spectator")   return create_spectator (queue, props);
+    else if (type == "TestEntity")  return create_test_entity (queue, props);
+    else                            return nullptr;
   }
 
   void Game::start (Co::Engine& engine)

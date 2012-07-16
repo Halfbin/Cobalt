@@ -53,13 +53,8 @@ namespace SH
 
     virtual void render (Co::Frame& frame, float alpha);
 
-    World (Co::WorkQueue& queue);
-
   public:
-    static Ptr create (Co::WorkQueue& queue, const Co::PropMap* props)
-    {
-      return queue.gc_attach (new World (queue));
-    }
+    World (Co::WorkQueue& queue, const Co::PropMap* props);
 
     const Chunk::Ptr& chunk_at (v3i cv);
     Block             block_at (v3i bv);

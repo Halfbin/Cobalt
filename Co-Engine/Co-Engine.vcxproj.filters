@@ -6,9 +6,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\EntityClass.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\UIInput.hpp">
       <Filter>API</Filter>
     </ClInclude>
@@ -28,6 +25,9 @@
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Co\Host.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\EntityClass.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

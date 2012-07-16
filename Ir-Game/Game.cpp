@@ -32,7 +32,7 @@ namespace Ir
   {
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
 
-    virtual Co::EntityClassBase& find_class (Rk::StringRef name);
+    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*);
 
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
@@ -82,7 +82,7 @@ namespace Ir
     State::render_current (frame, alpha);
   }
 
-  Co::EntityClassBase& Game::find_class (Rk::StringRef name)
+  Co::Entity::Ptr Game::create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*)
   {
     throw std::invalid_argument ("No such class");
   }
