@@ -30,7 +30,7 @@ namespace Co
     typedef std::shared_ptr <Renderer> Ptr;
 
     virtual void init         (void* hwnd, const Clock& clock, Log& log) = 0;
-    virtual void render_frame (u32 width, u32 height) = 0;
+    virtual void render_frame () = 0;
 
   };
 

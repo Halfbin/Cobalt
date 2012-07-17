@@ -130,10 +130,6 @@ namespace Co
             camera_near,
             camera_far;
 
-    // Viewport
-    u32 width,
-        height;
-
     // Render device
     void*          target;
     void*          shared_dc;
@@ -184,7 +180,7 @@ namespace Co
     virtual void add_meshes    (const Mesh*     begin, const Mesh*     end);
     virtual void add_materials (const Material* begin, const Material* end);
     
-    virtual void render_frame (u32 width, u32 height);
+    virtual void render_frame ();
 
     // Rendering
     void render_geoms     (Rk::Matrix4f model_to_clip);

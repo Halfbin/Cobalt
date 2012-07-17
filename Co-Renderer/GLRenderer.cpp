@@ -504,7 +504,7 @@ namespace Co
     glDisable (GL_BLEND);
   }
 
-  void GLRenderer::render_frame (u32 width, u32 height)
+  void GLRenderer::render_frame ()
   {
     // Setup for drawing
     auto back = pow (v3f (0.00f, 0.26f, 0.51f), 2.2f);

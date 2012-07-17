@@ -158,14 +158,18 @@ namespace Co
       }
 
       Frame& frame = *renderer;
-      float  alpha = time_accumulator;
+
+      frame.width  = width;
+      frame.height = height;
+
+      float alpha = time_accumulator;
 
       game -> render (frame, alpha);
 
       for (auto ent = entities.begin (); ent != entities.end (); ent++)
         (*ent) -> render (frame, alpha);
 
-      renderer -> render_frame (width, height);
+      renderer -> render_frame ();
 
       float real_time = get_time ();
       float delta_real_time = real_time - prev_real_time;

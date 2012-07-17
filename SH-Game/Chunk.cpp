@@ -172,7 +172,7 @@ namespace SH
         }
       }
     }
-    else if (bpos.z > 25)
+    else// if (bpos.z > 25)
     {
       for (int x = 0; x != dim; x++)
       {
@@ -200,7 +200,7 @@ namespace SH
             blocks [x][y][z++].type = blocktype_air;
         }
       }
-    }
+    }/*
     else
     {
       for (int x = 0; x != dim; x++)
@@ -211,7 +211,7 @@ namespace SH
             blocks [x][y][z].type = blocktype_stone;
         }
       }
-    }
+    }*/
 
     // Caves
     if (bpos.z < 65)

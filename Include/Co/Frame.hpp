@@ -116,6 +116,8 @@ namespace Co
   class Frame
   {
   public:
+    u32 width, height;
+    
     virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial spat) = 0;
     virtual void end              () = 0;
 

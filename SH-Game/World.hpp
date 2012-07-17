@@ -30,7 +30,7 @@ namespace SH
   public:
     enum
     {
-      stage_dim    = 15,
+      stage_dim    = 13,
       stage_radius = stage_dim / 2,
       stage_chunks = stage_dim * stage_dim * stage_dim,
     };

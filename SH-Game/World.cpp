@@ -79,12 +79,33 @@ namespace SH
 
   void World::render (Co::Frame& frame, float alpha)
   {
+    // Frustum culling
+    auto view = lerp (view_cur, view_next, alpha);
+
+    float recip_aspect = float (frame.height) / float (frame.width);
+    float x_hfov = 75.0f * (3.14152f / 180.0f) * 0.5f;
+    float y_hfov = x_hfov * recip_aspect;
+
+    v3f fwd  = view.orientation.forward (),
+        left = view.orientation.left    (),
+        up   = view.orientation.up      ();
+
+    v3f v_fwd_contrib  = std::sin (y_hfov) * fwd,
+        h_fwd_contrib  = std::sin (x_hfov) * fwd,
+        v_up_contrib   = std::cos (y_hfov) * up,
+        h_left_contrib = std::cos (x_hfov) * left;
+
+    v3f planes [4] = {
+      v_fwd_contrib - v_up_contrib,   // top
+      v_fwd_contrib + v_up_contrib,   // bottom
+      h_fwd_contrib - h_left_contrib, // left
+      h_fwd_contrib + h_left_contrib  // right
+    };
+
     // TODO:
-    //   Frustum cull chunks
     //   Sort chunks front to back
     //   Occlusion culling (oh boy)
 
-    //auto view = lerp (view_cur, view_next, alpha);
 
     Co::Material material = nil;
     material.diffuse_tex = texture -> get ();
@@ -111,13 +132,29 @@ namespace SH
         {
           auto& chunk = stage [x][y][z];
 
-          bool ok =
+          bool draw =
             loaded [x][y][z]
             && loaded [x - 1][y][z] && loaded [x + 1][y][z]
             && loaded [x][y - 1][z] && loaded [x][y + 1][z]
             && loaded [x][y][z - 1] && loaded [x][y][z + 1];
 
-          if (!ok)
+          if (!draw)
+            continue;
+
+          // Frustum cull chunk
+          for (uint i = 0; i != 4; i++)
+          {
+            v3f bp = chunk -> bpos;
+            v3f centre = bp + (v3i (Chunk::dim, Chunk::dim, Chunk::dim) / 2) - view.position;
+            static const float radius = float (Chunk::dim / 2) * 1.732f; // 8rt2
+            if (dot (centre, planes [i]) < -radius)
+            {
+              draw = false;
+              break;
+            }
+          }
+
+          if (!draw)
             continue;
 
           if (chunk -> dirty)
