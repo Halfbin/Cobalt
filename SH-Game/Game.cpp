@@ -28,7 +28,6 @@ namespace SH
   class Game :
     public Co::Game
   {
-
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
 
     virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*);
@@ -40,6 +39,13 @@ namespace SH
     virtual void render (Co::Frame& frame, float alpha);
 
   public:
+    ~Game ()
+    {
+      model_factory.reset ();
+      texture_factory.reset ();
+      font_factory.reset ();
+    }
+
     static Ptr create ()
     {
       return std::make_shared <Game> ();

@@ -23,39 +23,27 @@ namespace SH
 
     if (view_next_cpos != view_cur_cpos)
     {
-      for (int x = 0; x != stage_dim; x++)
-      {
-        for (int y = 0; y != stage_dim; y++)
-        {
-          for (int z = 0; z != stage_dim; z++)
-            stage [x][y][z] = load_chunk (v3i (x, y, z) + stage_mins);
-        }
-      }
+      for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
+        stage [c.x][c.y][c.z] = load_chunk (c + stage_mins);
     }
 
     //Co::Profiler tick ("tick", *log_ptr);
 
-    for (int x = 0; x != stage_dim; x++)
+    for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
     {
-      for (int y = 0; y != stage_dim; y++)
+      auto& chunk = stage [c.x][c.y][c.z];
+
+      if (!chunk)
+        chunk = load_chunk (c + stage_mins);
+
+      if (!chunk -> loaded)
       {
-        for (int z = 0; z != stage_dim; z++)
-        {
-          auto& chunk = stage [x][y][z];
-
-          if (!chunk)
-            chunk = load_chunk (v3i (x, y, z) + stage_mins);
-
-          if (!chunk -> loaded)
-          {
-            if (!chunk -> loading)
-              chunk -> generate (chunk, queue, seed);
-            continue;
-          }
-
-          // ...
-        }
+        if (!chunk -> loading)
+          chunk -> generate (chunk, queue, seed);
+        continue;
       }
+
+      // ...
     }
 
     //tick.done ();
@@ -83,7 +71,7 @@ namespace SH
     auto view = lerp (view_cur, view_next, alpha);
 
     float recip_aspect = float (frame.height) / float (frame.width);
-    float x_hfov = 75.0f * (3.14152f / 180.0f) * 0.5f;
+    float x_hfov = 75.0f * (3.141592f / 180.0f) * 0.5f;
     float y_hfov = x_hfov * recip_aspect;
 
     v3f fwd  = view.orientation.forward (),
@@ -112,58 +100,48 @@ namespace SH
 
     bool loaded [stage_dim][stage_dim][stage_dim];
 
-    for (int x = 0; x != stage_dim; x++)
+    for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
     {
-      for (int y = 0; y != stage_dim; y++)
-      {
-        for (int z = 0; z != stage_dim; z++)
-        {
-          auto& chunk = stage [x][y][z];
-          loaded [x][y][z] = chunk && chunk -> loaded;
-        }
-      }
+      auto& chunk = stage [c.x][c.y][c.z];
+      loaded [c.x][c.y][c.z] = chunk && chunk -> loaded;
     }
 
-    for (int x = 1; x != stage_dim - 1; x++)
+    for (v3i c (0, 0, 0); c.x != stage_dim - 2; advance_cubic_zyx (c, stage_dim - 2))
     {
-      for (int y = 1; y != stage_dim - 1; y++)
+      auto cp = c + v3i (1, 1, 1);
+
+      auto& chunk = stage [cp.x][cp.y][cp.z];
+
+      bool draw =
+        loaded [cp.x][cp.y][cp.z]
+        && loaded [cp.x - 1][cp.y][cp.z] && loaded [cp.x + 1][cp.y][cp.z]
+        && loaded [cp.x][cp.y - 1][cp.z] && loaded [cp.x][cp.y + 1][cp.z]
+        && loaded [cp.x][cp.y][cp.z - 1] && loaded [cp.x][cp.y][cp.z + 1];
+
+      if (!draw)
+        continue;
+
+      // Frustum cull chunk
+      for (uint i = 0; i != 4; i++)
       {
-        for (int z = 1; z != stage_dim - 1; z++)
+        v3f bp = chunk -> bpos;
+        v3f centre = bp + (v3i (Chunk::dim, Chunk::dim, Chunk::dim) / 2) - view.position;
+        static const float radius = float (Chunk::dim / 2) * 1.73205f; // 8rt3
+        if (dot (centre, planes [i]) < -radius)
         {
-          auto& chunk = stage [x][y][z];
-
-          bool draw =
-            loaded [x][y][z]
-            && loaded [x - 1][y][z] && loaded [x + 1][y][z]
-            && loaded [x][y - 1][z] && loaded [x][y + 1][z]
-            && loaded [x][y][z - 1] && loaded [x][y][z + 1];
-
-          if (!draw)
-            continue;
-
-          // Frustum cull chunk
-          for (uint i = 0; i != 4; i++)
-          {
-            v3f bp = chunk -> bpos;
-            v3f centre = bp + (v3i (Chunk::dim, Chunk::dim, Chunk::dim) / 2) - view.position;
-            static const float radius = float (Chunk::dim / 2) * 1.732f; // 8rt2
-            if (dot (centre, planes [i]) < -radius)
-            {
-              draw = false;
-              break;
-            }
-          }
-
-          if (!draw)
-            continue;
-
-          if (chunk -> dirty)
-            chunk -> regen_mesh (*this, v3i (x, y, z));
-            
-          if (chunk -> index_count > 0)
-            chunk -> draw (frame, material);
+          draw = false;
+          break;
         }
       }
+
+      if (!draw)
+        continue;
+
+      if (chunk -> dirty)
+        chunk -> regen_mesh (*this, cp);
+            
+      if (chunk -> index_count > 0)
+        chunk -> draw (frame, material);
     }
 
     frame.set_skybox (
@@ -208,8 +186,8 @@ namespace SH
       return chunk_at (cv) -> at (bv);
   }
 
-  Co::Texture::Ptr World::sky_tex,
-                   World::texture;
+  /*Co::Texture::Ptr World::sky_tex,
+                   World::texture;*/
 
   Co::Entity::Ptr create_world (Co::WorkQueue& queue, const Co::PropMap* props)
   {

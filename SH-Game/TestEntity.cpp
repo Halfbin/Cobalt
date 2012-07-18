@@ -24,10 +24,10 @@ namespace SH
   class TestEntity :
     public Co::Entity
   {
-    static Co::Model::Ptr   model;
-    static Co::Texture::Ptr tex;
-    static Co::Font::Ptr    font;
-    static Co::Material     mat;
+    Co::Model::Ptr   model;
+    Co::Texture::Ptr tex;
+    Co::Font::Ptr    font;
+    Co::Material     mat;
 
     Co::Spatial spatial;
 
@@ -65,25 +65,22 @@ namespace SH
       spatial.position = v3f (75.0f, 66.0f, 75.0f);
       spatial.orientation = nil;
 
-      if (!model)
-      {
-        model = model_factory   -> create (queue, "cube.rkmodel");
-        tex   = texture_factory -> create (queue, "derp.cotexture", false, true, true);
+      model = model_factory   -> create (queue, "cube.rkmodel");
+      tex   = texture_factory -> create (queue, "derp.cotexture", false, true, true);
 
-        Co::CodeRange ranges [] = {
-          { 0x0020, 0x007f }, // ASCII
-          { 0x00a1, 0x0100 }  // Latin-1 Supplement
-        };
-        font = font_factory -> create (queue, "../SH/Fonts/DejaVuSans.ttf", 14, Co::fontsize_points, ranges);
-      }
+      Co::CodeRange ranges [] = {
+        { 0x0020, 0x007f }, // ASCII
+        { 0x00a1, 0x0100 }  // Latin-1 Supplement
+      };
+      font = font_factory -> create (queue, "../SH/Fonts/DejaVuSans.ttf", 14, Co::fontsize_points, ranges);
     }
 
   }; // TestEntity
 
-  Co::Model::Ptr   TestEntity::model;
+  /*Co::Model::Ptr   TestEntity::model;
   Co::Texture::Ptr TestEntity::tex;
   Co::Material     TestEntity::mat;
-  Co::Font::Ptr    TestEntity::font;
+  Co::Font::Ptr    TestEntity::font;*/
 
   Co::Entity::Ptr create_test_entity (Co::WorkQueue& queue, const Co::PropMap* props)
   {

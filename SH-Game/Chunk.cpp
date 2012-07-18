@@ -187,10 +187,10 @@ namespace SH
 
           int z = 0;
 
-          while (z < std::min (depth, int (dim)))
+          while (z < std::min (depth, dim))
             blocks [x][y][z++].type = blocktype_stone;
 
-          while (z < std::min (level, int (dim)))
+          while (z < std::min (level, dim))
             blocks [x][y][z++].type = blocktype_soil;
 
           if (level >= 0 && level < dim)
@@ -216,19 +216,13 @@ namespace SH
     // Caves
     if (bpos.z < 65)
     {
-      for (int x = 0; x != dim; x++)
+      for (v3i b (0, 0, 0); b.x != dim; advance_cubic_zyx_po2 (b, lb_dim))
       {
-        for (int y = 0; y != dim; y++)
-        {
-          for (int z = 0; z != dim; z++)
-          {
-            v3f noise_pos = cpos + v3f (x, y, z) * (1.0f / dim);
-            bool cut = -0.2f > noise_perlin_harmonic (noise_pos, seed, 0.5f, 3, 0.8f);
+        v3f noise_pos = cpos + v3f (b) * (1.0f / dim);
+        bool cut = -0.2f > noise_perlin_harmonic (noise_pos, seed, 0.5f, 3, 0.8f);
 
-            if (cut)
-              blocks [x][y][z].type = blocktype_air;
-          }
-        }
+        if (cut)
+          blocks [b.x][b.y][b.z].type = blocktype_air;
       }
     }
   }
@@ -278,10 +272,8 @@ namespace SH
 
   } test;*/
 
-  void Chunk::regen_mesh (World& world, v3i stage_cpos)
+  uint Chunk::count_faces (World& world, v3i stage_cpos)
   {
-    log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
-
     // Figure out how many faces will be generated
     u16 transp [3 * dim * dim];
 
@@ -408,6 +400,15 @@ namespace SH
         }
       }
     }
+
+    return face_count;
+  }
+
+  void Chunk::regen_mesh (World& world, v3i stage_cpos)
+  {
+    log () << "- Regenning chunk (" << cpos.x << ", " << cpos.y << ", " << cpos.z << ")\n";
+
+    uint face_count = count_faces (world, stage_cpos);
     
     if (face_count == 0)
     {
@@ -431,89 +432,83 @@ namespace SH
 
     uint check_face_count = 0;
 
-    auto stage_bpos = stage_cpos * int (Chunk::dim);
+    auto stage_bpos = stage_cpos * dim;
 
-    for (int x = 0; x != dim; x++)
+    for (v3i b (0, 0, 0); b.x != dim; advance_cubic_zyx_po2 (b, lb_dim))
     {
-      for (int y = 0; y != dim; y++)
-      {
-        for (int z = 0; z != dim; z++)
-        {
-          const auto block = blocks [x][y][z];
+      const auto block = blocks [b.x][b.y][b.z];
 
-          if (block.empty ())
-            continue;
+      if (block.empty ())
+        continue;
 
-          auto tcoords = block_tcoords [block.type];
-          const i8 side_s = tcoords.sides.x,
-                   side_t = tcoords.sides.y,
-                   top_s  = tcoords.top.x,
-                   top_t  = tcoords.top.y,
-                   bot_s  = tcoords.bottom.x,
-                   bot_t  = tcoords.bottom.y,
-                   tg     = BlockTCoords::t;
+      auto tcoords = block_tcoords [block.type];
+      const i8 side_s = tcoords.sides.x,
+                side_t = tcoords.sides.y,
+                top_s  = tcoords.top.x,
+                top_t  = tcoords.top.y,
+                bot_s  = tcoords.bottom.x,
+                bot_t  = tcoords.bottom.y,
+                tg     = BlockTCoords::t;
           
-          if (world.block_at (stage_bpos + v3i (x + 1, y, z)).empty ())
-          {
-            // front
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s +  0, side_t +  0, f_light);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s +  0, side_t + tg, f_light);
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s + tg, side_t +  0, f_light);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s + tg, side_t + tg, f_light);
-            check_face_count++;
-          }
+      if (world.block_at (stage_bpos + v3i (b.x + 1, b.y, b.z)).empty ())
+      {
+        // front
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, side_s +  0, side_t +  0, f_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, side_s +  0, side_t + tg, f_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, side_s + tg, side_t +  0, f_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, side_s + tg, side_t + tg, f_light);
+        check_face_count++;
+      }
 
-          if (world.block_at (stage_bpos + v3i (x - 1, y, z)).empty ())
-          {
-            // back
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s +  0, side_t +  0, b_light);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s +  0, side_t + tg, b_light);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s + tg, side_t +  0, b_light);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s + tg, side_t + tg, b_light);
-            check_face_count++;
-          }
+      if (world.block_at (stage_bpos + v3i (b.x - 1, b.y, b.z)).empty ())
+      {
+        // back
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, side_s +  0, side_t +  0, b_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, side_s +  0, side_t + tg, b_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, side_s + tg, side_t +  0, b_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, side_s + tg, side_t + tg, b_light);
+        check_face_count++;
+      }
             
-          if (world.block_at (stage_bpos + v3i (x, y + 1, z)).empty ())
-          {
-            // left
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, side_s +  0, side_t +  0, l_light);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, side_s +  0, side_t + tg, l_light);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, side_s + tg, side_t +  0, l_light);
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, side_s + tg, side_t + tg, l_light);
-            check_face_count++;
-          }
+      if (world.block_at (stage_bpos + v3i (b.x, b.y + 1, b.z)).empty ())
+      {
+        // left
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, side_s +  0, side_t +  0, l_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, side_s +  0, side_t + tg, l_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, side_s + tg, side_t +  0, l_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, side_s + tg, side_t + tg, l_light);
+        check_face_count++;
+      }
             
-          if (world.block_at (stage_bpos + v3i (x, y - 1, z)).empty ())
-          {
-            // right
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, side_s +  0, side_t +  0, r_light);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, side_s +  0, side_t + tg, r_light);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, side_s + tg, side_t +  0, r_light);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, side_s + tg, side_t + tg, r_light);
-            check_face_count++;
-          }
+      if (world.block_at (stage_bpos + v3i (b.x, b.y - 1, b.z)).empty ())
+      {
+        // right
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, side_s +  0, side_t +  0, r_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, side_s +  0, side_t + tg, r_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, side_s + tg, side_t +  0, r_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, side_s + tg, side_t + tg, r_light);
+        check_face_count++;
+      }
             
-          if (world.block_at (stage_bpos + v3i (x, y, z + 1)).empty ())
-          {
-            // top
-            *vertices++ = Vertex (x + 1, y + 1, z + 1, top_s +  0, top_t +  0, t_light);
-            *vertices++ = Vertex (x + 0, y + 1, z + 1, top_s +  0, top_t + tg, t_light);
-            *vertices++ = Vertex (x + 1, y + 0, z + 1, top_s + tg, top_t +  0, t_light);
-            *vertices++ = Vertex (x + 0, y + 0, z + 1, top_s + tg, top_t + tg, t_light);
-            check_face_count++;
-          }
+      if (world.block_at (stage_bpos + v3i (b.x, b.y, b.z + 1)).empty ())
+      {
+        // top
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, top_s +  0, top_t +  0, t_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, top_s +  0, top_t + tg, t_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, top_s + tg, top_t +  0, t_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, top_s + tg, top_t + tg, t_light);
+        check_face_count++;
+      }
             
-          if (world.block_at (stage_bpos + v3i (x, y, z - 1)).empty ())
-          {
-            // bottom
-            *vertices++ = Vertex (x + 0, y + 1, z + 0, bot_s +  0, bot_t +  0, u_light);
-            *vertices++ = Vertex (x + 1, y + 1, z + 0, bot_s +  0, bot_t + tg, u_light);
-            *vertices++ = Vertex (x + 0, y + 0, z + 0, bot_s + tg, bot_t +  0, u_light);
-            *vertices++ = Vertex (x + 1, y + 0, z + 0, bot_s + tg, bot_t + tg, u_light);
-            check_face_count++;
-          }
-        } // z
-      } // y
+      if (world.block_at (stage_bpos + v3i (b.x, b.y, b.z - 1)).empty ())
+      {
+        // bottom
+        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, bot_s +  0, bot_t +  0, u_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, bot_s +  0, bot_t + tg, u_light);
+        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, bot_s + tg, bot_t +  0, u_light);
+        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, bot_s + tg, bot_t + tg, u_light);
+        check_face_count++;
+      }
     } // x
 
     assert (check_face_count == face_count);

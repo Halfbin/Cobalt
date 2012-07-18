@@ -31,18 +31,13 @@ namespace SH
   public:
     typedef std::shared_ptr <Chunk> Ptr;
 
-    enum
-    {
-      dim              = 16,
-      max_faces        = ((dim * dim * dim + 1) / 2) * 6,
-      max_vertices     = max_faces * 4,
-      max_indices      = max_faces * 6,
-
-      /*max_vertex_bytes = max_vertices * sizeof (Vertex),
-      max_index_bytes  = max_indices  * 2,
-      max_bytes        = max_vertex_bytes + max_index_bytes,
-      max_kbytes       = max_bytes >> 10*/
-    };
+    static const int
+      dim          = 16,
+      lb_dim       = 4,
+      max_faces    = ((dim * dim * dim + 1) / 2) * 6,
+      max_vertices = max_faces * 4,
+      max_indices  = max_faces * 6
+    ;
 
     // Resources
     Co::GeomCompilation::Ptr compilation;
@@ -64,7 +59,7 @@ namespace SH
       loading (false),
       dirty   (false),
       cpos    (cpos),
-      bpos    (cpos * uint (dim))
+      bpos    (cpos * dim)
     { }
     
     Block& at (v3i bv)
@@ -72,10 +67,11 @@ namespace SH
       return blocks [bv.x][bv.y][bv.z];
     }
 
-    void init       (Co::WorkQueue& queue, Co::RenderContext& rc);
-    void generate   (Ptr self, Co::WorkQueue& queue, u32 seed);
-    void regen_mesh (World& world, v3i stage_cpos);
-    void draw       (Co::Frame& frame, const Co::Material& mat);
+    void init        (Co::WorkQueue& queue, Co::RenderContext& rc);
+    void generate    (Ptr self, Co::WorkQueue& queue, u32 seed);
+    uint count_faces (World& world, v3i stage_cpos);
+    void regen_mesh  (World& world, v3i stage_cpos);
+    void draw        (Co::Frame& frame, const Co::Material& mat);
 
     void slice (uint limit);
 

@@ -7,6 +7,7 @@
 
 #include "Client.hpp"
 
+#include <vector>
 #include <map>
 
 namespace Co
@@ -15,17 +16,18 @@ namespace Co
   Rk::OutStream log_stream = log_file.virtualize ();
   Log log (log_stream);
 
-  static std::map <std::string, Rk::Module>
-    modules;
+  static std::vector <Rk::Module>     modules;
+  static std::map <std::string, uint> lookup;
 
   Rk::Module load_module (Rk::StringRef path)
   {
-    auto iter = modules.find (path.string ());
-    if (iter != modules.end ())
-      return iter -> second;
+    auto iter = lookup.find (path.string ());
+    if (iter != lookup.end ())
+      return modules [iter -> second];
 
     Rk::Module mod (path.string () + CO_SUFFIX ".dll");
-    modules.insert (std::make_pair (path.string (), mod));
+    lookup.insert (std::make_pair (path.string (), modules.size ()));
+    modules.push_back (mod);
     return mod;
   }
 
@@ -44,7 +46,9 @@ namespace Co
       log_exception (log, "in main thread");
     }
 
-    modules.clear ();
+    // Unload modules in reverse order
+    while (!modules.empty ())
+      modules.pop_back ();
 
     log_file << "* Shutdown complete\n"
              << "- Co-Client" CO_SUFFIX " exiting\n";

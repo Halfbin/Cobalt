@@ -28,12 +28,11 @@ namespace SH
     public Co::Entity
   {
   public:
-    enum
-    {
+    static const int
       stage_dim    = 13,
       stage_radius = stage_dim / 2,
-      stage_chunks = stage_dim * stage_dim * stage_dim,
-    };
+      stage_chunks = stage_dim * stage_dim * stage_dim
+    ;
 
   private:
     // Parameters
@@ -48,7 +47,7 @@ namespace SH
     
     Chunk::Ptr load_chunk (v3i cpos);
 
-    static Co::Texture::Ptr texture, sky_tex;
+    /*static*/ Co::Texture::Ptr texture, sky_tex;
 
     virtual void tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta);
 
