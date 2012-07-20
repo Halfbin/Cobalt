@@ -23,7 +23,7 @@ namespace Co
 
     if (size)
     {
-      glBufferData (GL_ARRAY_BUFFER, size, data, stream ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBufferData (GL_ARRAY_BUFFER, size, data, stream ? GL_STREAM_DRAW : GL_STATIC_DRAW);
       check_gl ("glBufferData");
     }
   }
@@ -43,7 +43,7 @@ namespace Co
 
     if (map_offset + reserve > capacity)
     {
-      glBufferData (GL_ARRAY_BUFFER, capacity, 0, GL_DYNAMIC_DRAW);
+      glBufferData (GL_ARRAY_BUFFER, capacity, 0, GL_STREAM_DRAW);
       check_gl ("glBufferData");
       map_offset = 0;
     }
@@ -80,6 +80,8 @@ namespace Co
 
     glBindBuffer (GL_ARRAY_BUFFER, name);
     check_gl ("glBindBuffer");
+
+    map_length = 0;
 
     bool ok = glUnmapBuffer (GL_ARRAY_BUFFER);
     if (!ok)

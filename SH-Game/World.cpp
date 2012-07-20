@@ -11,58 +11,57 @@
 
 namespace SH
 {
-  Co::Spatial view_cur,
-              view_next;
+  Co::Spatial view_cur  (nil),
+              view_next (nil);
 
-  static const v3i stage_corner (World::stage_radius, World::stage_radius, World::stage_radius);
-
+  static const v3i stage_corner (stage_radius, stage_radius, stage_radius);
+  
   void World::tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta)
   {
-    v3i view_next_cpos = floor (view_next.position / float (Chunk::dim));
-    v3i stage_mins = view_next_cpos - stage_corner;
+    v3i view_cpos = floor (view_next.position / float (chunk_dim));
+    v3i view_base = view_cpos - stage_corner;
 
-    if (view_next_cpos != view_cur_cpos)
-    {
-      for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
-        stage [c.x][c.y][c.z] = load_chunk (c + stage_mins);
-    }
+    /*if (view_cpos != view_cur_cpos)
+    {*/
+      stage_base = view_cpos % stage_dim;
+      if (stage_base.x < 0) stage_base.x += stage_dim;
+      if (stage_base.y < 0) stage_base.y += stage_dim;
+      if (stage_base.z < 0) stage_base.z += stage_dim;
 
-    //Co::Profiler tick ("tick", *log_ptr);
-
-    for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
-    {
-      auto& chunk = stage [c.x][c.y][c.z];
-
-      if (!chunk)
-        chunk = load_chunk (c + stage_mins);
-
-      if (!chunk -> loaded)
+      for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
       {
-        if (!chunk -> loading)
-          chunk -> generate (chunk, queue, seed);
-        continue;
+        auto& chunk = stage_at (c).chunk;
+        v3i new_cpos = view_base + c;
+
+        if (!chunk || chunk -> cpos != new_cpos)
+          chunk = load_chunk (queue, new_cpos);
       }
 
-      // ...
-    }
-
-    //tick.done ();
+      //view_cur_cpos = view_cpos;
+    //}
   }
 
-  Chunk::Ptr World::load_chunk (v3i cpos)
-  {
-    auto iter = cache.find (cpos);
+  static bool cache_enable = false;
 
-    if (iter == cache.end ())
+  Chunk::Ptr World::load_chunk (Co::WorkQueue& queue, v3i cpos)
+  {
+    if (cache_enable)
     {
-      auto chunk = std::make_shared <Chunk> (cpos);
+      auto iter = cache.find (cpos);
+
+      if (iter != cache.end ())
+      {
+        auto chunk = iter -> second;
+        chunk -> dirty = true;
+        return std::move (chunk);        
+      }
+    }
+
+    auto chunk = std::make_shared <Chunk> (cpos);
+    chunk -> generate (chunk, queue, seed);
+    if (cache_enable)
       cache.insert (std::make_pair (cpos, chunk));
-      return std::move (chunk);
-    }
-    else
-    {
-      return iter -> second;
-    }
+    return std::move (chunk);
   }
 
   void World::render (Co::Frame& frame, float alpha)
@@ -98,35 +97,61 @@ namespace SH
     Co::Material material = nil;
     material.diffuse_tex = texture -> get ();
 
-    bool loaded [stage_dim][stage_dim][stage_dim];
+    /*bool loaded [stage_dim][stage_dim][stage_dim];
 
-    for (v3i c (0, 0, 0); c.x != stage_dim; advance_cubic_zyx (c, stage_dim))
+    for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
     {
-      auto& chunk = stage [c.x][c.y][c.z];
-      loaded [c.x][c.y][c.z] = chunk && chunk -> loaded;
-    }
+      auto& schunk = stage [c.x][c.y][c.z];
+      loaded [c.x][c.y][c.z] = schunk.chunk && schunk.chunk -> loaded;
+    }*/
 
-    for (v3i c (0, 0, 0); c.x != stage_dim - 2; advance_cubic_zyx (c, stage_dim - 2))
+    v3i v = stage_extent - v3i (1, 1, 1); // why does this work
+    for (auto c = iteration (v3i (1, 1, 1), v); c; c.advance ())
     {
-      auto cp = c + v3i (1, 1, 1);
+      //v3i cp = (stage_base + c) % stage_dim;
+      auto& schunk = stage_at (c);
 
-      auto& chunk = stage [cp.x][cp.y][cp.z];
-
-      bool draw =
-        loaded [cp.x][cp.y][cp.z]
-        && loaded [cp.x - 1][cp.y][cp.z] && loaded [cp.x + 1][cp.y][cp.z]
-        && loaded [cp.x][cp.y - 1][cp.z] && loaded [cp.x][cp.y + 1][cp.z]
-        && loaded [cp.x][cp.y][cp.z - 1] && loaded [cp.x][cp.y][cp.z + 1];
-
-      if (!draw)
+      if (!schunk.chunk || !schunk.chunk -> loaded)
         continue;
 
+      if (schunk.chunk -> dirty)
+      {
+        const Chunk* neighbours [6] = {
+          stage_at (c + v3i ( 1,  0,  0)).chunk.get (),
+          stage_at (c + v3i (-1,  0,  0)).chunk.get (),
+          stage_at (c + v3i ( 0,  1,  0)).chunk.get (),
+          stage_at (c + v3i ( 0, -1,  0)).chunk.get (),
+          stage_at (c + v3i ( 0,  0,  1)).chunk.get (),
+          stage_at (c + v3i ( 0,  0, -1)).chunk.get ()
+        };
+
+        bool regen = true;
+
+        for (uint i = 0; i != 6; i++)
+        {
+          if (!neighbours [i] || !neighbours [i] -> loaded)
+            regen = false;
+        }
+
+        if (regen)
+        {
+          schunk.mesh.regen (*schunk.chunk, neighbours);
+          schunk.chunk -> dirty = false;
+        }
+        else
+        {
+          continue;
+        }
+      }
+
       // Frustum cull chunk
+      bool draw = true;
+
       for (uint i = 0; i != 4; i++)
       {
-        v3f bp = chunk -> bpos;
-        v3f centre = bp + (v3i (Chunk::dim, Chunk::dim, Chunk::dim) / 2) - view.position;
-        static const float radius = float (Chunk::dim / 2) * 1.73205f; // 8rt3
+        v3f bp = schunk.chunk -> bpos;
+        v3f centre = bp + (v3i (chunk_dim, chunk_dim, chunk_dim) / 2) - view.position;
+        static const float radius = float (chunk_dim / 2) * 1.73205f; // 8rt3
         if (dot (centre, planes [i]) < -radius)
         {
           draw = false;
@@ -134,14 +159,8 @@ namespace SH
         }
       }
 
-      if (!draw)
-        continue;
-
-      if (chunk -> dirty)
-        chunk -> regen_mesh (*this, cp);
-            
-      if (chunk -> index_count > 0)
-        chunk -> draw (frame, material);
+      if (draw)
+        schunk.mesh.draw (frame, schunk.chunk -> bpos, material);
     }
 
     frame.set_skybox (
@@ -151,47 +170,34 @@ namespace SH
     );
   }
 
-  World::World (Co::WorkQueue& queue, const Co::PropMap* props)
+  World::World (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
   {
-    view_cur_cpos = v3i (0, 0, 0);
+    stage_base = v3i (0, 0, 0);
 
     seed = 0xfeedbeef;
 
     texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
     sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);
+
+    for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
+      stage [c.x][c.y][c.z].mesh.init (queue, rc);
   }
 
-  const Chunk::Ptr& World::chunk_at (v3i cv)
+  World::StageChunk& World::stage_at (v3i cv)
   {
-    if (
-      cv.x >= stage_dim || cv.x < 0 ||
-      cv.y >= stage_dim || cv.y < 0 ||
-      cv.z >= stage_dim || cv.z < 0)
-    {
-      static const Chunk::Ptr null = nullptr;
-      return null;
-    }
-
+    cv = (stage_base + cv) % stage_dim;
+    if (cv.x < 0) cv.x += stage_dim;
+    if (cv.y < 0) cv.y += stage_dim;
+    if (cv.z < 0) cv.z += stage_dim;
     return stage [cv.x][cv.y][cv.z];
-  }
-
-  Block World::block_at (v3i bv)
-  {
-    v3i cv (bv.x >> 4, bv.y >> 4, bv.z >> 4) ;
-    bv = v3i (bv.x & 0xf, bv.y & 0xf, bv.z & 0xf);
-
-    if (cv.x >= stage_dim || cv.y >= stage_dim || cv.z >= stage_dim || cv.x < 0 || cv.y < 0 || cv.z < 0)
-      return Block (blocktype_void);
-    else
-      return chunk_at (cv) -> at (bv);
   }
 
   /*Co::Texture::Ptr World::sky_tex,
                    World::texture;*/
 
-  Co::Entity::Ptr create_world (Co::WorkQueue& queue, const Co::PropMap* props)
+  Co::Entity::Ptr create_world (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
   {
-    return queue.gc_attach (new World (queue, props));
+    return queue.gc_attach (new World (queue, rc, props));
   }
 
 } // namespace SH

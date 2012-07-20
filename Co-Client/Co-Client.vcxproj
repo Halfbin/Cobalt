@@ -52,6 +52,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>Co-Rk$(CoSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

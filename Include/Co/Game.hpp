@@ -28,9 +28,9 @@ namespace Co
     static Rk::StringRef ix_name () { return "Co::Game"; }
     typedef std::shared_ptr <Game> Ptr;
 
-    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Log& new_log) = 0;
+    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Log& new_log) = 0;
 
-    virtual Entity::Ptr create_entity (Rk::StringRef name, WorkQueue& queue, const PropMap* props = 0) = 0;
+    virtual Entity::Ptr create_entity (Rk::StringRef name, WorkQueue& queue, RenderContext& rc, const PropMap* props = 0) = 0;
 
     virtual void start (Co::Engine& engine) = 0;
     virtual void stop  () = 0;

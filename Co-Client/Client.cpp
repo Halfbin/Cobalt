@@ -229,7 +229,7 @@ namespace Co
             {
               char16 cp (wp & 0xffff);
 
-              // Are the top five bits are 11011?
+              // Are the top five bits 11011?
               if ((cp & 0xf800) == 0xd800) // Surrogate - Ignore for now
               {
                 
@@ -338,7 +338,7 @@ namespace Co
     // Start worker threads
     auto thread_renderer   = renderer;
     auto thread_filesystem = filesystem;
-    pool.resize (8);
+    pool.resize (7);
     for (auto thread = pool.begin (); thread != pool.end (); thread++)
     {
       thread -> execute (

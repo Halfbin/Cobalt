@@ -71,6 +71,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChunkMesh.cpp" />
     <ClCompile Include="World.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AnySuitable</InlineFunctionExpansion>
@@ -105,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Block.hpp" />
+    <ClInclude Include="ChunkMesh.hpp" />
     <ClInclude Include="World.hpp" />
     <ClInclude Include="Chunk.hpp" />
     <ClInclude Include="Common.hpp" />

@@ -28,9 +28,9 @@ namespace SH
   class Game :
     public Co::Game
   {
-    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
+    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log);
 
-    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*);
+    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, Co::RenderContext&, const Co::PropMap*);
 
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
@@ -55,7 +55,7 @@ namespace SH
 
   RK_MODULE_FACTORY (Game);
 
-  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log)
+  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log)
   {
     log_ptr = &new_log;
     log () << "- SH-Game: Initializing\n";
@@ -65,11 +65,11 @@ namespace SH
     engine.get_object (font_factory);
   }
 
-  Co::Entity::Ptr Game::create_entity (Rk::StringRef type, Co::WorkQueue& queue, const Co::PropMap* props)
+  Co::Entity::Ptr Game::create_entity (Rk::StringRef type, Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
   {
-    if      (type == "World")       return create_world (queue, props);
-    else if (type == "Spectator")   return create_spectator (queue, props);
-    else if (type == "TestEntity")  return create_test_entity (queue, props);
+    if      (type == "World")       return create_world       (queue, rc, props);
+    else if (type == "Spectator")   return create_spectator   (queue, rc, props);
+    else if (type == "TestEntity")  return create_test_entity (queue, rc, props);
     else                            return nullptr;
   }
 

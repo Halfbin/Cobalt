@@ -150,6 +150,8 @@ namespace Co
     virtual void init    (void* hwnd, const Clock& clock, Log& log);
     void         cleanup ();
     
+    virtual RenderContext& context ();
+
     // Frame exchange
     virtual void begin_point_geom (GeomCompilation::Ptr compilation, Spatial spat);
     virtual void end              ();

@@ -18,12 +18,11 @@
 
 #include <memory>
 
+#include "Common.hpp"
 #include "Block.hpp"
 
 namespace SH
 {
-  class World;
-
   class Chunk
   {
     void generate_impl (u32 seed);
@@ -31,35 +30,26 @@ namespace SH
   public:
     typedef std::shared_ptr <Chunk> Ptr;
 
-    static const int
-      dim          = 16,
-      lb_dim       = 4,
-      max_faces    = ((dim * dim * dim + 1) / 2) * 6,
-      max_vertices = max_faces * 4,
-      max_indices  = max_faces * 6
-    ;
+    // Data
+    Block blocks [chunk_dim][chunk_dim][chunk_dim];
 
-    // Resources
-    Co::GeomCompilation::Ptr compilation;
-    Co::StreamBuffer::Ptr    vertex_buffer,
-                             index_buffer;
+    // Caches
+    u16 opacity  [chunk_dim][chunk_dim]; // x, y
+    //u16 solidity [chunk_dim][chunk_dim];
 
     // State
-    Block     blocks [dim][dim][dim];
-    uptr      index_count;
-    bool      loaded,
-              loading,
-              dirty;
-    v3i       cpos,
+    bool loaded,
+         dirty;
+
+    // Identity
+    const v3i cpos,
               bpos;
 
     Chunk (v3i cpos) :
-      index_count (0),
       loaded  (false),
-      loading (false),
       dirty   (false),
       cpos    (cpos),
-      bpos    (cpos * dim)
+      bpos    (cpos * chunk_dim)
     { }
     
     Block& at (v3i bv)
@@ -67,13 +57,24 @@ namespace SH
       return blocks [bv.x][bv.y][bv.z];
     }
 
-    void init        (Co::WorkQueue& queue, Co::RenderContext& rc);
-    void generate    (Ptr self, Co::WorkQueue& queue, u32 seed);
-    uint count_faces (World& world, v3i stage_cpos);
-    void regen_mesh  (World& world, v3i stage_cpos);
-    void draw        (Co::Frame& frame, const Co::Material& mat);
+    Block at (v3i bv) const
+    {
+      return blocks [bv.x][bv.y][bv.z];
+    }
 
-    void slice (uint limit);
+    bool opaque (v3i bv) const
+    {
+      return (opacity [bv.x][bv.y] >> bv.z) & 1;
+    }
+
+    /*bool solid (v3i bv) const
+    {
+      return (solidity [bv.x][bv.y] >> bv.z) & 1;
+    }*/
+
+    void generate (Ptr self, Co::WorkQueue& queue, u32 seed);
+    
+    void regen_caches ();
 
   }; // class Chunk
 

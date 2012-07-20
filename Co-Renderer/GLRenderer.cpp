@@ -286,6 +286,7 @@ namespace Co
     
     // Shared context
     shared_rc = wglCreateContextAttribs (shared_dc, 0, context_attribs);
+    u32 code = Rk::ExceptionPrivate::GetLastError ();
     if (!shared_rc)
       throw std::runtime_error ("Error creating shared render context");
     
@@ -305,6 +306,7 @@ namespace Co
     );
 
     // Initialize GLEW
+    glewExperimental = true; // what in sam hell
     bool fail = glewInit () != GLEW_OK;
     if (fail)
       throw std::runtime_error ("Error initializing GLEW");
@@ -356,6 +358,11 @@ namespace Co
     target  = 0;
     format  = 0;
     wglCreateContextAttribs = 0;
+  }
+
+  RenderContext& GLRenderer::context ()
+  {
+    return *true_context;
   }
 
   //
@@ -444,12 +451,13 @@ namespace Co
         if (index_type)
         {
           uptr offset = index_size * mesh.base_index + geom -> comp -> index_base ();
+          u32 eb = geom -> comp -> element_base ();
           glDrawElementsBaseVertex (
             prim_type,
             mesh.element_count,
             index_type,
             (void*) offset,
-            mesh.base_element + geom -> comp -> element_base ()
+            mesh.base_element + eb
           );
           check_gl ("glDrawElementsBaseVertex");
         }

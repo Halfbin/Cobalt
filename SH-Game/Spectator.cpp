@@ -52,7 +52,7 @@ namespace SH
     }
 
   public:
-    Spectator (Co::WorkQueue&, const Co::PropMap*)
+    Spectator (Co::WorkQueue&, Co::RenderContext& rc, const Co::PropMap*)
     {
       cur.position = v3f (0.0f, 0.0f, 0.0f);
       cur.orientation = Co::Quat (0.785f, v3f (0, 0, 1));
@@ -61,9 +61,9 @@ namespace SH
 
   };
 
-  Co::Entity::Ptr create_spectator (Co::WorkQueue& queue, const Co::PropMap* props)
+  Co::Entity::Ptr create_spectator (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
   {
-    return queue.gc_attach (new Spectator (queue, props));
+    return queue.gc_attach (new Spectator (queue, rc, props));
   }
 
 }

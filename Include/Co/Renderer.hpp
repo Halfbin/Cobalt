@@ -32,6 +32,8 @@ namespace Co
     virtual void init         (void* hwnd, const Clock& clock, Log& log) = 0;
     virtual void render_frame () = 0;
 
+    virtual RenderContext& context () = 0;
+
   };
 
 } // namespace Co

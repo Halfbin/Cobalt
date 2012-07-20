@@ -111,7 +111,7 @@ namespace Co
       input_sink = 0;
       running    = false;
 
-      game -> init (*this, *queue, host -> log);
+      game -> init (*this, *queue, renderer -> context (), host -> log);
     }
 
     void EngineImpl::start () 
@@ -198,7 +198,7 @@ namespace Co
       if (!class_name)
         throw std::invalid_argument ("class_name is nil");
 
-      auto ent = game -> create_entity (class_name, *queue, props);
+      auto ent = game -> create_entity (class_name, *queue, renderer -> context (), props);
 
       if (ent)
       {

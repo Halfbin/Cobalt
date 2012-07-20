@@ -60,7 +60,7 @@ namespace SH
     { }
 
   public:
-    TestEntity (Co::WorkQueue& queue, const Co::PropMap*)
+    TestEntity (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap*)
     {
       spatial.position = v3f (75.0f, 66.0f, 75.0f);
       spatial.orientation = nil;
@@ -82,9 +82,9 @@ namespace SH
   Co::Material     TestEntity::mat;
   Co::Font::Ptr    TestEntity::font;*/
 
-  Co::Entity::Ptr create_test_entity (Co::WorkQueue& queue, const Co::PropMap* props)
+  Co::Entity::Ptr create_test_entity (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
   {
-    return queue.gc_attach (new TestEntity (queue, props));
+    return queue.gc_attach (new TestEntity (queue, rc, props));
   }
 
 } // namespace SH

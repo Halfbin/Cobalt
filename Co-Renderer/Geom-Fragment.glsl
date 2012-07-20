@@ -22,7 +22,9 @@ in vec4 xformed_position;
 in vec2 xformed_tcoords;
 in vec4 xformed_colour;
 
-vec4 pow (in vec4 val, in float ex)
+out vec4 frag;
+
+vec4 vpow (in vec4 val, in float ex)
 {
   return vec4 (
     pow (val.x, ex),
@@ -50,5 +52,5 @@ void main ()
         ref_emissive = mat_emissive;
   float ref_exponent = mat_exponent;*/
 
-  gl_FragColor = pow (xformed_colour, gamma) * texel_diffuse;
+  frag = vpow (xformed_colour, gamma) * texel_diffuse;
 }

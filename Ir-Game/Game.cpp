@@ -30,15 +30,15 @@ namespace Ir
   class Game :
     public Co::Game
   {
-    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log);
+    virtual void init (Co::Engine&, Co::WorkQueue&, Co::RenderContext&, Co::Log&);
 
-    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*);
+    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, Co::RenderContext&, const Co::PropMap*);
 
-    virtual void start (Co::Engine& engine);
+    virtual void start (Co::Engine&);
     virtual void stop  ();
     
-    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count);
-    virtual void render (Co::Frame& frame, float alpha);
+    virtual void tick   (float time, float step, Co::WorkQueue&, const Co::UIEvent* ui_events, uint ui_event_count);
+    virtual void render (Co::Frame&, float alpha);
 
   public:
     static Ptr create ()
@@ -50,7 +50,7 @@ namespace Ir
 
   RK_MODULE_FACTORY (Game);
 
-  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::Log& new_log)
+  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log)
   {
     log_ptr = &new_log;
     log () << "- Ir-Game: Initializing\n";
@@ -82,7 +82,7 @@ namespace Ir
     State::render_current (frame, alpha);
   }
 
-  Co::Entity::Ptr Game::create_entity (Rk::StringRef class_name, Co::WorkQueue&, const Co::PropMap*)
+  Co::Entity::Ptr Game::create_entity (Rk::StringRef class_name, Co::WorkQueue&, Co::RenderContext&, const Co::PropMap*)
   {
     throw std::invalid_argument ("No such class");
   }

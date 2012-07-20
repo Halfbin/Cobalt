@@ -4,15 +4,40 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="TestEntity.cpp" />
     <ClCompile Include="Spectator.cpp" />
-    <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="Noise.cpp" />
-    <ClCompile Include="World.cpp" />
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Chunk</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="ChunkMesh.cpp">
+      <Filter>ChunkMesh</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="Noise.hpp" />
-    <ClInclude Include="Chunk.hpp" />
     <ClInclude Include="Block.hpp" />
-    <ClInclude Include="World.hpp" />
+    <ClInclude Include="Chunk.hpp">
+      <Filter>Chunk</Filter>
+    </ClInclude>
+    <ClInclude Include="World.hpp">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="ChunkMesh.hpp">
+      <Filter>ChunkMesh</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Chunk">
+      <UniqueIdentifier>{e2f5cd42-ef0b-4ac7-8894-99dac95ff924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="World">
+      <UniqueIdentifier>{94f4d533-d585-4da1-9a5a-e2e28c063c0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChunkMesh">
+      <UniqueIdentifier>{cb5d45c3-aafc-4213-a4d7-402e82a8edfb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

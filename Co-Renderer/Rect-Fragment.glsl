@@ -12,7 +12,9 @@ uniform sampler2DRect tex;
 uniform vec4          linear_colour;
 uniform vec4          const_colour;
 
-vec3 pow (in vec3 val, in float ex)
+out vec4 frag;
+
+vec3 vpow (in vec3 val, in float ex)
 {
   return vec3 (
     pow (val.x, ex),
@@ -27,6 +29,6 @@ void main ()
 {
   vec4 texel    = texelFetch (tex, ivec2 (xformed_tcoords));
   vec4 linear   = linear_colour * texel;//vec4 (/*pow (*/texel.rgb/*, gamma)*/, texel.a);
-  vec4 constant = vec4 (pow (const_colour.rgb, gamma), 1.0f);
-  gl_FragColor = mix (linear, constant, const_colour.a);
+  vec4 constant = vec4 (vpow (const_colour.rgb, gamma), 1.0f);
+  frag = mix (linear, constant, const_colour.a);
 }

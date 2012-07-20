@@ -10,7 +10,9 @@ uniform vec4        blend_colour;
 
 in vec3 cube_dir;
 
-vec3 pow (in vec3 a, in float ex)
+out vec4 frag;
+
+vec3 vpow (in vec3 a, in float ex)
 {
   return vec3 (
     pow (a.x, ex),
@@ -23,9 +25,9 @@ const float gamma = 2.2f;
 
 void main ()
 {
-  gl_FragColor = vec4 (
+  frag = vec4 (
     mix (
-      pow (blend_colour.rgb, gamma),
+      vpow (blend_colour.rgb, gamma),
       texture (tex_cube, cube_dir).rgb,
       blend_colour.a
     ),
