@@ -119,9 +119,9 @@ namespace Co
       if (running)
         throw std::logic_error ("Engine already running");
 
-      log () << "- Engine starting\n";
-
       game -> start (*this);
+
+      log () << "* Engine starting\n";
 
       running = true;
       prev_real_time   = get_time ();
@@ -184,7 +184,8 @@ namespace Co
 
     void EngineImpl::stop ()
     {
-      log () << "- Engine stopping\n";
+      log () << "* Engine stopping\n"
+             << "i Simulation time " << sim_time << "s\n";
       running = false;
     }
 

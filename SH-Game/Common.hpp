@@ -37,7 +37,8 @@ namespace SH
 
   static const int
     chunk_dim          = 16, // must be power of two and thus even
-    chunk_max_faces    = chunk_dim * chunk_dim * chunk_dim * 3,
+    chunk_volume       = chunk_dim * chunk_dim * chunk_dim,
+    chunk_max_faces    = chunk_volume * 3,
     chunk_max_vertices = chunk_max_faces * 4,
     chunk_max_indices  = chunk_max_faces * 6,
 
@@ -49,6 +50,29 @@ namespace SH
     chunk_extent (chunk_dim, chunk_dim, chunk_dim),
     stage_extent (stage_dim, stage_dim, stage_dim)
   ;
+
+  static inline uint bit_count (u16 word)
+  {
+    #if 1
+      return (uint) __popcnt16 (short (word));
+    #else
+      u16 count = word;
+      count = ((count >> 1) & 0x5555) + (count & 0x5555);
+      count = ((count >> 2) & 0x3333) + (count & 0x3333);
+      count = ((count >> 4) & 0x0f0f) + (count & 0x0f0f);
+      count = ((count >> 8) & 0x00ff) + (count & 0x00ff);
+      return count;
+    #endif
+  }
+
+  static inline u16 rotr (u16 word, u8 dist)
+  {
+    #if 1
+      return (u16) _rotr16 (ushort (word), uchar (dist));
+    #else
+      return (word >> dist) | (word << (16 - dist));
+    #endif
+  }
 
 }
 

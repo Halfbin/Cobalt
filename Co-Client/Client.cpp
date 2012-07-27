@@ -338,7 +338,7 @@ namespace Co
     // Start worker threads
     auto thread_renderer   = renderer;
     auto thread_filesystem = filesystem;
-    pool.resize (7);
+    pool.resize (4);
     for (auto thread = pool.begin (); thread != pool.end (); thread++)
     {
       thread -> execute (

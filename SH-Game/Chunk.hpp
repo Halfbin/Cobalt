@@ -25,6 +25,8 @@ namespace SH
 {
   class Chunk
   {
+    float gen_time;
+
     void generate_impl (u32 seed);
 
   public:
@@ -34,8 +36,11 @@ namespace SH
     Block blocks [chunk_dim][chunk_dim][chunk_dim];
 
     // Caches
-    u16 opacity  [chunk_dim][chunk_dim]; // x, y
+    u16 x_opacity  [chunk_dim][chunk_dim],
+        y_opacity  [chunk_dim][chunk_dim],
+        z_opacity  [chunk_dim][chunk_dim];
     //u16 solidity [chunk_dim][chunk_dim];
+    uint internal_face_count;
 
     // State
     bool loaded,
@@ -45,26 +50,26 @@ namespace SH
     const v3i cpos,
               bpos;
 
-    Chunk (v3i cpos) :
-      loaded  (false),
-      dirty   (false),
-      cpos    (cpos),
-      bpos    (cpos * chunk_dim)
-    { }
-    
+    Chunk (v3i cpos);
+    ~Chunk ();
+
+    static uptr high_mem ();
+
+    float get_gen_time () const;
+
     Block& at (v3i bv)
     {
       return blocks [bv.x][bv.y][bv.z];
     }
 
-    Block at (v3i bv) const
+    __forceinline Block at (v3i bv) const
     {
       return blocks [bv.x][bv.y][bv.z];
     }
 
     bool opaque (v3i bv) const
     {
-      return (opacity [bv.x][bv.y] >> bv.z) & 1;
+      return (z_opacity [bv.x][bv.y] >> bv.z) & 1;
     }
 
     /*bool solid (v3i bv) const

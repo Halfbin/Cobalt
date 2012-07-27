@@ -6,6 +6,8 @@
 // Implements
 #include "ChunkMesh.hpp"
 
+#include <Co/Clock.hpp>
+
 namespace SH
 {
   struct BlockTCoords
@@ -56,10 +58,10 @@ namespace SH
 
   struct Vertex
   {
-    u8 x, y, z, w;
-    u8 s, t, p, q;
-    u8 r, g, b, a;
-    u8 i, j, k, m;
+    u8 x, y, z;//, w;
+    u8 s, t;//, p, q;
+    u8 r, g, b;//, a;
+    //u8 i, j, k, m;
 
     Vertex ()
     { }
@@ -72,12 +74,11 @@ namespace SH
     
   };
 
-  enum
-  {
+  static const u32
     vertex_size = sizeof (Vertex),
     max_vertex_bytes = chunk_max_vertices * vertex_size,
     max_index_bytes  = chunk_max_indices  * 2
-  };
+  ;
 
   //
   // = ChunkMesh =======================================================================================================
@@ -92,78 +93,18 @@ namespace SH
     index_buffer  = rc.create_stream (queue, max_index_bytes  / 4);
     
     static const Co::GeomAttrib attribs [3] = {
-      { Co::attrib_position, Co::attrib_u8,  16, 0 },
-      { Co::attrib_tcoords,  Co::attrib_u8n, 16, 4 },
-      { Co::attrib_colour,   Co::attrib_u8n, 16, 8 },
+      { Co::attrib_position, Co::attrib_u8,  8, 0 },
+      { Co::attrib_tcoords,  Co::attrib_u8n, 8, 3 },
+      { Co::attrib_colour,   Co::attrib_u8n, 8, 5 },
     };
 
     compilation = rc.create_compilation (queue, attribs, vertex_buffer, index_buffer, Co::index_u16);
   }
   
-  static inline uint bit_count (u16 word)
-  {
-    #if 1
-      return (uint) __popcnt16 (short (word));
-    #else
-      u16 count = word;
-      count = ((count >> 1) & 0x5555) + (count & 0x5555);
-      count = ((count >> 2) & 0x3333) + (count & 0x3333);
-      count = ((count >> 4) & 0x0f0f) + (count & 0x0f0f);
-      count = ((count >> 8) & 0x00ff) + (count & 0x00ff);
-      return count;
-    #endif
-  }
-
-  static inline u16 rotr (u16 word, u8 dist)
-  {
-    #if 1
-      return (u16) _rotr16 (ushort (word), uchar (dist));
-    #else
-      return (word >> dist) | (word << (16 - dist));
-    #endif
-  }
-
   uint ChunkMesh::count_faces (const Chunk& chunk, const Chunk* neighbours [6])
   {
     // Now we find transitions in each direction
-    uint face_count = 0;
-
-    // Vertical
-    for (int x = 0; x != chunk_dim; x++)
-    {
-      for (int y = 0; y != chunk_dim; y++)
-      {
-        u16 bits = chunk.opacity [x][y];
-        u16 trans = (bits ^ rotr (bits, 1)) & 0x7fff;
-        face_count += bit_count (trans);
-      }
-    }
-
-    // Left-Right
-    for (int x = 0; x != chunk_dim; x++)
-    {
-      for (int z = 0; z != chunk_dim; z++)
-      {
-        u16 bits = 0;
-        for (int y = 0; y != chunk_dim; y++)
-          bits |= u16 (chunk.opaque (v3i (x, y, z))) << y;
-        u16 trans = (bits ^ rotr (bits, 1)) & 0x7fff;
-        face_count += bit_count (trans);
-      }
-    }
-
-    // Front-Back
-    for (int y = 0; y != chunk_dim; y++)
-    {
-      for (int z = 0; z != chunk_dim; z++)
-      {
-        u16 bits = 0;
-        for (int x = 0; x != chunk_dim; x++)
-          bits |= u16 (chunk.opaque (v3i (x, y, z))) << x;
-        u16 trans = (bits ^ rotr (bits, 1)) & 0x7fff;
-        face_count += bit_count (trans);
-      }
-    }
+    uint face_count = chunk.internal_face_count;
 
     // Finally add transitions between this chunk and the next
     // This gets ugly
@@ -248,15 +189,34 @@ namespace SH
     return face_count;
   }
 
+  static float regen_time = 0.0f;
+  static float count_time = 0.0f;
+
+  float ChunkMesh::get_regen_time ()
+  {
+    return regen_time;
+  }
+
+  float ChunkMesh::get_count_time ()
+  {
+    return count_time;
+  }
+
   void ChunkMesh::regen (const Chunk& chunk, const Chunk* neighbours [6])
   {
-    log () << "- Regenning chunk (" << chunk.cpos.x << ", " << chunk.cpos.y << ", " << chunk.cpos.z << ")\n";
+    //log () << "- Regenning chunk (" << chunk.cpos.x << ", " << chunk.cpos.y << ", " << chunk.cpos.z << ")\n";
+
+    Co::Clock prof;
 
     uint face_count = count_faces (chunk, neighbours);
     index_count = face_count * 6;
 
     if (face_count == 0)
       return;
+
+    //float post_count = prof.time ();
+
+    //count_time += post_count;
 
     // Only map as much as we need
     uint vertex_count = face_count * 4;
@@ -267,8 +227,9 @@ namespace SH
       return;
     }
 
-    uint check_face_count = 0;
+    //uint check_face_count = 0;
     
+
     // Inner
     for (auto b = iteration (v3i (0, 0, 0), chunk_extent); b; b.advance ())
     {
@@ -277,8 +238,8 @@ namespace SH
       if (block.empty ())
         continue;
 
-      auto tcoords = block_tcoords [block.type];
-      const i8 side_s = tcoords.sides.x,
+      const auto tcoords = block_tcoords [block.type];
+      const u8 side_s = tcoords.sides.x,
                side_t = tcoords.sides.y,
                top_s  = tcoords.top.x,
                top_t  = tcoords.top.y,
@@ -286,68 +247,88 @@ namespace SH
                bot_t  = tcoords.bottom.y,
                tg     = BlockTCoords::t;
 
-      if (b.x < chunk_dim - 1 ? chunk.at (b + v3i (1, 0, 0)).empty () : !neighbours [0] -> opaque (v3i (0, b.y, b.z)))
+      // Because the cl optimizer is apparently retarded
+      const u8 x0 = b.x, x1 = x0 + 1,
+               y0 = b.y, y1 = y0 + 1,
+               z0 = b.z, z1 = z0 + 1;
+
+      const auto f_light = SH::f_light,
+                 b_light = SH::b_light,
+                 l_light = SH::l_light,
+                 r_light = SH::t_light,
+                 t_light = SH::t_light,
+                 u_light = SH::u_light;
+
+      if (x0 < chunk_dim - 1 ? chunk.at (b + v3i (1, 0, 0)).empty () : !neighbours [0] -> opaque (v3i (0, b.y, b.z)))
       {
         // front
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, side_s +  0, side_t +  0, f_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, side_s +  0, side_t + tg, f_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, side_s + tg, side_t +  0, f_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, side_s + tg, side_t + tg, f_light);
-        check_face_count++;
+        vertices [0] = Vertex (x1, y0, z1, side_s +  0, side_t +  0, f_light);
+        vertices [1] = Vertex (x1, y0, z0, side_s +  0, side_t + tg, f_light);
+        vertices [2] = Vertex (x1, y1, z1, side_s + tg, side_t +  0, f_light);
+        vertices [3] = Vertex (x1, y1, z0, side_s + tg, side_t + tg, f_light);
+        vertices += 4;
+        //check_face_count++;
       }
 
-      if (b.x > 0 ? chunk.at (b + v3i (-1, 0, 0)).empty () : !neighbours [1] -> opaque (v3i (chunk_dim - 1, b.y, b.z)))
+      if (x0 > 0 ? chunk.at (b + v3i (-1, 0, 0)).empty () : !neighbours [1] -> opaque (v3i (chunk_dim - 1, b.y, b.z)))
       {
         // back
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, side_s +  0, side_t +  0, b_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, side_s +  0, side_t + tg, b_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, side_s + tg, side_t +  0, b_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, side_s + tg, side_t + tg, b_light);
-        check_face_count++;
+        vertices [0] = Vertex (x0, y1, z1, side_s +  0, side_t +  0, b_light);
+        vertices [1] = Vertex (x0, y1, z0, side_s +  0, side_t + tg, b_light);
+        vertices [2] = Vertex (x0, y0, z1, side_s + tg, side_t +  0, b_light);
+        vertices [3] = Vertex (x0, y0, z0, side_s + tg, side_t + tg, b_light);
+        vertices += 4;
+        //check_face_count++;
       }
       
-      if (b.y < chunk_dim - 1 ? chunk.at (b + v3i (0, 1, 0)).empty () : !neighbours [2] -> opaque (v3i (b.x, 0, b.z)))
+      if (y0 < chunk_dim - 1 ? chunk.at (b + v3i (0, 1, 0)).empty () : !neighbours [2] -> opaque (v3i (b.x, 0, b.z)))
       {
         // left
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, side_s +  0, side_t +  0, l_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, side_s +  0, side_t + tg, l_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, side_s + tg, side_t +  0, l_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, side_s + tg, side_t + tg, l_light);
-        check_face_count++;
+        vertices [0] = Vertex (x1, y1, z1, side_s +  0, side_t +  0, l_light);
+        vertices [1] = Vertex (x1, y1, z0, side_s +  0, side_t + tg, l_light);
+        vertices [2] = Vertex (x0, y1, z1, side_s + tg, side_t +  0, l_light);
+        vertices [3] = Vertex (x0, y1, z0, side_s + tg, side_t + tg, l_light);
+        vertices += 4;
+        //check_face_count++;
       }
       
-      if (b.y > 0 ? chunk.at (b + v3i (0, -1, 0)).empty () : !neighbours [3] -> opaque (v3i (b.x, chunk_dim - 1, b.z)))
+      if (y0 > 0 ? chunk.at (b + v3i (0, -1, 0)).empty () : !neighbours [3] -> opaque (v3i (b.x, chunk_dim - 1, b.z)))
       {
         // right
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, side_s +  0, side_t +  0, r_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, side_s +  0, side_t + tg, r_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, side_s + tg, side_t +  0, r_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, side_s + tg, side_t + tg, r_light);
-        check_face_count++;
+        vertices [0] = Vertex (x0, y0, z1, side_s +  0, side_t +  0, r_light);
+        vertices [1] = Vertex (x0, y0, z0, side_s +  0, side_t + tg, r_light);
+        vertices [2] = Vertex (x1, y0, z1, side_s + tg, side_t +  0, r_light);
+        vertices [3] = Vertex (x1, y0, z0, side_s + tg, side_t + tg, r_light);
+        vertices += 4;
+        //check_face_count++;
       }
       
-      if (b.z < chunk_dim - 1 ? chunk.at (b + v3i (0, 0, 1)).empty () : !neighbours [4] -> opaque (v3i (b.x, b.y, 0)))
+      if (z0 < chunk_dim - 1 ? chunk.at (b + v3i (0, 0, 1)).empty () : !neighbours [4] -> opaque (v3i (b.x, b.y, 0)))
       {
         // top
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 1, top_s +  0, top_t +  0, t_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 1, top_s +  0, top_t + tg, t_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 1, top_s + tg, top_t +  0, t_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 1, top_s + tg, top_t + tg, t_light);
-        check_face_count++;
+        vertices [0] = Vertex (x1, y1, z1, top_s +  0, top_t +  0, t_light);
+        vertices [1] = Vertex (x0, y1, z1, top_s +  0, top_t + tg, t_light);
+        vertices [2] = Vertex (x1, y0, z1, top_s + tg, top_t +  0, t_light);
+        vertices [3] = Vertex (x0, y0, z1, top_s + tg, top_t + tg, t_light);
+        vertices += 4;
+        //check_face_count++;
       }
       
-      if (b.z > 0 ? chunk.at (b + v3i (0, 0, -1)).empty () : !neighbours [5] -> opaque (v3i (b.x, b.y, chunk_dim - 1)))
+      if (z0 > 0 ? chunk.at (b + v3i (0, 0, -1)).empty () : !neighbours [5] -> opaque (v3i (b.x, b.y, chunk_dim - 1)))
       {
         // bottom
-        *vertices++ = Vertex (b.x + 0, b.y + 1, b.z + 0, bot_s +  0, bot_t +  0, u_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 1, b.z + 0, bot_s +  0, bot_t + tg, u_light);
-        *vertices++ = Vertex (b.x + 0, b.y + 0, b.z + 0, bot_s + tg, bot_t +  0, u_light);
-        *vertices++ = Vertex (b.x + 1, b.y + 0, b.z + 0, bot_s + tg, bot_t + tg, u_light);
-        check_face_count++;
+        vertices [0] = Vertex (x0, y1, z0, bot_s +  0, bot_t +  0, u_light);
+        vertices [1] = Vertex (x1, y1, z0, bot_s +  0, bot_t + tg, u_light);
+        vertices [2] = Vertex (x0, y0, z0, bot_s + tg, bot_t +  0, u_light);
+        vertices [3] = Vertex (x1, y0, z0, bot_s + tg, bot_t + tg, u_light);
+        vertices += 4;
+        //check_face_count++;
       }
     }
 
-    assert (check_face_count == face_count);
+    regen_time += prof.time ();
+
+    //assert (check_face_count == face_count);
 
     bool ok = vertex_buffer -> commit (vertex_count * sizeof (Vertex));
     if (!ok)

@@ -105,6 +105,8 @@ namespace SH
       loaded [c.x][c.y][c.z] = schunk.chunk && schunk.chunk -> loaded;
     }*/
 
+    bool regen_done = false;
+
     v3i v = stage_extent - v3i (1, 1, 1); // why does this work
     for (auto c = iteration (v3i (1, 1, 1), v); c; c.advance ())
     {
@@ -114,7 +116,7 @@ namespace SH
       if (!schunk.chunk || !schunk.chunk -> loaded)
         continue;
 
-      if (schunk.chunk -> dirty)
+      if (!regen_done && schunk.chunk -> dirty)
       {
         const Chunk* neighbours [6] = {
           stage_at (c + v3i ( 1,  0,  0)).chunk.get (),
@@ -137,6 +139,7 @@ namespace SH
         {
           schunk.mesh.regen (*schunk.chunk, neighbours);
           schunk.chunk -> dirty = false;
+          regen_done = true;
         }
         else
         {
@@ -181,6 +184,14 @@ namespace SH
 
     for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
       stage [c.x][c.y][c.z].mesh.init (queue, rc);
+  }
+
+  World::~World ()
+  {
+    log ()
+      << "i high_cmem: " << Chunk::high_mem () << '\n'
+      << "i count_time: " << ChunkMesh::get_count_time () << '\n'
+      << "i regen_time: " << ChunkMesh::get_regen_time () << '\n';
   }
 
   World::StageChunk& World::stage_at (v3i cv)

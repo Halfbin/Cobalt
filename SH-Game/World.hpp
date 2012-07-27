@@ -58,6 +58,7 @@ namespace SH
 
   public:
     World (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props);
+    ~World ();
 
   };
 

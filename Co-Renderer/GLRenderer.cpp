@@ -370,7 +370,7 @@ namespace Co
   //
   GLContext::Ptr GLRenderer::create_context_impl ()
   {
-    log () << "- Creating render context on GLRenderer\n";
+    //log () << "- Creating render context on GLRenderer\n";
     return GLContext::Ptr (
       new GLContext (device_mutex, wglCreateContextAttribs, shared_dc, shared_rc, target, context_attribs)
     );

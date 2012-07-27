@@ -42,7 +42,8 @@ namespace SH
 
   inline float ease (float t)
   {
-    return 6.0f * std::pow (t, 5) - 15.0f * std::pow (t, 4) + 10.0f * std::pow (t, 3);
+    const auto t2 = t * t;
+    return /*t * t * t * (t * (t * 6 - 15) + 10);*/3.0f * t2 - 2.0f * t2 * t;//6.0f * std::pow (t, 5) - 15.0f * std::pow (t, 4) + 10.0f * std::pow (t, 3);
   }
 
   inline v2f ease (v2f t)
@@ -94,7 +95,13 @@ namespace SH
   inline float noise_grad (v3f p, v3i cell, u32 seed)
   {
     u32 index = hash (cell) ^ (seed_noise * seed);
-    return dot (p - cell, noise_grads_3d [index & 0x1f]);
+    //return dot (p - cell, noise_grads_3d [index & 0x1f]);
+
+    index &= 0xf;
+    p -= cell;
+    float u = (index < 8) ? p.x : p.y;
+    float v = (index < 4) ? p.y : (index == 12 || index == 14) ? p.x : p.z;
+    return ((index & 1) ? -u : u) + ((index & 2) ? -v : v);
   }
 
   extern float perlin_2d_min,

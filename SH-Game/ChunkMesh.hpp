@@ -36,6 +36,9 @@ namespace SH
     void regen (const Chunk& chunk, const Chunk* neighbours [6]);
     void draw  (Co::Frame& frame, v3i bpos, const Co::Material& mat);
 
+    static float get_regen_time ();
+    static float get_count_time ();
+
   };
 
 }

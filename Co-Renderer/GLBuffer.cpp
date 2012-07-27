@@ -41,18 +41,19 @@ namespace Co
     glBindBuffer (GL_ARRAY_BUFFER, name);
     check_gl ("glBindBuffer");
 
+    u32 inval_flag = GL_MAP_INVALIDATE_RANGE_BIT;
+
     if (map_offset + reserve > capacity)
     {
-      glBufferData (GL_ARRAY_BUFFER, capacity, 0, GL_STREAM_DRAW);
-      check_gl ("glBufferData");
       map_offset = 0;
+      inval_flag = GL_MAP_INVALIDATE_BUFFER_BIT;
     }
 
     void* map = glMapBufferRange (
       GL_ARRAY_BUFFER,
       map_offset,
       reserve,
-      GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
+      inval_flag | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
     );
 
     if (!map)
@@ -83,7 +84,7 @@ namespace Co
 
     map_length = 0;
 
-    bool ok = glUnmapBuffer (GL_ARRAY_BUFFER);
+    auto ok = glUnmapBuffer (GL_ARRAY_BUFFER);
     if (!ok)
     {
       auto code = glGetError ();

@@ -57,6 +57,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <DisableLanguageExtensions>true</DisableLanguageExtensions>
       <PreprocessorDefinitions>FT2_BUILD_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

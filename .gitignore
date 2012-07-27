@@ -11,6 +11,7 @@ ipch/
 *.unsuccessfulbuild
 *.cache
 *.log
+*.vsp
 
 Debug/
 */Debug/
@@ -23,6 +24,7 @@ NoGit/
 *.opensdf
 *.suo
 *.vcxproj.user
+*.psess
 
 thumbs.db
 desktop.ini
