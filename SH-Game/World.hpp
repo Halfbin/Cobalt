@@ -19,6 +19,7 @@
 #include "Chunk.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace SH
 {
@@ -42,7 +43,20 @@ namespace SH
 
     StageChunk stage [stage_dim][stage_dim][stage_dim];
     v3i        stage_base;
-    //v3i        view_cur_cpos;
+
+    struct DrawChunk
+    {
+      StageChunk* schunk;
+      uint        dist;
+
+      DrawChunk (StageChunk* schunk, uint dist) :
+        schunk (schunk),
+        dist   (dist)
+      { }
+      
+    };
+
+    std::vector <DrawChunk> draw_list;
     
     Cache cache;
     

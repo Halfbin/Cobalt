@@ -9,6 +9,8 @@
 // Uses
 #include "Common.hpp"
 
+#include <algorithm>
+
 namespace SH
 {
   Co::Spatial view_cur  (nil),
@@ -93,62 +95,25 @@ namespace SH
     //   Sort chunks front to back
     //   Occlusion culling (oh boy)
 
-
     Co::Material material = nil;
     material.diffuse_tex = texture -> get ();
 
-    /*bool loaded [stage_dim][stage_dim][stage_dim];
-
-    for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
-    {
-      auto& schunk = stage [c.x][c.y][c.z];
-      loaded [c.x][c.y][c.z] = schunk.chunk && schunk.chunk -> loaded;
-    }*/
-
-    bool regen_done = false;
-
     v3i v = stage_extent - v3i (1, 1, 1); // why does this work
+
+    StageChunk* regen_schunk = nullptr;
+    bool regen_in_frustum = false;
+    int  regen_dist = 0x7fffffff;
+    v3i  regen_cpos;
+
     for (auto c = iteration (v3i (1, 1, 1), v); c; c.advance ())
     {
-      //v3i cp = (stage_base + c) % stage_dim;
       auto& schunk = stage_at (c);
 
       if (!schunk.chunk || !schunk.chunk -> loaded)
         continue;
 
-      if (!regen_done && schunk.chunk -> dirty)
-      {
-        const Chunk* neighbours [6] = {
-          stage_at (c + v3i ( 1,  0,  0)).chunk.get (),
-          stage_at (c + v3i (-1,  0,  0)).chunk.get (),
-          stage_at (c + v3i ( 0,  1,  0)).chunk.get (),
-          stage_at (c + v3i ( 0, -1,  0)).chunk.get (),
-          stage_at (c + v3i ( 0,  0,  1)).chunk.get (),
-          stage_at (c + v3i ( 0,  0, -1)).chunk.get ()
-        };
-
-        bool regen = true;
-
-        for (uint i = 0; i != 6; i++)
-        {
-          if (!neighbours [i] || !neighbours [i] -> loaded)
-            regen = false;
-        }
-
-        if (regen)
-        {
-          schunk.mesh.regen (*schunk.chunk, neighbours);
-          schunk.chunk -> dirty = false;
-          regen_done = true;
-        }
-        else
-        {
-          continue;
-        }
-      }
-
-      // Frustum cull chunk
-      bool draw = true;
+      // Frustum culling
+      bool visible = true;
 
       for (uint i = 0; i != 4; i++)
       {
@@ -157,14 +122,86 @@ namespace SH
         static const float radius = float (chunk_dim / 2) * 1.73205f; // 8rt3
         if (dot (centre, planes [i]) < -radius)
         {
-          draw = false;
+          visible = false;
           break;
         }
       }
 
-      if (draw)
-        schunk.mesh.draw (frame, schunk.chunk -> bpos, material);
+      if (visible)
+      {
+        auto offset = stage_corner - c;
+        int dist = abs (offset.x) + abs (offset.y) + abs (offset.z);
+        
+        if (schunk.chunk -> dirty && dist < regen_dist)
+        {
+          regen_schunk = &schunk;
+          regen_in_frustum = true;
+          regen_dist = dist;
+          regen_cpos = c;
+        }
+
+        draw_list.push_back (DrawChunk (&schunk, dist));
+      }
+      else if (!regen_in_frustum)
+      {
+        regen_schunk = &schunk;
+        regen_cpos = c;
+      }
     }
+
+    // Regen dirty mesh
+    bool regen = regen_schunk != nullptr;
+
+    if (regen)
+    {
+      const Chunk* neighbours [6] = {
+        stage_at (regen_cpos + v3i ( 1,  0,  0)).chunk.get (),
+        stage_at (regen_cpos + v3i (-1,  0,  0)).chunk.get (),
+        stage_at (regen_cpos + v3i ( 0,  1,  0)).chunk.get (),
+        stage_at (regen_cpos + v3i ( 0, -1,  0)).chunk.get (),
+        stage_at (regen_cpos + v3i ( 0,  0,  1)).chunk.get (),
+        stage_at (regen_cpos + v3i ( 0,  0, -1)).chunk.get ()
+      };
+
+      for (uint i = 0; regen && (i != 6); i++)
+      {
+        if (!neighbours [i] || !neighbours [i] -> loaded)
+          regen = false;
+      }
+
+      if (regen)
+      {
+        regen_schunk -> mesh.regen (*regen_schunk -> chunk, neighbours);
+        regen_schunk -> chunk -> dirty = false;
+      }
+    }
+
+    // Sort visible chunks by distance
+    std::sort (
+      draw_list.begin (),
+      draw_list.end   (),
+      [] (const DrawChunk& a, const DrawChunk& b)
+        -> bool
+      {
+        return a.dist < b.dist;
+      }
+    );
+
+    // Draw visible chunks
+    for (auto iter = draw_list.begin (); iter != draw_list.end (); iter++)
+    {
+      auto* schunk = iter -> schunk;
+
+      if (
+        schunk -> chunk &&
+        schunk -> chunk -> loaded &&
+        !schunk -> chunk -> dirty)
+      {
+        schunk -> mesh.draw (frame, schunk -> chunk -> bpos, material);
+      }
+    }
+
+    draw_list.clear ();
 
     frame.set_skybox (
       sky_tex -> get (),

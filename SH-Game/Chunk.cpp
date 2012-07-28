@@ -50,17 +50,17 @@ namespace SH
       for (auto b = iteration (v3i (0, 0, 0), chunk_extent); b; b.advance ())
         blocks [b.x][b.y][b.z].type = blocktype_air;
     }
-    else// if (bpos.z > 25)
+    else if (bpos.z > 25)
     {
       for (int x = 0; x != chunk_dim; x++)
       {
         for (int y = 0; y != chunk_dim; y++)
         {
           v2f noise_pos = cpos.xy () + v2f (x, y) * (1.0f / chunk_dim);
-          int level = int (64.0f + 22.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 2, 0.25f));
+          int level = int (64.0f + 22.0f * noise_perlin_harmonic (noise_pos, seed, 0.3f, 3, 0.25f));
           level -= bpos.z;
 
-          int depth = int (8.0f + 10.0f * noise_perlin_harmonic (noise_pos, seed + 20, 0.3f, 2, 0.25f));
+          int depth = int (8.0f + 10.0f * noise_perlin_harmonic (noise_pos, seed + 20, 0.3f, 3, 0.25f));
           depth = level - depth;
 
           int z = 0;
@@ -78,31 +78,31 @@ namespace SH
             blocks [x][y][z++].type = blocktype_air;
         }
       }
-    }/*
+    }
     else
     {
-      for (int x = 0; x != dim; x++)
+      for (int x = 0; x != chunk_dim; x++)
       {
-        for (int y = 0; y != dim; y++)
+        for (int y = 0; y != chunk_dim; y++)
         {
-          for (int z = 0; z != dim; z++)
+          for (int z = 0; z != chunk_dim; z++)
             blocks [x][y][z].type = blocktype_stone;
         }
       }
-    }*/
+    }
 
     // Caves
-    /*if (bpos.z < 62)
+    if (bpos.z < 70)
     {
       for (auto b = iteration (v3i (0, 0, 0), chunk_extent); b; b.advance ())
       {
         v3f noise_pos = cpos + v3f (b) * (1.0f / chunk_dim);
-        bool cut = -0.2f > noise_perlin_harmonic (noise_pos, seed, 0.5f, 2, 0.8f);
+        bool cut = -0.2f > noise_perlin_harmonic (noise_pos, seed, 0.5f, 3, 0.8f);
 
         if (cut)
           blocks [b.x][b.y][b.z].type = blocktype_air;
       }
-    }*/
+    }
 
     regen_caches ();
 
