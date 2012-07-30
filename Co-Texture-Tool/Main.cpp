@@ -313,7 +313,7 @@ namespace Co
       width  & 0xffff,
       height & 0xffff,
       buffer.data (),
-      buffer.size ()
+      (u32) buffer.size ()
     );
 
     dest.delete_on_close (false);
@@ -408,7 +408,7 @@ namespace Co
     Rk::ShortString <512> out_path;
     bool                  cubemap = false;
 
-    for (uint arg_index = 1; arg_index != arg_count; arg_index++)
+    for (int arg_index = 1; arg_index != arg_count; arg_index++)
     {
       Rk::StringRef arg = args [arg_index];
 

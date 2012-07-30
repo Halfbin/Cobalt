@@ -70,7 +70,7 @@ namespace Co
       check_gl ("glUniformMatrix3fv");
     }
 
-    void upload_rects (const TexRect* rects, u32 count)
+    void upload_rects (const TexRect* rects, uptr count)
     {
       if (!count)
         return;

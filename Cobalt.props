@@ -1,17 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
   <PropertyGroup Label="UserMacros">
     <RkPath>D:\Halfbin\Projects\Rk</RkPath>
     <FreetypePath>D:\Libraries\freetype-2.4.6\</FreetypePath>
     <GLEWPath>D:\Libraries\glew-1.8.0\</GLEWPath>
   </PropertyGroup>
-  
   <PropertyGroup>
     <OutDir>C:\Cobalt\Binaries\</OutDir>
     <TargetName>$(ProjectName)$(CoSuffix)</TargetName>
   </PropertyGroup>
-  
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)Include;$(RkPath)\Include;$(FreetypePath)\include;$(GLEWPath)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -21,11 +18,9 @@
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  
   <ItemGroup>
     <BuildMacro Include="CoSuffix">
       <Value>$(CoSuffix)</Value>
     </BuildMacro>
   </ItemGroup>
-  
 </Project>

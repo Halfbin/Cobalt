@@ -381,16 +381,12 @@ namespace Co
       if (key == key_invalid)
         continue;
 
-      bool down = raw_keystate [vk] >> 7;
-      bool set  = raw_keystate [vk] &  1;
+      bool down = (raw_keystate [vk] >> 7) ? true : false;
+      bool set  = (raw_keystate [vk] &  1) ? true : false;
 
-      if (down != keyboard [key].down)
-        keyboard [key].changed = true;
-      else
-        keyboard [key].changed = false;
-
-      keyboard [key].down = down;
-      keyboard [key].set  = set;
+      keyboard [key].changed = (down != keyboard [key].down);
+      keyboard [key].down    = down;
+      keyboard [key].set     = set;
     }
   }
 
@@ -433,7 +429,7 @@ namespace Co
         window.get_width  (),
         window.get_height (),
         ui_events.data (),
-        ui_events.size (),
+        (u32) ui_events.size (),
         keyboard,
         mouse_delta
       );

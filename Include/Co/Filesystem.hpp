@@ -45,7 +45,7 @@ namespace Co
   public:
     typedef std::shared_ptr <FileIn> Ptr;
 
-    virtual u32 read (void* data, u32 length) = 0;
+    virtual uptr read (void* data, uptr length) = 0;
 
   };
 
@@ -55,7 +55,7 @@ namespace Co
   public:
     typedef std::shared_ptr <FileOut> Ptr;
 
-    virtual void write (const void* data, u32 length) = 0;
+    virtual void write (const void* data, uptr length) = 0;
 
   };
 

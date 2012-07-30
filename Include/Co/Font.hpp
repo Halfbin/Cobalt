@@ -96,7 +96,7 @@ namespace Co
     
     virtual void translate_codepoints (const char32* codepoints, const char32* end, Character* chars) const = 0;
     
-    void translate_codepoints (const char32* codepoints, uint count, Character* chars) const
+    void translate_codepoints (const char32* codepoints, uptr count, Character* chars) const
     {
       translate_codepoints (codepoints, codepoints + count, chars);
     }

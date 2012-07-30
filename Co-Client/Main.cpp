@@ -17,7 +17,7 @@ namespace Co
   Log log (log_stream);
 
   static std::vector <Rk::Module>     modules;
-  static std::map <std::string, uint> lookup;
+  static std::map <std::string, uptr> lookup;
 
   Rk::Module load_module (Rk::StringRef path)
   {

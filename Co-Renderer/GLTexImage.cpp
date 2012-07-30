@@ -117,7 +117,7 @@ namespace Co
           0, 0, sub_image,
           level_width, level_height, 1,
           gl_fmt.iformat,
-          size,
+          (GLsizei) size,
           data
         );
         check_gl ("glCompressedTexSubImage3D");
@@ -145,7 +145,7 @@ namespace Co
           level,
           gl_fmt.iformat,
           width, height, 0,
-          size,
+          (GLsizei) size,
           data
         );
         check_gl ("glCompressedTexImage2D");

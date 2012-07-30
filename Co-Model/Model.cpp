@@ -57,7 +57,7 @@ namespace Co
     virtual GeomCompilation::Ptr retrieve (const Mesh*& meshes_out, uint& count_out)
     {
       meshes_out = meshes.data ();
-      count_out  = meshes.size ();
+      count_out  = (uint) meshes.size ();
       return std::move (comp);
     }
 

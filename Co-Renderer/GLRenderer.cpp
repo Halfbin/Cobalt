@@ -451,7 +451,7 @@ namespace Co
         if (index_type)
         {
           uptr offset = index_size * mesh.base_index + geom -> comp -> index_base ();
-          u32 eb = geom -> comp -> element_base ();
+          u32 eb = (u32) geom -> comp -> element_base ();
           glDrawElementsBaseVertex (
             prim_type,
             mesh.element_count,
@@ -621,7 +621,7 @@ namespace Co
       return;
     
     meshes.insert (meshes.end (), begin, end);
-    geoms.back ().mesh_count += size;
+    geoms.back ().mesh_count += (u32) size;
   }
 
   void GLRenderer::add_materials (const Material* begin, const Material* end)
@@ -633,7 +633,7 @@ namespace Co
       return;
 
     materials.insert (materials.end (), begin, end);
-    geoms.back ().material_count += size;
+    geoms.back ().material_count += (u32) size;
   }
 
   void GLRenderer::end ()
@@ -656,8 +656,8 @@ namespace Co
     labels_2d.push_back (
       Label2D (
         std::static_pointer_cast <GLTexImage> (texture),
-        rects.size (),
-        size,
+        (u32) rects.size (),
+        (u32) size,
         spat,
         linear_colour,
         const_colour
@@ -681,8 +681,8 @@ namespace Co
     labels_3d.push_back (
       Label3D (
         std::static_pointer_cast <GLTexImage> (texture),
-        rects.size (),
-        size,
+        (u32) rects.size (),
+        (u32) size,
         spat,
         linear_colour,
         const_colour

@@ -32,12 +32,12 @@ namespace Co
       return file.tell ();
     }
 
-    virtual u32 read (void* data, u32 length)
+    virtual uptr read (void* data, uptr length)
     {
       return file.read (data, length);
     }
 
-    virtual void write (const void* data, u32 length)
+    virtual void write (const void* data, uptr length)
     {
       file.write (data, length);
     }

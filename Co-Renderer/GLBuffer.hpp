@@ -19,8 +19,8 @@ namespace Co
   class GLBuffer :
     public StreamBuffer
   {
-    u32  name,
-         map_offset,
+    u32  name;
+    uptr map_offset,
          map_length,
          draw_offset,
          capacity;
@@ -60,7 +60,7 @@ namespace Co
       }
     }
 
-    u32 get_draw_offset () const
+    uptr get_draw_offset () const
     {
       return draw_offset;
     }

@@ -100,7 +100,7 @@ namespace Co
             if (!header.version)
               throw std::runtime_error ("Texture has DATA before HEAD");
             buffer.resize (loader.size);
-            file -> read (buffer.data (), buffer.size ());
+            file -> read (buffer.data (), loader.size);
           break;
           
           default:

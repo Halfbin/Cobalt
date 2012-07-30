@@ -25,7 +25,7 @@ namespace Co
   {
     u32                      vao;
     std::vector <GeomAttrib> attribs;
-    u32                      element_size;
+    uptr                     element_size;
     GLBuffer::Ptr            elements;
     GLBuffer::Ptr            indices;
     IndexType                index_type;
@@ -79,12 +79,12 @@ namespace Co
       check_gl ("glBindVertexArray");
     }
 
-    u32 index_base ()
+    uptr index_base ()
     {
       return indices -> get_draw_offset ();
     }
 
-    u32 element_base ()
+    uptr element_base ()
     {
       return elements -> get_draw_offset () / element_size;
     }

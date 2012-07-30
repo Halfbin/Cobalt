@@ -160,7 +160,7 @@ namespace Co
     void add_label (
       TexImage::Ptr  texture,
       const TexRect* rects,
-      uint           count,
+      uptr           count,
       Spatial2D      spat,
       v4f            linear_colour,
       v4f            const_colour)
@@ -171,7 +171,7 @@ namespace Co
     void add_label (
       TexImage::Ptr  texture,
       const TexRect* rects,
-      uint           count,
+      uptr           count,
       Spatial        spat,
       v4f            linear_colour,
       v4f            const_colour)

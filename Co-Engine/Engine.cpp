@@ -206,10 +206,8 @@ namespace Co
         entities.push_back (ent);
         return std::move (ent);
       }
-      else
-      {
-        Rk::raise () << "No such entity class " << class_name;
-      }
+      
+      throw std::runtime_error ("No such entity class");
     }
 
     std::shared_ptr <void> EngineImpl::get_object (Rk::StringRef type)

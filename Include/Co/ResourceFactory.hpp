@@ -28,7 +28,7 @@ namespace Co
 
     virtual u32 usage () const
     {
-      return cache.size ();
+      return (u32) cache.size ();
     };
 
     virtual u32 clear ()
