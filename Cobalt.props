@@ -1,26 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Label="PropertySheets" />
+  
   <PropertyGroup Label="UserMacros">
-    <CoSuffix />
+    <FreetypePath>D:\Libraries\freetype-2.4.6\</FreetypePath>
+    <GLEWPath>D:\Libraries\glew-1.8.0\</GLEWPath>
   </PropertyGroup>
+  
   <PropertyGroup>
     <OutDir>C:\Cobalt\Binaries\</OutDir>
     <TargetName>$(ProjectName)$(CoSuffix)</TargetName>
   </PropertyGroup>
+  
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include;D:\Halfbin\Projects\Rk\Include;D:\Libraries\freetype-2.4.6\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(FreetypePath)\include;$(GLEWPath)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";CO_W_SUFFIX=L"$(CoSuffix)";_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
+  
   <ItemGroup>
     <BuildMacro Include="CoSuffix">
       <Value>$(CoSuffix)</Value>
     </BuildMacro>
   </ItemGroup>
+  
 </Project>

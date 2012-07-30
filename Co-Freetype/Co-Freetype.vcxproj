@@ -31,11 +31,13 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Co-Custom-Debug.props" />
+    <Import Project="..\Cobalt.props" />
+    <Import Project="..\Cobalt-Debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Co-Custom.props" />
+    <Import Project="..\Cobalt-Release.props" />
+    <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
@@ -66,23 +68,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbase.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbbox.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbitmap.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftdebug.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftglyph.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftinit.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftsystem.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\psnames\psnames.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\sfnt\sfnt.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\smooth\smooth.c" />
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\truetype\truetype.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftbase.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftbbox.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftbitmap.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftdebug.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftglyph.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftinit.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftsystem.c" />
+    <ClCompile Include="$(FreetypePath)\src\psnames\psnames.c" />
+    <ClCompile Include="$(FreetypePath)\src\sfnt\sfnt.c" />
+    <ClCompile Include="$(FreetypePath)\src\smooth\smooth.c" />
+    <ClCompile Include="$(FreetypePath)\src\truetype\truetype.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftconfig.h" />
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftheader.h" />
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftmodule.h" />
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftconfig.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftheader.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftmodule.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftstdlib.h" />
     <ClInclude Include="..\Include\Co\FreetypeOptions.h" />
     <ClInclude Include="..\Include\ft2build.h" />
   </ItemGroup>

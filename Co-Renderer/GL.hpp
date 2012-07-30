@@ -26,7 +26,7 @@ enum WGLCCAConstants
   WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT = 0x00000002
 };
 
-extern "C" __declspec(dllimport) u8 wglewIsSupported (const char*);
+extern "C" __declspec(dllimport) u8 __stdcall wglewIsSupported (const char*);
 
 namespace Co
 {

@@ -1,72 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbase.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbbox.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftbitmap.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftdebug.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftglyph.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftinit.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\base\ftsystem.c">
-      <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\psnames\psnames.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\sfnt\sfnt.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\smooth\smooth.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Libraries\freetype-2.4.6\src\truetype\truetype.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
+    <ClCompile Include="$(FreetypePath)\src\base\ftbase.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftbbox.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftbitmap.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftdebug.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftglyph.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftinit.c" />
+    <ClCompile Include="$(FreetypePath)\src\base\ftsystem.c" />
+    <ClCompile Include="$(FreetypePath)\src\psnames\psnames.c" />
+    <ClCompile Include="$(FreetypePath)\src\sfnt\sfnt.c" />
+    <ClCompile Include="$(FreetypePath)\src\smooth\smooth.c" />
+    <ClCompile Include="$(FreetypePath)\src\truetype\truetype.c" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Config">
-      <UniqueIdentifier>{bd199026-44c2-4330-bf97-8e0efe02f26b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Base">
-      <UniqueIdentifier>{cb9aad08-3a06-4148-afdf-b64596123863}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Modules">
-      <UniqueIdentifier>{c2dee09f-eb73-4a7f-9df3-2879acb59b08}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Local">
       <UniqueIdentifier>{400798a3-7ea9-40e8-b73a-93fae1ab0a44}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\ft2build.h">
-      <Filter>Local</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\FreetypeOptions.h">
       <Filter>Local</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftconfig.h">
-      <Filter>Config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftstdlib.h">
-      <Filter>Config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftheader.h">
-      <Filter>Config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\Libraries\freetype-2.4.6\include\freetype\config\ftmodule.h">
-      <Filter>Config</Filter>
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftconfig.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftheader.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftmodule.h" />
+    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="..\Include\ft2build.h">
+      <Filter>Local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
