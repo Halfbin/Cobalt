@@ -24,9 +24,11 @@
     </ClInclude>
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftconfig.h" />
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftheader.h" />
-    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftmodule.h" />
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftstdlib.h" />
     <ClInclude Include="..\Include\ft2build.h">
+      <Filter>Local</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\FreetypeModules.h">
       <Filter>Local</Filter>
     </ClInclude>
   </ItemGroup>

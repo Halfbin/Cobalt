@@ -21,6 +21,7 @@
 
 #pragma warning (disable: 4996)
 #define FT_CONFIG_OPTIONS_H <Co/FreetypeOptions.h>
+#define FT_CONFIG_MODULES_H <Co/FreetypeModules.h>
 #include <freetype/config/ftheader.h>
 
 #endif /* __FT2_BUILD_GENERIC_H__ */

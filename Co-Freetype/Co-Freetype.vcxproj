@@ -85,8 +85,8 @@
   <ItemGroup>
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftconfig.h" />
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftheader.h" />
-    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftmodule.h" />
     <ClInclude Include="$(FreetypePath)\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="..\Include\Co\FreetypeModules.h" />
     <ClInclude Include="..\Include\Co\FreetypeOptions.h" />
     <ClInclude Include="..\Include\ft2build.h" />
   </ItemGroup>
