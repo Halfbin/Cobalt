@@ -10,7 +10,6 @@
 #include <Co/WorkQueue.hpp>
 #include <Co/PropMap.hpp>
 #include <Co/UIInput.hpp>
-#include <Co/Entity.hpp>
 #include <Co/Frame.hpp>
 #include <Co/Log.hpp>
 
@@ -30,12 +29,10 @@ namespace Co
 
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Log& new_log) = 0;
 
-    virtual Entity::Ptr create_entity (Rk::StringRef name, WorkQueue& queue, RenderContext& rc, const PropMap* props = 0) = 0;
-
     virtual void start (Co::Engine& engine) = 0;
     virtual void stop  () = 0;
     
-    virtual void tick   (float time, float step, WorkQueue& queue, const UIEvent* ui_events, uint ui_event_count) = 0;
+    virtual void tick   (float time, float step, WorkQueue& queue, const UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta) = 0;
     virtual void render (Frame& frame, float alpha) = 0;
 
   };

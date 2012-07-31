@@ -6,9 +6,6 @@
 #ifndef SH_H_WORLD
 #define SH_H_WORLD
 
-// Implements
-#include <Co/Entity.hpp>
-
 // Uses
 #include <Co/PropMap.hpp>
 #include <Co/Texture.hpp>
@@ -26,15 +23,16 @@ namespace SH
   //
   // = World ===========================================================================================================
   //
-  class World :
-    public Co::Entity
+  class World
   {
     // Parameters
     u32 seed;
 
-    // State
+    // Cache
     typedef std::unordered_map <v3i, Chunk::Ptr> Cache;
-
+    Cache cache;
+    
+    // Stage
     struct StageChunk
     {
       Chunk::Ptr chunk;
@@ -44,6 +42,7 @@ namespace SH
     StageChunk stage [stage_dim][stage_dim][stage_dim];
     v3i        stage_base;
 
+    // Scratch
     struct DrawChunk
     {
       StageChunk* schunk;
@@ -58,20 +57,34 @@ namespace SH
 
     std::vector <DrawChunk> draw_list;
     
-    Cache cache;
-    
+    // Resources
     Co::Texture::Ptr texture,
                      sky_tex;
 
-    StageChunk& stage_at (v3i cv);
+    StageChunk& stage_at (v3i cv)
+    {
+      cv = (stage_base + cv) % stage_dim;
+      if (cv.x < 0) cv.x += stage_dim;
+      if (cv.y < 0) cv.y += stage_dim;
+      if (cv.z < 0) cv.z += stage_dim;
+      return stage [cv.x][cv.y][cv.z];
+    }
 
     Chunk::Ptr load_chunk (Co::WorkQueue& queue, v3i cpos);
 
-    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta);
-    virtual void render (Co::Frame& frame, float alpha);
-
+    World (Co::WorkQueue& queue, Co::RenderContext& rc);
+    
   public:
-    World (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props);
+    typedef std::shared_ptr <World> Ptr;
+
+    static Ptr create (Co::WorkQueue& queue, Co::RenderContext& rc)
+    {
+      return Ptr (new World (queue, rc));
+    }
+
+    void tick (float time, float step, Co::WorkQueue& queue);
+    void render (Co::Frame& frame, float alpha);
+
     ~World ();
 
   };

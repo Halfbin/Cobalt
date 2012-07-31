@@ -8,7 +8,6 @@
 
 #include <Co/PropMap.hpp>
 #include <Co/Texture.hpp>
-#include <Co/Entity.hpp>
 #include <Co/Model.hpp>
 #include <Co/Font.hpp>
 #include <Co/Log.hpp>
@@ -22,18 +21,9 @@ namespace SH
     return log_ptr -> lock ();
   }
 
-  typedef Co::Entity::Ptr (CreateEntFunc) (Co::WorkQueue&, Co::RenderContext& rc, const Co::PropMap*);
-
-  CreateEntFunc
-    create_spectator,
-    create_world,
-    create_test_entity;
-
   extern Co::TextureFactory::Ptr texture_factory;
   extern Co::ModelFactory::Ptr   model_factory;
   extern Co::FontFactory::Ptr    font_factory;
-  
-  extern Co::Spatial view_cur, view_next;
 
   static const int
     chunk_dim          = 16, // must be power of two and thus even

@@ -10,7 +10,6 @@
 #include <Co/Renderer.hpp>
 #include <Co/PropMap.hpp>
 #include <Co/UIInput.hpp>
-#include <Co/Entity.hpp>
 #include <Co/Game.hpp>
 #include <Co/Host.hpp>
 #include <Co/Log.hpp>
@@ -33,8 +32,6 @@ namespace Co
     virtual void stop      () = 0;
     virtual void enable_ui (bool enable) = 0;
 
-    virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props = 0) = 0;
-    
     virtual std::shared_ptr <void> get_object (Rk::StringRef type) = 0;
 
     template <typename T>

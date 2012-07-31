@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="TestEntity.cpp" />
     <ClCompile Include="Spectator.cpp" />
     <ClCompile Include="Noise.cpp" />
     <ClCompile Include="Chunk.cpp">
@@ -28,6 +27,7 @@
     <ClInclude Include="ChunkMesh.hpp">
       <Filter>ChunkMesh</Filter>
     </ClInclude>
+    <ClInclude Include="Pawn.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Chunk">

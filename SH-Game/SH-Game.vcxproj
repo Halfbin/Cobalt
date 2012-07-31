@@ -174,7 +174,6 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Noise.cpp" />
     <ClCompile Include="Spectator.cpp" />
-    <ClCompile Include="TestEntity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Co-Font\Co-Font.vcxproj">
@@ -193,6 +192,7 @@
   <ItemGroup>
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="ChunkMesh.hpp" />
+    <ClInclude Include="Pawn.hpp" />
     <ClInclude Include="World.hpp" />
     <ClInclude Include="Chunk.hpp" />
     <ClInclude Include="Common.hpp" />

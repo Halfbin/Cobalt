@@ -60,9 +60,6 @@ namespace Co
 
       // Termination
       bool running;
-      
-      // Entities
-      std::vector <Entity::Ptr> entities;
 
       // Simulation control
       virtual void init      (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr);
@@ -70,9 +67,6 @@ namespace Co
       virtual bool update    (uint, uint, const UIEvent*, uint, const KeyState*, v2f);
       virtual void stop      ();
       virtual void enable_ui (bool enable);
-
-      // Object creation
-      virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props);
       
       // Linking
       virtual std::shared_ptr <void> get_object (Rk::StringRef type);
@@ -146,11 +140,8 @@ namespace Co
 
       while (time_accumulator >= 1.0f)
       {
-        game -> tick (sim_time, tick_interval, *queue, ui_events, ui_event_count);
+        game -> tick (sim_time, tick_interval, *queue, ui_events, ui_event_count, keyboard, mouse_delta);
         ui_event_count = 0;
-
-        for (auto ent = entities.begin (); ent != entities.end (); ent++)
-          (*ent) -> tick (sim_time, tick_interval, *queue, keyboard, mouse_delta);
 
         sim_time += tick_interval;
         time_accumulator -= 1.0f;
@@ -165,9 +156,6 @@ namespace Co
       float alpha = time_accumulator;
 
       game -> render (frame, alpha);
-
-      for (auto ent = entities.begin (); ent != entities.end (); ent++)
-        (*ent) -> render (frame, alpha);
 
       renderer -> render_frame ();
 
@@ -192,22 +180,6 @@ namespace Co
     void EngineImpl::enable_ui (bool enable)
     {
       host -> enable_ui (enable);
-    }
-
-    Entity::Ptr EngineImpl::create_entity (Rk::StringRef class_name, const PropMap* props)
-    {
-      if (!class_name)
-        throw std::invalid_argument ("class_name is nil");
-
-      auto ent = game -> create_entity (class_name, *queue, renderer -> context (), props);
-
-      if (ent)
-      {
-        entities.push_back (ent);
-        return std::move (ent);
-      }
-      
-      throw std::runtime_error ("No such entity class");
     }
 
     std::shared_ptr <void> EngineImpl::get_object (Rk::StringRef type)

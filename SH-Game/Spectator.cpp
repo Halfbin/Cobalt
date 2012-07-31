@@ -3,16 +3,17 @@
 // All Rights Reserved.
 //
 
-#include "Common.hpp"
+// Implements
+#include "Pawn.hpp"
 
 namespace SH
 {
   class Spectator :
-    public Co::Entity
+    public Pawn
   {
     Co::Spatial cur, next;
 
-    virtual void tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* kb, v2f mouse_delta)
+    virtual void tick (float time, float step, const Co::KeyState* kb, v2f mouse_delta)
     {
       using namespace Co::Keys;
 
@@ -52,18 +53,17 @@ namespace SH
     }
 
   public:
-    Spectator (Co::WorkQueue&, Co::RenderContext& rc, const Co::PropMap*)
+    Spectator (Co::Spatial spat)
     {
-      cur.position = v3f (0.0f, 0.0f, 0.0f);
-      cur.orientation = Co::Quat (0.785f, v3f (0, 0, 1));
+      cur = spat;
       next = cur;
     }
 
   };
 
-  Co::Entity::Ptr create_spectator (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
+  Pawn::Ptr create_spectator (Co::Spatial spat)
   {
-    return queue.gc_attach (new Spectator (queue, rc, props));
+    return Pawn::Ptr (new Spectator (spat));
   }
 
 }

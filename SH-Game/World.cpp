@@ -18,7 +18,7 @@ namespace SH
 
   static const v3i stage_corner (stage_radius, stage_radius, stage_radius);
   
-  void World::tick (float time, float step, Co::WorkQueue& queue, const Co::KeyState* keyboard, v2f mouse_delta)
+  void World::tick (float time, float step, Co::WorkQueue& queue)
   {
     v3i view_cpos = floor (view_next.position / float (chunk_dim));
     v3i view_base = view_cpos - stage_corner;
@@ -210,7 +210,7 @@ namespace SH
     );
   }
 
-  World::World (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
+  World::World (Co::WorkQueue& queue, Co::RenderContext& rc)
   {
     stage_base = v3i (0, 0, 0);
 
@@ -229,23 +229,6 @@ namespace SH
       << "i high_cmem: " << Chunk::high_mem () << '\n'
       << "i count_time: " << ChunkMesh::get_count_time () << '\n'
       << "i regen_time: " << ChunkMesh::get_regen_time () << '\n';
-  }
-
-  World::StageChunk& World::stage_at (v3i cv)
-  {
-    cv = (stage_base + cv) % stage_dim;
-    if (cv.x < 0) cv.x += stage_dim;
-    if (cv.y < 0) cv.y += stage_dim;
-    if (cv.z < 0) cv.z += stage_dim;
-    return stage [cv.x][cv.y][cv.z];
-  }
-
-  /*Co::Texture::Ptr World::sky_tex,
-                   World::texture;*/
-
-  Co::Entity::Ptr create_world (Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
-  {
-    return queue.gc_attach (new World (queue, rc, props));
   }
 
 } // namespace SH

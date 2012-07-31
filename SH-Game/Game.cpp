@@ -16,6 +16,8 @@
 #include <Rk/Module.hpp>
 
 #include "Common.hpp"
+#include "World.hpp"
+#include "Pawn.hpp"
 
 namespace SH
 {
@@ -28,14 +30,15 @@ namespace SH
   class Game :
     public Co::Game
   {
+    World::Ptr world;
+    Pawn::Ptr  pawn;
+    
     virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log);
-
-    virtual Co::Entity::Ptr create_entity (Rk::StringRef class_name, Co::WorkQueue&, Co::RenderContext&, const Co::PropMap*);
 
     virtual void start (Co::Engine& engine);
     virtual void stop  ();
     
-    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count);
+    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta);
     virtual void render (Co::Frame& frame, float alpha);
 
   public:
@@ -63,23 +66,14 @@ namespace SH
     engine.get_object (texture_factory);
     engine.get_object (model_factory);
     engine.get_object (font_factory);
-  }
 
-  Co::Entity::Ptr Game::create_entity (Rk::StringRef type, Co::WorkQueue& queue, Co::RenderContext& rc, const Co::PropMap* props)
-  {
-    if      (type == "World")       return create_world       (queue, rc, props);
-    else if (type == "Spectator")   return create_spectator   (queue, rc, props);
-    else if (type == "TestEntity")  return create_test_entity (queue, rc, props);
-    else                            return nullptr;
+    world = World::create (queue, rc);
+    pawn = create_spectator (nil);
   }
 
   void Game::start (Co::Engine& engine)
   {
     log () << "- SH-Game: Starting\n";
-
-    //engine.create_entity ("TestEntity");
-    engine.create_entity ("World");
-    engine.create_entity ("Spectator");
 
     engine.enable_ui (false);
   }
@@ -89,10 +83,16 @@ namespace SH
     log () << "- SH-Game: Stopping\n";
   }
 
-  void Game::tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count)
-  { }
+  void Game::tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta)
+  {
+    pawn  -> tick (time, step, kb, mouse_delta);
+    world -> tick (time, step, queue);
+  }
 
   void Game::render (Co::Frame& frame, float alpha)
-  { }
+  {
+    pawn  -> render (frame, alpha);
+    world -> render (frame, alpha);
+  }
 
 } // namespace SH

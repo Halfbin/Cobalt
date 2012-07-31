@@ -12,9 +12,6 @@
     <ClInclude Include="..\Include\Co\Engine.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\Entity.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\Game.hpp">
       <Filter>API</Filter>
     </ClInclude>
@@ -25,9 +22,6 @@
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Co\Host.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\EntityClass.hpp">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>
