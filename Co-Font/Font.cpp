@@ -107,7 +107,7 @@ namespace Co
 
       metrics = slot -> metrics;
 
-      max_side = Rk::maximum (width (), height ());
+      max_side = std::max (width (), height ());
       area = width () * height ();
     }
       
@@ -636,8 +636,10 @@ namespace Co
 
   void FontImpl::translate_codepoints (const char32* begin, const char32* end, Character* chars) const
   {
-    Rk::require <std::invalid_argument> (begin && end && chars, "Font::translate_codepoints - null pointer");
-    Rk::require <std::invalid_argument> (end >= begin,          "Font::translate_codepoints - invalid range");
+    if (!begin || !end || !chars)
+      throw std::invalid_argument ("Co::Font::translate_codepoints - null pointer");
+
+    Rk::check_range (begin, end);
 
     u32 prev_ft_index = 0;
 

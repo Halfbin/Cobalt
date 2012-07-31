@@ -10,7 +10,6 @@
 #include <Co/Renderer.hpp>
 
 // Uses
-#include <Rk/FixedQueue.hpp>
 #include <Rk/Thread.hpp>
 #include <Rk/Mutex.hpp>
 
