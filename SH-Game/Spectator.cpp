@@ -37,10 +37,13 @@ namespace SH
                     +  cur.orientation.left    () * y_move * dist
                     +  v3f (0, 0, 1) * z_move * dist;
 
-      next.orientation =
-        Co::Quat (step * 20.0f * mouse_delta.x, v3f (0, 0, -1)) *
-        cur.orientation *
-        Co::Quat (step * 20.0f * mouse_delta.y, v3f (0, 1, 0));
+      if (mouse_delta.x != 0.0f || mouse_delta.y != 0.0f)
+      {
+        next.orientation =
+          Co::Quat (step * 20.0f * mouse_delta.x, v3f (0, 0, -1)) *
+          cur.orientation *
+          Co::Quat (step * 20.0f * mouse_delta.y, v3f (0, 1, 0));
+      }
 
       view_cur  = cur;
       view_next = next;
