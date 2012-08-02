@@ -12,7 +12,7 @@
 #include <Co/UIInput.hpp>
 #include <Co/Engine.hpp>
 #include <Co/Clock.hpp>
-#include <Co/Host.hpp>
+#include <Co/Game.hpp>
 #include <Co/Log.hpp>
 
 #include <Rk/StringRef.hpp>
@@ -30,15 +30,15 @@ namespace Co
 {
   class RenderDevice;
 
-  class Client :
-    public Host
+  class Client
   {
     WorkQueue::Ptr           queue;
     std::vector <Rk::Thread> pool;
     GLWindow                 window;
     MasterClock              clock;
     Renderer::Ptr            renderer;
-    Engine::Ptr              engine;
+    Engine                   engine;
+    Game::Ptr                game;
     //Filesystem::Ptr          filesystem;
     
     std::map <std::string, std::string>
@@ -50,6 +50,8 @@ namespace Co
     KeyState              keyboard [key_count];
     bool                  ui_enabled;
     std::vector <UIEvent> ui_events;
+
+    bool running;
 
     void worker (RenderDevice& device, Filesystem& fs);
 

@@ -8,39 +8,32 @@
 
 // Uses
 #include "Common.hpp"
+#include "Noise.hpp"
 
 #include <algorithm>
 
 namespace SH
 {
-  Co::Spatial view_cur  (nil),
-              view_next (nil);
-
   static const v3i stage_corner (stage_radius, stage_radius, stage_radius);
   
-  void World::tick (float time, float step, Co::WorkQueue& queue)
+  void World::tick (float time, float step, Co::WorkQueue& queue, const Co::Spatial& view)
   {
-    v3i view_cpos = floor (view_next.position / float (chunk_dim));
+    v3i view_cpos = floor (view.position / float (chunk_dim));
     v3i view_base = view_cpos - stage_corner;
 
-    /*if (view_cpos != view_cur_cpos)
-    {*/
-      stage_base = view_cpos % stage_dim;
-      if (stage_base.x < 0) stage_base.x += stage_dim;
-      if (stage_base.y < 0) stage_base.y += stage_dim;
-      if (stage_base.z < 0) stage_base.z += stage_dim;
+    stage_base = view_cpos % stage_dim;
+    if (stage_base.x < 0) stage_base.x += stage_dim;
+    if (stage_base.y < 0) stage_base.y += stage_dim;
+    if (stage_base.z < 0) stage_base.z += stage_dim;
 
-      for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
-      {
-        auto& chunk = stage_at (c).chunk;
-        v3i new_cpos = view_base + c;
+    for (auto c = iteration (v3i (0, 0, 0), stage_extent); c; c.advance ())
+    {
+      auto& chunk = stage_at (c).chunk;
+      v3i new_cpos = view_base + c;
 
-        if (!chunk || chunk -> cpos != new_cpos)
-          chunk = load_chunk (queue, new_cpos);
-      }
-
-      //view_cur_cpos = view_cpos;
-    //}
+      if (!chunk || chunk -> cpos != new_cpos)
+        chunk = load_chunk (queue, new_cpos);
+    }
   }
 
   static bool cache_enable = false;
@@ -66,13 +59,11 @@ namespace SH
     return std::move (chunk);
   }
 
-  void World::render (Co::Frame& frame, float alpha)
+  void World::render (Co::Frame& frame, const Co::Spatial& view)
   {
     // Frustum culling
-    auto view = lerp (view_cur, view_next, alpha);
-
     float recip_aspect = float (frame.height) / float (frame.width);
-    float x_hfov = 75.0f * (3.141592f / 180.0f) * 0.5f;
+    float x_hfov = 75.0f * 3.141592f / 360.0f;
     float y_hfov = x_hfov * recip_aspect;
 
     v3f fwd  = view.orientation.forward (),
@@ -118,7 +109,7 @@ namespace SH
       for (uint i = 0; i != 4; i++)
       {
         v3f bp = schunk.chunk -> bpos;
-        v3f centre = bp + (v3i (chunk_dim, chunk_dim, chunk_dim) / 2) - view.position;
+        v3f centre = bp + v3f (v3i (chunk_dim, chunk_dim, chunk_dim) / 2) - view.position;
         static const float radius = float (chunk_dim / 2) * 1.73205f; // 8rt3
         if (dot (centre, planes [i]) < -radius)
         {
@@ -181,7 +172,6 @@ namespace SH
       draw_list.begin (),
       draw_list.end   (),
       [] (const DrawChunk& a, const DrawChunk& b)
-        -> bool
       {
         return a.dist < b.dist;
       }
@@ -210,11 +200,15 @@ namespace SH
     );
   }
 
-  World::World (Co::WorkQueue& queue, Co::RenderContext& rc)
+  World::World (u64 full_seed, Co::WorkQueue& queue, Co::RenderContext& rc)
   {
-    stage_base = v3i (0, 0, 0);
+    RandomGen rg (full_seed);
+    for (uint i = 0; i != 10; i++)
+      rg.get ();
 
-    seed = 0xfeedbeef;
+    seed = rg.get ();
+
+    stage_base = v3i (0, 0, 0);
 
     texture = texture_factory -> create (queue, "blocks.cotexture", false, false, false);
     sky_tex = texture_factory -> create (queue, "title.cotexture",  false, true, true);

@@ -23,11 +23,11 @@ namespace SH
       state (0)
     { }
     
-    RandomGen (u32 seed) :
+    RandomGen (u64 seed) :
       state (seed)
     { }
     
-    void set_seed (u32 seed)
+    void set_seed (u64 seed)
     {
       state = seed;
     }

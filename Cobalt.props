@@ -16,6 +16,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -11,16 +11,11 @@
 #include <Co/Model.hpp>
 #include <Co/Font.hpp>
 
-#include <Co/RenderDevice.hpp>
-#include <Co/Renderer.hpp>
-#include <Co/Engine.hpp>
 #include <Co/Game.hpp>
 
 #include <Rk/ShortString.hpp>
-#include <Rk/Module.hpp>
 #include <Rk/Guard.hpp>
 
-#include "GLWindow.hpp"
 #include "Common.hpp"
 
 struct Point
@@ -160,7 +155,7 @@ namespace Co
     switch (message)
     {
       case wm_close:
-        engine -> stop ();
+        running = false;
       return 0;
 
       case wm_activateapp:
@@ -289,7 +284,6 @@ namespace Co
 
   std::pair <std::string, std::string> default_mods [] =
   {
-    mod <Engine>         ("Co-Engine"),
     mod <WorkQueue>      ("Co-WorkQueue"),
     mod <Renderer>       ("Co-GLRenderer"),
     mod <TextureFactory> ("Co-Texture"),
@@ -301,7 +295,7 @@ namespace Co
   static int mid_x, mid_y;
 
   Client::Client (Rk::StringRef config_path) :
-    Host (clock, Co::log)
+    engine (clock, 50.0f)
   {
     ui_enabled = true;
 
@@ -320,11 +314,10 @@ namespace Co
     module_config.insert (mod <Game> (game_path.string () + "Binaries/Co-Game"));
 
     // Load subsystem modules
-    get_object (engine);
     get_object (queue);
     get_object (renderer);
     auto filesystem = get_object <Filesystem> ();
-    auto game = get_object <Game> ();
+    get_object (game);
 
     // Initialize subsystems
     Rk::StringWOutStream title;
@@ -348,8 +341,6 @@ namespace Co
         }
       );
     }
-
-    engine -> init (*this, renderer, *queue, game);
   }
   
   Client::~Client ()
@@ -358,9 +349,9 @@ namespace Co
 
     // Specific shutdown order is important
     // Kill anything that can own resources
-    objects.clear ();    // Release otherwise-unreferenced global objects
-    engine.reset ();     // Destroy engine and game
-    
+    objects.clear (); // Release otherwise-unreferenced global objects
+    game.reset ();
+
     // Now that we're guaranteed to get no more jobs, finish any in the queue, and then
     // spin down the worker threads
     queue -> stop (); 
@@ -411,9 +402,11 @@ namespace Co
   {
     window.show ();
 
-    engine -> start ();
+    engine.restart ();
     
-    for (;;)
+    running = true;
+
+    while (running)
     {
       // Message pump
       Message msg;
@@ -424,18 +417,13 @@ namespace Co
       update_keyboard ();
       auto mouse_delta = update_mouse ();
 
-      // Update
-      bool running = engine -> update (
-        window.get_width  (),
-        window.get_height (),
-        ui_events.data (),
-        (u32) ui_events.size (),
-        keyboard,
-        mouse_delta
-      );
+      engine.update (mouse_delta);
 
-      if (!running)
-        break;
+      while (running && engine.begin_tick ())
+      {
+        game -> tick (engine.time (), engine.time_step (), *queue, 0, 0, keyboard, mouse_delta);
+        engine.end_tick ();
+      }
 
       ui_events.clear ();
     }

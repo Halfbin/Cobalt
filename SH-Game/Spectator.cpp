@@ -43,13 +43,15 @@ namespace SH
         cur.orientation *
         Co::Quat (step * 20.0f * mouse_delta.y, v3f (0, 1, 0));
 
+      next.orientation.normalize ();
+
       view_cur  = cur;
       view_next = next;
     }
 
     virtual void render (Co::Frame& frame, float alpha)
     {
-      frame.set_camera (lerp (cur, next, alpha), 90.0f, 0.1f, 1000.0f);
+      frame.set_camera (lerp (cur, next, alpha), 75.0f, 0.1f, 1000.0f);
     }
 
   public:

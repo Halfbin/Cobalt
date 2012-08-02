@@ -530,7 +530,7 @@ namespace Co
     float aspect = float (width) / float (height);
 
     auto eye_to_clip = Rk::eye_to_clip_xform (
-      camera_fov / aspect,
+      camera_fov,
       aspect,
       camera_near, camera_far
     );

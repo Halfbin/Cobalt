@@ -9,9 +9,6 @@
     <ClInclude Include="..\Include\Co\UIInput.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\Engine.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Co\Game.hpp">
       <Filter>API</Filter>
     </ClInclude>
@@ -21,9 +18,10 @@
     <ClInclude Include="..\Include\Co\InputSink.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\Host.hpp">
+    <ClInclude Include="..\Include\Co\EngineOld.hpp">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\Engine.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />

@@ -139,8 +139,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\Engine.hpp" />
+    <ClInclude Include="..\Include\Co\EngineOld.hpp" />
     <ClInclude Include="..\Include\Co\Game.hpp" />
-    <ClInclude Include="..\Include\Co\Host.hpp" />
     <ClInclude Include="..\Include\Co\InputSink.hpp" />
     <ClInclude Include="..\Include\Co\Module.hpp" />
     <ClInclude Include="..\Include\Co\UIInput.hpp" />

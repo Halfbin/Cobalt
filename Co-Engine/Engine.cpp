@@ -2,7 +2,7 @@
 // Copyright (C) 2012 Roadkill Software
 // All Rights Reserved.
 //
-
+/*
 // Implements
 #include <Co/Engine.hpp>
 #include <Co/Module.hpp>
@@ -47,8 +47,6 @@ namespace Co
 
       // Input
       InputSink::Ptr input_sink;
-      int            mouse_x,
-                     mouse_y;
       v2f            mouse_motion;
 
       // Timing
@@ -190,3 +188,4 @@ namespace Co
   } // namespace
 
 } // namespace Co
+*/

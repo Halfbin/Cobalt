@@ -67,7 +67,7 @@ namespace SH
     engine.get_object (model_factory);
     engine.get_object (font_factory);
 
-    world = World::create (queue, rc);
+    world = World::create (0xdecafbadfeedbeefull, queue, rc);
     pawn = create_spectator (nil);
   }
 
@@ -85,14 +85,22 @@ namespace SH
 
   void Game::tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta)
   {
-    pawn  -> tick (time, step, kb, mouse_delta);
-    world -> tick (time, step, queue);
+    pawn -> tick (time, step, kb, mouse_delta);
+
+    Co::Spatial cur, next;
+    pawn -> get_view (cur, next);
+
+    world -> tick (time, step, queue, cur);
   }
 
   void Game::render (Co::Frame& frame, float alpha)
   {
-    pawn  -> render (frame, alpha);
-    world -> render (frame, alpha);
+    pawn -> render (frame, alpha);
+
+    Co::Spatial cur, next;
+    pawn -> get_view (cur, next);
+
+    world -> render (frame, lerp (cur, next, alpha));
   }
 
 } // namespace SH

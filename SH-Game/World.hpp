@@ -20,9 +20,6 @@
 
 namespace SH
 {
-  //
-  // = World ===========================================================================================================
-  //
   class World
   {
     // Parameters
@@ -72,18 +69,18 @@ namespace SH
 
     Chunk::Ptr load_chunk (Co::WorkQueue& queue, v3i cpos);
 
-    World (Co::WorkQueue& queue, Co::RenderContext& rc);
+    World (u64 seed, Co::WorkQueue& queue, Co::RenderContext& rc);
     
   public:
     typedef std::shared_ptr <World> Ptr;
 
-    static Ptr create (Co::WorkQueue& queue, Co::RenderContext& rc)
+    static Ptr create (u64 seed, Co::WorkQueue& queue, Co::RenderContext& rc)
     {
-      return Ptr (new World (queue, rc));
+      return Ptr (new World (seed, queue, rc));
     }
 
-    void tick (float time, float step, Co::WorkQueue& queue);
-    void render (Co::Frame& frame, float alpha);
+    void tick (float time, float step, Co::WorkQueue& queue, const Co::Spatial& view);
+    void render (Co::Frame& frame, const Co::Spatial& view);
 
     ~World ();
 
