@@ -7,7 +7,9 @@
 #include <Co/Filesystem.hpp>
 
 // Uses
-#include <Rk/Module.hpp>
+#include <Co/Log.hpp>
+
+#include <Rk/Modular.hpp>
 #include <Rk/File.hpp>
 
 #include <stdexcept>
@@ -62,16 +64,16 @@ namespace Co
   class FSImpl :
     public Filesystem
   {
-    std::string game_path;
+    Log& log;
 
-    virtual void init (Rk::StringRef new_game_path)
+    virtual void mount_native (Rk::StringRef mount_point, Rk::StringRef path)
     {
-      game_path = new_game_path.string ();
+
     }
 
     virtual FileIn::Ptr open_read (Rk::StringRef path)
     {
-      return std::make_shared <FileImpl> (game_path + path.string (), Rk::File::open_read_existing);
+      return std::make_shared <FileImpl> (path.string (), Rk::File::open_read_existing);
     }
 
     virtual FileOut::Ptr open_write (Rk::StringRef path)
@@ -87,16 +89,22 @@ namespace Co
     }
 
   public:
-    FSImpl ()
+    FSImpl (Log& log) :
+      log (log)
     { }
+    
+  };
 
-    static Ptr create ()
+  class Root :
+    public FilesystemRoot
+  {
+    virtual Filesystem::Ptr create_fs (Log& log)
     {
-      return std::make_shared <FSImpl> ();
+      return std::make_shared <FSImpl> (log);
     }
 
   };
 
-  RK_MODULE_FACTORY (FSImpl);
+  RK_MODULE (Root);
 
 }

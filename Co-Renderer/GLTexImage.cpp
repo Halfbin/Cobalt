@@ -144,7 +144,7 @@ namespace Co
           sub_target,
           level,
           gl_fmt.iformat,
-          width, height, 0,
+          level_width, level_height, 0,
           (GLsizei) size,
           data
         );
@@ -156,7 +156,7 @@ namespace Co
           sub_target,
           level,
           gl_fmt.iformat,
-          width, height, 0,
+          level_width, level_height, 0,
           gl_fmt.format,
           gl_fmt.type,
           data

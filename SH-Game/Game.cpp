@@ -8,7 +8,6 @@
 
 // Uses
 #include <Co/Texture.hpp>
-#include <Co/Engine.hpp>
 #include <Co/Model.hpp>
 #include <Co/Font.hpp>
 
@@ -21,44 +20,27 @@
 
 namespace SH
 {
-  Co::ModelFactory::Ptr   model_factory;
-  Co::TextureFactory::Ptr texture_factory;
-  Co::FontFactory::Ptr    font_factory;
-
-  Co::Log* log_ptr = 0;
-
   class Game :
     public Co::Game
   {
     World::Ptr world;
     Pawn::Ptr  pawn;
     
-    virtual void init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log);
+    virtual void client_start ();
+    virtual void client_stop  ();
+    virtual void server_start ();
+    virtual void server_stop  ();
 
-    virtual void start (Co::Engine& engine);
-    virtual void stop  ();
-    
-    virtual void tick   (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta);
+    virtual void client_tick (float time, float step, Co::WorkQueue& queue, const Co::UIEvent* ui_events, uint ui_event_count, const Co::KeyState* kb, v2f mouse_delta);
+    virtual void server_tick (float time, float step, Co::WorkQueue& queue);
+
     virtual void render (Co::Frame& frame, float alpha);
-
-  public:
-    ~Game ()
-    {
-      model_factory.reset ();
-      texture_factory.reset ();
-      font_factory.reset ();
-    }
-
-    static Ptr create ()
-    {
-      return std::make_shared <Game> ();
-    }
 
   };
 
   RK_MODULE_FACTORY (Game);
 
-  void Game::init (Co::Engine& engine, Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log)
+  void Game::init (Co::WorkQueue& queue, Co::RenderContext& rc, Co::Log& new_log)
   {
     log_ptr = &new_log;
     log () << "- SH-Game: Initializing\n";

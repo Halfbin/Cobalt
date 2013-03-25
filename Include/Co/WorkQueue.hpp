@@ -9,8 +9,11 @@
 // Uses
 #include <Rk/AsyncMethod.hpp>
 
+#include <Co/Log.hpp>
+
 #include <functional>
 #include <memory>
+//#include <tuple>
 
 namespace Co
 {
@@ -20,7 +23,6 @@ namespace Co
   class WorkQueue
   {
   public:
-    static Rk::StringRef ix_name () { return "Co::WorkQueue"; }
     typedef std::shared_ptr <WorkQueue> Ptr;
 
     virtual void work           (RenderContext& rc, Filesystem& fs) = 0;
@@ -107,6 +109,13 @@ namespace Co
       queue_load (ptr, &T::construct);
       return std::move (ptr);
     }
+
+  };
+
+  class WorkQueueRoot
+  {
+  public:
+    virtual WorkQueue::Ptr create_queue (Log& log) = 0;
 
   };
 

@@ -202,6 +202,11 @@ namespace Co
     UIEventType type;
     i32         a, b, c;
 
+    bool operator == (const UIEvent& rhs) const
+    {
+      return type == rhs.type && a == rhs.a && b == rhs.b && c == rhs.c;
+    }
+
   };
 
   static inline UIEvent ui_mouse_down  (MouseButton button) { return UIEvent (ui_event_mouse_down, button); }

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\Include\Co\Clock.hpp" />
     <ClInclude Include="..\Include\Co\Log.hpp" />
+    <ClInclude Include="..\Include\Co\ModuleManager.hpp" />
     <ClInclude Include="..\Include\Co\Profile.hpp" />
     <ClInclude Include="..\Include\Co\PropMap.hpp" />
     <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />

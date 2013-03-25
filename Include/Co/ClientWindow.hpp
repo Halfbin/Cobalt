@@ -3,10 +3,13 @@
 // All Rights Reserved.
 //
 
-#ifndef CO_CLIENT_H_GLWINDOW
-#define CO_CLIENT_H_GLWINDOW
+#ifndef CO_CLIENTFRONTEND_H_CLIENTWINDOW
+#define CO_CLIENTFRONTEND_H_CLIENTWINDOW
 
+#include <Rk/StringRef.hpp>
 #include <Rk/Types.hpp>
+
+#include <functional>
 
 namespace Co
 {
@@ -23,17 +26,16 @@ namespace Co
       
   };
 
-  class GLWindow
+  class ClientWindow
   {
     static iptr __stdcall message_proxy   (void*, u32, uptr, iptr);
     iptr                  message_handler (u32, uptr, iptr);
 
   public:
-    typedef iptr (*Handler) (GLWindow*, u32, uptr, iptr);
+    typedef std::function <iptr (ClientWindow*, u32, uptr, iptr)> Handler;
 
   private:
     void*   handle;
-    void*   user;
     Handler handler;
     Rect    borders;
     uint    width,
@@ -43,9 +45,8 @@ namespace Co
     bool    win_maxed;
 
   public:
-    GLWindow (const Nil& n = nil) :
+    ClientWindow (const Nil& n = nil) :
       handle     (0),
-      user       (0),
       width      (0),
       height     (0),
       fullscreen (false),
@@ -53,7 +54,18 @@ namespace Co
       win_maxed  (false)
     { }
     
-    void create (const wchar_t* title, Handler handler, bool fullscreen, uint window_width, uint window_height, void* user = 0);
+    void create (Rk::WStringRef title, Handler handler, bool fullscreen, uint window_width, uint window_height);
+    
+    ClientWindow (Rk::WStringRef title, Handler handler, bool fullscreen, uint window_width, uint window_height) :
+      handle     (0),
+      width      (0),
+      height     (0),
+      fullscreen (false),
+      win_rect   (0, 0, 0, 0),
+      win_maxed  (false)
+    {
+      create (title, handler, fullscreen, window_width, window_height);
+    }
     
     bool is_fullscreen () const
     {
@@ -62,16 +74,11 @@ namespace Co
 
     void set_fullscreen (bool fullscreen);
 
-    ~GLWindow ();
+    ~ClientWindow ();
 
     void* get_handle ()
     {
       return handle;
-    }
-
-    void* get_user () const
-    {
-      return user;
     }
 
     iptr message_default (u32, uptr, iptr);

@@ -4,19 +4,10 @@
 //
 
 // Implements
-#include "Client.hpp"
+#include <Co/ClientFrontend.hpp>
 
 // Uses
-#include <Co/Texture.hpp>
-#include <Co/Model.hpp>
-#include <Co/Font.hpp>
-
-#include <Co/Game.hpp>
-
-#include <Rk/ShortString.hpp>
-#include <Rk/Guard.hpp>
-
-#include "Common.hpp"
+#include <Co/Engine.hpp>
 
 struct Point
 {
@@ -26,44 +17,45 @@ struct Point
 struct Message
 {
   void* window;
-  u32   message;
-  uptr  wp;
-  iptr  lp;
-  u32   time;
+  u32 message;
+  uptr wp;
+  iptr lp;
+  u32 time;
   Point cursor;
 };
 
 extern "C"
 {
   #define fromdll __declspec(dllimport)
-  fromdll void  __stdcall PostQuitMessage   (u32);
-  fromdll i32   __stdcall PeekMessageW      (Message*, void*, u32, u32, u32);
-  fromdll i32   __stdcall DispatchMessageW  (const Message*);
-  fromdll i32   __stdcall ShowCursor        (i32);
-  fromdll i32   __stdcall GetKeyboardState  (u8*);
-  fromdll i32   __stdcall GetSystemMetrics  (i32);
-  fromdll i32   __stdcall GetCursorPos      (Point*);
-  fromdll i32   __stdcall SetCursorPos      (i32, i32);
-  fromdll void* __stdcall GetCurrentThread  ();
+  fromdll void  __stdcall PostQuitMessage (u32);
+  fromdll i32   __stdcall PeekMessageW (Message*, void*, u32, u32, u32);
+  fromdll i32   __stdcall DispatchMessageW (const Message*);
+  fromdll i32   __stdcall ShowCursor (i32);
+  fromdll i32   __stdcall GetKeyboardState (u8*);
+  fromdll i32   __stdcall GetSystemMetrics (i32);
+  fromdll i32   __stdcall GetCursorPos (Point*);
+  fromdll i32   __stdcall SetCursorPos (i32, i32);
+  fromdll void* __stdcall GetCurrentThread ();
   fromdll i32   __stdcall SetThreadPriority (void*, i32);
 }
 
 enum Messages
 {
-  wm_size        = 0x0005,
-  wm_close       = 0x0010,
-  wm_activateapp = 0x001c,
-  wm_keydown     = 0x0100,
-  wm_keyup       = 0x0101,
-  wm_char        = 0x0103,
-  wm_syskeydown  = 0x0104,
-  wm_mousemove   = 0x0200,
-  wm_lbuttondown = 0x0201,
-  wm_lbuttonup   = 0x0202,
-  wm_rbuttondown = 0x0204,
-  wm_rbuttonup   = 0x0205,
-  wm_mbuttondown = 0x0207,
-  wm_mbuttonup   = 0x0208
+  wm_size          = 0x0005,
+  wm_close         = 0x0010,
+  wm_activateapp   = 0x001c,
+  wm_displaychange = 0x007e,
+  wm_keydown       = 0x0100,
+  wm_keyup         = 0x0101,
+  wm_char          = 0x0103,
+  wm_syskeydown    = 0x0104,
+  wm_mousemove     = 0x0200,
+  wm_lbuttondown   = 0x0201,
+  wm_lbuttonup     = 0x0202,
+  wm_rbuttondown   = 0x0204,
+  wm_rbuttonup     = 0x0205,
+  wm_mbuttondown   = 0x0207,
+  wm_mbuttonup     = 0x0208
 };
 
 enum
@@ -142,15 +134,15 @@ namespace Co
     return keytab [wp & 0xff];
   }
 
-  iptr Client::handler_proxy (GLWindow* win, u32 message, uptr wp, iptr lp)
+  uint mid_x, mid_y;
+
+  static void update_mids ()
   {
-    auto client = (Client*) win -> get_user ();
-    return client -> handler (message, wp, lp);
+    mid_x = GetSystemMetrics (sm_cxscreen) / 2;
+    mid_y = GetSystemMetrics (sm_cyscreen) / 2;
   }
 
-  bool prev_ui_enabled;
-
-  iptr Client::handler (u32 message, uptr wp, iptr lp)
+  iptr ClientFrontend::handle_message (ClientWindow*, u32 message, uptr wp, iptr lp)
   {
     switch (message)
     {
@@ -169,6 +161,10 @@ namespace Co
           enable_ui (prev_ui_enabled);
         }
       return 0;
+
+      case wm_displaychange:
+        update_mids ();
+      break;
 
       case wm_syskeydown:
         if (wp == 0x0d && !(lp & (1 << 30))) // Alt+Enter
@@ -251,117 +247,8 @@ namespace Co
 
     return window.message_default (message, wp, lp);
   }
-  
-  void Client::worker (RenderDevice& device, Filesystem& fs)
-  {
-    log () << "- Worker thread starting\n";
 
-    SetThreadPriority (GetCurrentThread (), -1);
-
-    auto rc = device.create_context ();
-    
-    for (;;)
-    {
-      try
-      {
-        queue -> work (*rc, fs);
-        break;
-      }
-      catch (...)
-      {
-        log_exception (log, "in worker thread");
-      }
-    }
-
-    log () << "- Worker thread exiting\n";
-  }
-
-  template <typename Interface>
-  std::pair <std::string, std::string> mod (std::string name)
-  {
-    return std::make_pair (Interface::ix_name ().string (), name);
-  }
-
-  std::pair <std::string, std::string> default_mods [] =
-  {
-    mod <WorkQueue>      ("Co-WorkQueue"),
-    mod <Renderer>       ("Co-GLRenderer"),
-    mod <TextureFactory> ("Co-Texture"),
-    mod <ModelFactory>   ("Co-Model"),
-    mod <FontFactory>    ("Co-Font"),
-    mod <Filesystem>     ("Co-Filesystem")
-  };
-
-  static int mid_x, mid_y;
-
-  Client::Client (Rk::StringRef config_path) :
-    engine (clock, 50.0f)
-  {
-    ui_enabled = true;
-
-    mid_x = GetSystemMetrics (sm_cxscreen) / 2;
-    mid_y = GetSystemMetrics (sm_cyscreen) / 2;
-
-    init_key_tab ();
-
-    // Parse configuration
-    module_config.insert (std::begin (default_mods), std::end (default_mods));
-
-    Rk::StringRef game_name = "SH";
-    Rk::StringOutStream game_path;
-    game_path << "../" << game_name << "/";
-
-    module_config.insert (mod <Game> (game_path.string () + "Binaries/Co-Game"));
-
-    // Load subsystem modules
-    get_object (queue);
-    get_object (renderer);
-    auto filesystem = get_object <Filesystem> ();
-    get_object (game);
-
-    // Initialize subsystems
-    Rk::StringWOutStream title;
-    title << L"Cobalt Client"; 
-    window.create (title.string ().c_str (), handler_proxy, false, 1280, 720, this);
-
-    filesystem -> init (game_path.string ());
-
-    renderer -> init (window.get_handle (), clock, log);
-    
-    // Start worker threads
-    auto thread_renderer   = renderer;
-    auto thread_filesystem = filesystem;
-    pool.resize (4);
-    for (auto thread = pool.begin (); thread != pool.end (); thread++)
-    {
-      thread -> execute (
-        [this, thread_renderer, thread_filesystem]
-        {
-          worker (*thread_renderer, *thread_filesystem);
-        }
-      );
-    }
-  }
-  
-  Client::~Client ()
-  {
-    window.hide ();
-
-    // Specific shutdown order is important
-    // Kill anything that can own resources
-    objects.clear (); // Release otherwise-unreferenced global objects
-    game.reset ();
-
-    // Now that we're guaranteed to get no more jobs, finish any in the queue, and then
-    // spin down the worker threads
-    queue -> stop (); 
-    pool.clear ();
-  }
-
-  //
-  // Input
-  //
-  void Client::update_keyboard ()
+  void ClientFrontend::update_keyboard ()
   {
     u8 raw_keystate [256];
     GetKeyboardState (raw_keystate);
@@ -376,12 +263,12 @@ namespace Co
       bool set  = (raw_keystate [vk] &  1) ? true : false;
 
       keyboard [key].changed = (down != keyboard [key].down);
-      keyboard [key].down    = down;
-      keyboard [key].set     = set;
+      keyboard [key].down = down;
+      keyboard [key].set = set;
     }
   }
 
-  v2f Client::update_mouse ()
+  v2f ClientFrontend::update_mouse ()
   {
     if (ui_enabled)
       return v2f (0, 0);
@@ -395,15 +282,15 @@ namespace Co
     return v2f ((cursor.x - mid_x) / float (min_mid), (cursor.y - mid_y) / float (min_mid));
   }
 
-  //
-  // run
-  //
-  void Client::run ()
+  void ClientFrontend::run (GameClient::Ptr gc)
   {
     window.show ();
 
-    engine.restart ();
+    clock.restart ();
+    Engine eng (clock, 50.0f);
     
+    gc -> client_start ();
+
     running = true;
 
     while (running)
@@ -412,43 +299,54 @@ namespace Co
       Message msg;
       while (PeekMessageW (&msg, 0, 0, 0, 1))
         DispatchMessageW (&msg);
-      
+
       // Input
       update_keyboard ();
       auto mouse_delta = update_mouse ();
-
-      engine.update (mouse_delta);
-
-      while (running && engine.begin_tick ())
-      {
-        game -> tick (engine.time (), engine.time_step (), *queue, 0, 0, keyboard, mouse_delta);
-        engine.end_tick ();
-      }
-
+      gc -> client_input (ui_events.data (), ui_events.size (), keyboard, mouse_delta);
       ui_events.clear ();
+
+      // Worker Sync
+      queue -> do_completions ();
+
+      // Update
+      eng.update_clock ();
+
+      while (eng.tick ())
+        gc -> client_tick (eng.time (), eng.time_step ());
+
+      // Render
+      gc -> render (*renderer, eng.alpha ());
     }
+
+    gc -> client_stop ();
   }
-  
-  std::shared_ptr <void> Client::get_object (Rk::StringRef type)
+
+  ClientFrontend::ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen, uint w, uint h) try :
+    exe_name (new_exe_name.string () + CO_SUFFIX),
+    log_file (exe_name, false),
+    log_str  (log_file.stream ()),
+    log      (log_str),
+    window   (app_name, Rk::method_proxy (this, &ClientFrontend::handle_message), fullscreen, w, h)
   {
-    auto object_iter = objects.find (type.string ());
-    if (object_iter != objects.end ())
-      return object_iter -> second;
+    ui_enabled = true;
 
-    auto name_iter = module_config.find (type.string ());
-    if (name_iter != module_config.end ())
-    {
-      auto ptr = load_module (name_iter -> second).create (type);
-      objects.insert (std::make_pair (type.string (), ptr));
-      return ptr;
-    }
-    else
-    {
-      throw std::runtime_error ("No module provides objects of type \"" + type.string () + "\"");
-    }
+    update_mids ();
+
+    log () << "* " << exe_name << " starting\n";
+    
+    load_module (queue, "Co-WorkQueue", log);
+
+    Renderer::Params params = { log, *queue, clock };
+    load_module (renderer, "Co-GLRenderer", params);
+  }
+  catch (...)
+  {
+    if (log)
+      log_exception (log, "during frontend initialization");
   }
 
-  void Client::enable_ui (bool new_enabled)
+  void ClientFrontend::enable_ui (bool new_enabled)
   {
     if (ui_enabled != new_enabled)
       ShowCursor (new_enabled);
@@ -456,4 +354,4 @@ namespace Co
     ui_enabled = new_enabled;
   }
 
-} // namespace Co
+}

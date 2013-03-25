@@ -62,9 +62,9 @@ namespace SH
   void World::render (Co::Frame& frame, const Co::Spatial& view)
   {
     // Frustum culling
-    float recip_aspect = float (frame.height) / float (frame.width);
-    float x_hfov = 75.0f * 3.141592f / 360.0f;
-    float y_hfov = x_hfov * recip_aspect;
+    float aspect = float (frame.width) / float (frame.height);
+    float y_hfov = 75.0f * 3.141592f / 360.0f;
+    float x_hfov = y_hfov * aspect;
 
     v3f fwd  = view.orientation.forward (),
         left = view.orientation.left    (),

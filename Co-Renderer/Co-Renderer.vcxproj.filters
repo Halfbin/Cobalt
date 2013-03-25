@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="API">
-      <UniqueIdentifier>{d7d0519e-0724-4de8-9796-94015d4fb6da}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GLBuffer">
       <UniqueIdentifier>{0e8abb45-c3f3-46ab-8619-00359baf8531}</UniqueIdentifier>
     </Filter>
@@ -28,14 +25,17 @@
     <Filter Include="Shaders\Geom">
       <UniqueIdentifier>{fc72e7e9-1ece-4952-94ce-54d325be8c38}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Rect">
-      <UniqueIdentifier>{4ab2c60a-7d81-47b3-bc20-f3831e134c1e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\Skybox">
       <UniqueIdentifier>{1d941aaf-7cf6-46bc-a165-5d592f9e3fe0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders\BlockGeom">
       <UniqueIdentifier>{35dbb2c3-d610-4c49-b415-a5ab15eb2e02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API">
+      <UniqueIdentifier>{3582bde4-6c25-45e1-9cb4-ea86f24c5999}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Rect">
+      <UniqueIdentifier>{4a9f9870-df54-4769-aa85-091253c051b5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -58,16 +58,25 @@
     <ClInclude Include="GeomProgram.hpp">
       <Filter>Shaders\Geom</Filter>
     </ClInclude>
-    <ClInclude Include="RectProgram.hpp">
-      <Filter>Shaders\Rect</Filter>
-    </ClInclude>
     <ClInclude Include="SkyboxProgram.hpp">
       <Filter>Shaders\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="GLContext.hpp">
+      <Filter>GLContext</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockGeomProgram.hpp">
+      <Filter>Shaders\BlockGeom</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Co\Frame.hpp">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\TexImage.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\Co\GeomBuffer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\GeomCompilation.hpp">
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Co\RenderContext.hpp">
@@ -79,17 +88,8 @@
     <ClInclude Include="..\Include\Co\Renderer.hpp">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\Co\TexImage.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="GLContext.hpp">
-      <Filter>GLContext</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\GeomCompilation.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="BlockGeomProgram.hpp">
-      <Filter>Shaders\BlockGeom</Filter>
+    <ClInclude Include="RectProgram.hpp">
+      <Filter>Shaders\Rect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -105,7 +105,6 @@
     <ClCompile Include="GLContext.cpp">
       <Filter>GLContext</Filter>
     </ClCompile>
-    <ClCompile Include="Module.cpp" />
     <ClCompile Include="GLTexImage.cpp">
       <Filter>GLTexImage</Filter>
     </ClCompile>
@@ -115,14 +114,14 @@
     <ClCompile Include="GeomProgram.cpp">
       <Filter>Shaders\Geom</Filter>
     </ClCompile>
-    <ClCompile Include="RectProgram.cpp">
-      <Filter>Shaders\Rect</Filter>
-    </ClCompile>
     <ClCompile Include="SkyboxProgram.cpp">
       <Filter>Shaders\Skybox</Filter>
     </ClCompile>
     <ClCompile Include="BlockGeomProgram.cpp">
       <Filter>Shaders\BlockGeom</Filter>
+    </ClCompile>
+    <ClCompile Include="RectProgram.cpp">
+      <Filter>Shaders\Rect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -131,12 +130,6 @@
     </CustomBuild>
     <CustomBuild Include="Geom-Vertex.glsl">
       <Filter>Shaders\Geom</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Rect-Fragment.glsl">
-      <Filter>Shaders\Rect</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Rect-Vertex.glsl">
-      <Filter>Shaders\Rect</Filter>
     </CustomBuild>
     <CustomBuild Include="Skybox-Fragment.glsl">
       <Filter>Shaders\Skybox</Filter>
@@ -149,6 +142,12 @@
     </CustomBuild>
     <CustomBuild Include="BlockGeom-Vertex.glsl">
       <Filter>Shaders\BlockGeom</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Rect-Fragment.glsl">
+      <Filter>Shaders\Rect</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Rect-Vertex.glsl">
+      <Filter>Shaders\Rect</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

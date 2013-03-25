@@ -4,7 +4,7 @@
 //
 
 // Implements
-#include "GLWindow.hpp"
+#include <Co/ClientWindow.hpp>
 
 // Uses
 #include <Rk/Exception.hpp>
@@ -115,16 +115,16 @@ namespace Co
     __declspec(dllimport) i32   __stdcall SetWindowPlacement (void*, const WindowPlacement*);
   }
 
-  iptr GLWindow::message_proxy (void* handle, u32 message, uptr wp, iptr lp)
+  iptr ClientWindow::message_proxy (void* handle, u32 message, uptr wp, iptr lp)
   {
-    auto window = (GLWindow*) GetWindowLongPtrW (handle, gwlp_userdata);
+    auto window = (ClientWindow*) GetWindowLongPtrW (handle, gwlp_userdata);
     if (window)
       return window -> message_handler (message, wp, lp);
     else
       return DefWindowProcW (handle, message, wp, lp);
   }
 
-  iptr GLWindow::message_handler (u32 message, uptr wp, iptr lp)
+  iptr ClientWindow::message_handler (u32 message, uptr wp, iptr lp)
   {
     if (message == wm_size)
     {
@@ -135,10 +135,9 @@ namespace Co
     return handler (this, message, wp, lp);
   }
 
-  void GLWindow::create (const wchar_t* title, Handler new_handler, bool new_fullscreen, uint window_width, uint window_height, void* new_user)
+  void ClientWindow::create (Rk::WStringRef title, Handler new_handler, bool new_fullscreen, uint window_width, uint window_height)
   {
     handler = new_handler;
-    user    = new_user;
     
     WndClassExW wc = {
       sizeof (wc),
@@ -184,10 +183,12 @@ namespace Co
       new_height = window_height + borders.bottom + borders.top;
     }
 
+    auto title_buf = title.string ();
+
     handle = CreateWindowExW (
       style_ex,
       (const wchar_t*) uptr (atom),
-      title,
+      title_buf.c_str (),
       style,
       new_x,
       new_y,
@@ -208,12 +209,12 @@ namespace Co
       set_fullscreen (true);
   }
 
-  iptr GLWindow::message_default (u32 message, uptr wp, iptr lp)
+  iptr ClientWindow::message_default (u32 message, uptr wp, iptr lp)
   {
     return DefWindowProcW (handle, message, wp, lp);
   }
 
-  void GLWindow::show (bool value)
+  void ClientWindow::show (bool value)
   {
     if (value)
       ShowWindow (handle, sw_show);
@@ -221,7 +222,7 @@ namespace Co
       ShowWindow (handle, sw_hide);
   }
 
-  void GLWindow::set_fullscreen (bool new_fullscreen)
+  void ClientWindow::set_fullscreen (bool new_fullscreen)
   {
     if (new_fullscreen == fullscreen)
       return;
@@ -267,7 +268,7 @@ namespace Co
     }
   }
 
-  GLWindow::~GLWindow ()
+  ClientWindow::~ClientWindow ()
   {
     DestroyWindow (handle);
     handle = 0;

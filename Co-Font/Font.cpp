@@ -18,7 +18,7 @@
 #include <Rk/AsyncMethod.hpp>
 #include <Rk/ShortString.hpp>
 #include <Rk/Exception.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Image.hpp>
 #include <Rk/File.hpp>
 
@@ -66,7 +66,7 @@ namespace Co
       other.bitmap.buffer = 0;
       other.index         = ~uint (0);
     }
-      
+    
     Glyph& operator = (Glyph&& other)
     {
       if (bitmap.buffer)
@@ -379,6 +379,34 @@ namespace Co
   } // make_atlas
 
   //
+  // = map_char ========================================================================================================
+  //
+  template <typename CharMap>
+  void map_char (FT_Face& face, char32 cp, CharMap& char_map, std::map <uint, uint>& remaps, uint& glyph_count)
+  {
+    uint freetype_index = FT_Get_Char_Index (face, cp);
+
+    // No glyph for this character
+    if (freetype_index == 0)
+      freetype_index = FT_Get_Char_Index (face, 0xfffd);
+
+    // Character uses a glyph - do we already have it?
+    auto remap = remaps.find (freetype_index);
+    if (remap != remaps.end ())
+    {
+      // We already have the glyph remapped
+      char_map [cp] = remap -> second;
+    }
+    else
+    {
+      // We need to remap the glyph
+      remaps [freetype_index] = glyph_count;
+      char_map [cp] = glyph_count;
+      glyph_count++;
+    }
+  }
+
+  //
   // = create_font =====================================================================================================
   //
   template <typename CharMap, typename Iter>
@@ -419,33 +447,11 @@ namespace Co
     for (auto range = ranges; range != end; range++)
     {
       for (char32 cp = range -> begin; cp != range -> end; cp++)
-      {
-        uint freetype_index = FT_Get_Char_Index (face, cp);
-        if (freetype_index == 0)
-        {
-          // No glyph for this character
-          char_map [cp] = ~u32 (0);
-          continue;
-        }
-        else
-        {
-          // Character uses a glyph - do we already have it?
-          auto remap = glyph_remaps.find (freetype_index);
-          if (remap != glyph_remaps.end ())
-          {
-            // We already have the glyph remapped
-            char_map [cp] = remap -> second;
-          }
-          else
-          {
-            // We need to remap the glyph
-            glyph_remaps [freetype_index] = glyph_count;
-            char_map [cp] = glyph_count;
-            glyph_count++;
-          }
-        }
-      }
+        map_char (face, cp, char_map, glyph_remaps, glyph_count);
     }
+
+    // Make sure we have U+FFFD REPLACEMENT CHARACTER
+    map_char (face, 0xfffd, char_map, glyph_remaps, glyph_count);
 
     std::vector <Glyph> glyphs;
     glyphs.resize (glyph_count);
@@ -532,7 +538,7 @@ namespace Co
       palette [i * 3 + 2] = u8 (i);
     }
 
-    Rk::File dump ("font-dump.tga", Rk::File::open_replace_or_create);
+    Rk::File dump (path.string () + ".dump.tga", Rk::File::open_replace_or_create);
     dump.put (head)
         .put (palette)
         .write (image.data, image.size ());
@@ -583,7 +589,10 @@ namespace Co
     // Management
     virtual void retrieve (TexImage::Ptr& tex, GlyphMetrics::Vector& mets, uint& font_height) const;
 
+    Character translate_codepoint (char32 cp, u32& prev_ft_index) const;
+
     virtual void translate_codepoints (const char32* begin, const char32* end, Character* chars) const;
+    virtual void translate_utf16      (const char16* utf16, const char16* end, Character* chars) const;
 
     template <typename Iter>
     FontImpl (
@@ -613,6 +622,9 @@ namespace Co
 
   }; // class Font
 
+  //
+  // construct
+  //
   void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
   {
     Rk::Image image;
@@ -626,6 +638,9 @@ namespace Co
     this -> tex  = std::move (tex);
   }
 
+  //
+  // retrieve
+  //
   void FontImpl::retrieve (TexImage::Ptr& tex, GlyphMetrics::Vector& mets, uint& font_height) const
   {
     auto lock = mutex.get_lock ();
@@ -634,6 +649,30 @@ namespace Co
     font_height = this -> font_height;
   }
 
+  //
+  // translate_codepoint
+  //
+  Character FontImpl::translate_codepoint (char32 cp, u32& prev_ft_index) const
+  {
+    auto iter = char_map.find (cp);
+
+    if (iter == char_map.end () && cp != 0xfffd)
+      return translate_codepoint (0xfffd, prev_ft_index);
+
+    u32 ft_index = FT_Get_Char_Index (face, iter -> first);
+
+    FT_Vector kerning = { 0, 0 };
+    if (prev_ft_index && iter -> first)
+      FT_Get_Kerning (face, prev_ft_index, ft_index, 0, &kerning);
+
+    prev_ft_index = ft_index;
+
+    return Character (iter -> second, kerning.x >> 6);
+  }
+
+  //
+  // translate_codepoints
+  //
   void FontImpl::translate_codepoints (const char32* begin, const char32* end, Character* chars) const
   {
     if (!begin || !end || !chars)
@@ -644,24 +683,53 @@ namespace Co
     u32 prev_ft_index = 0;
 
     while (begin != end)
+      *chars++ = translate_codepoint (*begin++, prev_ft_index);
+  }
+
+  //
+  // translate_utf16
+  //
+  void FontImpl::translate_utf16 (const char16* begin, const char16* end, Character* chars) const
+  {
+    if (!begin || !end || !chars)
+      throw std::invalid_argument ("Co::Font::translate_codepoints - null pointer");
+
+    Rk::check_range (begin, end);
+
+    u32 prev_ft_index = 0;
+
+    char32 cp = 0;
+    bool in_pair = false;
+
+    while (begin != end)
     {
-      auto iter = char_map.find (*begin++);
-      if (iter != char_map.end ())
+      char16 unit = *begin++;
+
+      if (unit >= 0xd800 && unit < 0xe000)
       {
-        u32 ft_index = FT_Get_Char_Index (face, iter -> first);
+        if (unit < 0xdc00) // lead surrogate
+        {
+          if (in_pair)
+            throw std::runtime_error ("Co::Font: translate_utf16 - invalid string - double lead surrogate");
 
-        FT_Vector kerning = { 0, 0 };
-        if (prev_ft_index && iter -> first)
-          FT_Get_Kerning (face, prev_ft_index, ft_index, 0, &kerning);
+          cp = unit - 0xd800;
+          in_pair = true;
+        }
+        else
+        {
+          if (!in_pair)
+            throw std::runtime_error ("Co::Font: translate_utf16 - invalid_string - unpaired trail surrogate");
 
-        *chars++ = Character (iter -> second, kerning.x >> 6);
-
-        prev_ft_index = ft_index;
+          cp = (cp << 10) | (unit - 0xdc00);
+          in_pair = false;
+        }
       }
       else
       {
-        *chars++ = Character (0, 0);
+        cp = unit;
       }
+
+      *chars++ = translate_codepoint (cp, prev_ft_index);
     }
   }
 
@@ -702,12 +770,17 @@ namespace Co
   //
   // = FactoryImpl =====================================================================================================
   //
+  extern const RangeSet repetoire_wgl4;
+  extern const RangeSet repetoire_bmp;
+
   class FactoryImpl :
     public FontFactory,
     public ResourceFactory <std::string, FontImpl>
   {
+    Log&       log;
+    WorkQueue& queue;
+
     virtual Font::Ptr create (
-      WorkQueue&       queue,
       Rk::StringRef    path,
       uint             size,
       FontSizeMode     mode,
@@ -733,14 +806,36 @@ namespace Co
       return std::move (ptr);
     }
 
-  public:
-    static std::shared_ptr <FactoryImpl> create ()
+    virtual RangeSet get_repetoire (Rk::StringRef name)
     {
-      return std::make_shared <FactoryImpl> ();
+      //log () << "Co::Font: get_repetoire - " << name << '\n';
+
+      if (name == "WGL4")
+        return repetoire_wgl4;
+      else if (name == "BMP")
+        return repetoire_bmp;
+      else
+        return RangeSet (nullptr, nullptr);
+    }
+
+  public:
+    FactoryImpl (Log& log, WorkQueue& queue) :
+      log   (log),
+      queue (queue)
+    { }
+    
+  };
+
+  class Root :
+    public FontRoot
+  {
+    virtual FontFactory::Ptr create_factory (Log& log, WorkQueue& queue)
+    {
+      return std::make_shared <FactoryImpl> (log, queue);
     }
 
   };
 
-  RK_MODULE_FACTORY (FactoryImpl);
+  RK_MODULE (Root);
 
 } // namespace Co

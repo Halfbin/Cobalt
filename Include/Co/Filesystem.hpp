@@ -7,6 +7,8 @@
 #define CO_H_FILESYSTEM
 
 // Uses
+#include <Co/Log.hpp>
+
 #include <Rk/StringRef.hpp>
 #include <Rk/Types.hpp>
 
@@ -71,14 +73,21 @@ namespace Co
   class Filesystem
   {
   public:
-    static Rk::StringRef ix_name () { return "Co::Filesystem"; }
+    //typedef Log ParamType;
     typedef std::shared_ptr <Filesystem> Ptr;
 
-    virtual void init (Rk::StringRef game_path) = 0;
+    virtual void mount_native (Rk::StringRef mount_point, Rk::StringRef path) = 0;
 
     virtual FileIn::Ptr  open_read  (Rk::StringRef path) = 0;
     virtual FileOut::Ptr open_write (Rk::StringRef path) = 0;
     virtual File::Ptr    open       (Rk::StringRef path) = 0;
+
+  };
+
+  class FilesystemRoot
+  {
+  public:
+    virtual Filesystem::Ptr create_fs (Log& log) = 0;
 
   };
 

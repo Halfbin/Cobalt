@@ -16,7 +16,7 @@
 
 #include <Rk/AsyncMethod.hpp>
 #include <Rk/ChunkLoader.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
 
@@ -62,7 +62,7 @@ namespace Co
     }
 
     ModelImpl (Rk::StringRef new_path) :
-      path ("Models/" + new_path.string ())
+      path (/*"Models/" +*/ new_path.string ())
     { }
     
   public:
@@ -162,7 +162,10 @@ namespace Co
     public ModelFactory,
     public ResourceFactory <std::string, ModelImpl>
   {
-    virtual Model::Ptr create (WorkQueue& queue, Rk::StringRef path)
+    Log&       log;
+    WorkQueue& queue;
+
+    virtual Model::Ptr create (Rk::StringRef path)
     {
       auto ptr = find (path.string ());
       if (!ptr)
@@ -174,13 +177,23 @@ namespace Co
     }
 
   public:
-    static std::shared_ptr <FactoryImpl> create ()
+    FactoryImpl (Log& log, WorkQueue& queue) :
+      log   (log),
+      queue (queue)
+    { }
+    
+  };
+
+  class Root :
+    public ModelRoot
+  {
+    virtual ModelFactory::Ptr create_factory (Log& log, WorkQueue& queue)
     {
-      return std::make_shared <FactoryImpl> ();
+      return std::make_shared <FactoryImpl> (log, queue);
     }
 
   };
 
-  RK_MODULE_FACTORY (FactoryImpl);
+  RK_MODULE (Root);
 
 } // namespace Co

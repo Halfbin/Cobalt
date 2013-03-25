@@ -20,13 +20,13 @@ namespace Co
            sim_time,
            time_delta,
            time_accum;
-    v2f    mouse_accum,
-           mouse_delta;
+    bool   ticking;
 
   public:
     Engine (Clock& clock, float tick_frequency) :
       clock      (clock),
-      time_delta (1.0f / tick_frequency)
+      time_delta (1.0f / tick_frequency),
+      ticking    (false)
     {
       restart ();
     }
@@ -35,8 +35,7 @@ namespace Co
     {
       sim_time    = 0.0f;
       time_accum  = 0.0f;
-      mouse_accum = v2f (0.0f, 0.0f);
-
+      
       prev_real_time = clock.time ();
     }
 
@@ -50,17 +49,12 @@ namespace Co
       return sim_time;
     }
 
-    v2f mouse_step () const
-    {
-      return mouse_delta;
-    }
-
     float alpha () const
     {
       return time_accum / time_delta;
     }
 
-    void update (v2f mouse_in)
+    void update_clock ()
     {
       float real_time = clock.time ();
       float delta_real_time = real_time - prev_real_time;
@@ -69,21 +63,34 @@ namespace Co
       delta_real_time = Rk::clamp (delta_real_time, 0.0f, 0.25f);
       time_accum += delta_real_time;
 
-      mouse_accum += mouse_in;
-      mouse_delta = mouse_accum / time_accum;
+      ticking = false;
     }
 
-    bool begin_tick () const
+    bool tick ()
     {
-      return time_accum >= time_delta;
+      if (ticking)
+      {
+        time_accum -= time_delta;
+        sim_time   += time_delta;
+      }
+
+      ticking = time_accum >= time_delta;
+
+      return ticking;
     }
 
-    void end_tick ()
+    /*void tick_client (GameClient& gc, Renderer& rr)
     {
-      time_accum  -= time_delta;
-      mouse_accum -= mouse_delta;
-      sim_time    += time_delta;
-    }
+      update ();
+
+      while (begin_tick ())
+      {
+        gc.client_tick (time (), time_step ());
+        end_tick ();
+      }
+
+      gc.render (rr, alpha ());
+    }*/
 
   };
 

@@ -16,7 +16,7 @@
 #include <Rk/AsyncMethod.hpp>
 #include <Rk/ChunkLoader.hpp>
 #include <Rk/ByteStream.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
 
@@ -48,7 +48,7 @@ namespace Co
     typedef std::shared_ptr <TextureImpl> Ptr;
 
     TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
-      path       ("Textures/" + new_path.string ()),
+      path       (/*"Textures/" +*/ new_path.string ()),
       wrap       (new_wrap),
       min_filter (new_min_filter),
       mag_filter (new_mag_filter)
@@ -204,8 +204,10 @@ namespace Co
     public TextureFactory,
     public ResourceFactory <std::string, TextureImpl>
   {
+    Log&       log;
+    WorkQueue& queue;
+
     virtual Texture::Ptr create (
-      WorkQueue&    queue,
       Rk::StringRef path,
       bool          wrap,
       bool          min_filter,
@@ -221,13 +223,23 @@ namespace Co
     }
 
   public:
-    static std::shared_ptr <FactoryImpl> create ()
+    FactoryImpl (Log& log, WorkQueue& queue) :
+      log   (log),
+      queue (queue)
+    { }
+    
+  };
+
+  class Root :
+    public TextureRoot
+  {
+    virtual TextureFactory::Ptr create_factory (Log& log, WorkQueue& queue)
     {
-      return std::make_shared <FactoryImpl> ();
+      return std::make_shared <FactoryImpl> (log, queue);
     }
 
   };
 
-  RK_MODULE_FACTORY (FactoryImpl);
+  RK_MODULE (Root);
 
 } // namespace Co

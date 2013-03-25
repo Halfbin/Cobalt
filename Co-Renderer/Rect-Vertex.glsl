@@ -29,7 +29,8 @@ void main ()
 
   ivec4 rect = permute [gl_VertexID];
 
-  xformed_position = vec4 ((ui_to_clip * ui_to_ui * vec3 (rect.xy, 1)).xy, 0, 1);
+  ivec3 ui_xy = ivec3 (ui_to_ui * vec3 (rect.xy, 1));
+  xformed_position = vec4 ((ui_to_clip * vec3 (ui_xy)).xy, 0, 1);
   xformed_tcoords  = rect.zw;
 
   gl_Position = xformed_position;
