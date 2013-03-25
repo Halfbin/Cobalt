@@ -121,12 +121,20 @@
     <ProjectReference Include="..\Co-ClientFrontend\Co-ClientFrontend.vcxproj">
       <Project>{5f707372-521c-4953-b6bf-63317c0e9f51}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Co-Font\Co-Font.vcxproj">
+      <Project>{0e64c3bc-a6a1-4e70-b523-e70198e6df43}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Model\Co-Model.vcxproj">
+      <Project>{02206154-3aca-4bc9-b4cf-d58fbd93722e}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
       <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Co-Texture\Co-Texture.vcxproj">
+      <Project>{13ddacc6-6a8f-4eb8-a58f-f70a1876d653}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
     <ClCompile Include="Title.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

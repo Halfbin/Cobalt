@@ -248,6 +248,31 @@ namespace Co
     return window.message_default (message, wp, lp);
   }
 
+  // TODO
+  void ClientFrontend::worker (RenderDevice& device, Filesystem& fs)
+  {
+    log () << "- Worker thread starting\n";
+
+    SetThreadPriority (GetCurrentThread (), -1);
+
+    auto rc = device.create_context ();
+    
+    for (;;)
+    {
+      try
+      {
+        queue -> work (*rc, fs);
+        break;
+      }
+      catch (...)
+      {
+        log_exception (log, "in worker thread");
+      }
+    }
+
+    log () << "- Worker thread exiting\n";
+  }
+
   void ClientFrontend::update_keyboard ()
   {
     u8 raw_keystate [256];
@@ -273,27 +298,26 @@ namespace Co
     if (ui_enabled)
       return v2f (0, 0);
 
-    int min_mid = std::min (mid_x, mid_y);
+    float scale = 1.0f / float (std::min (mid_x, mid_y));
 
     Point cursor;
     GetCursorPos (&cursor);
     SetCursorPos (mid_x, mid_y);
 
-    return v2f ((cursor.x - mid_x) / float (min_mid), (cursor.y - mid_y) / float (min_mid));
+    return v2f (
+      cursor.x - mid_x,
+      cursor.y - mid_y
+    ) * scale;
   }
 
-  void ClientFrontend::run (GameClient::Ptr gc)
+  void ClientFrontend::run_game ()
   {
-    window.show ();
-
     clock.restart ();
     Engine eng (clock, 50.0f);
-    
-    gc -> client_start ();
 
-    running = true;
+    client -> client_start ();
 
-    while (running)
+    while (running && !switch_game ())
     {
       // Message pump
       Message msg;
@@ -303,7 +327,7 @@ namespace Co
       // Input
       update_keyboard ();
       auto mouse_delta = update_mouse ();
-      gc -> client_input (ui_events.data (), ui_events.size (), keyboard, mouse_delta);
+      client -> client_input (ui_events.data (), ui_events.size (), keyboard, mouse_delta);
       ui_events.clear ();
 
       // Worker Sync
@@ -313,45 +337,94 @@ namespace Co
       eng.update_clock ();
 
       while (eng.tick ())
-        gc -> client_tick (eng.time (), eng.time_step ());
+        client -> client_tick (eng.time (), eng.time_step ());
 
       // Render
-      gc -> render (*renderer, eng.alpha ());
+      renderer -> width  = window.get_width ();
+      renderer -> height = window.get_height ();
+      client -> render (*renderer, eng.alpha ());
+      renderer -> render_frame ();
     }
 
-    gc -> client_stop ();
+    client -> client_stop ();
   }
 
-  ClientFrontend::ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen, uint w, uint h) try :
+  void ClientFrontend::run ()
+  {
+    window.show ();
+    running = true;
+    
+    while (running)
+    {
+      client = next_client;
+      next_client = nullptr;
+
+      server = next_server;
+      next_server = nullptr;
+
+      run_game ();
+    }
+  }
+
+  ClientFrontend::ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen, uint w, uint h) :
     exe_name (new_exe_name.string () + CO_SUFFIX),
     log_file (exe_name, false),
     log_str  (log_file.stream ()),
     log      (log_str),
+    modman   (log),
     window   (app_name, Rk::method_proxy (this, &ClientFrontend::handle_message), fullscreen, w, h)
   {
-    ui_enabled = true;
+    try
+    {
+      init_key_tab ();
+      ui_enabled = true;
+      prev_ui_enabled = true;
 
-    update_mids ();
+      update_mids ();
 
-    log () << "* " << exe_name << " starting\n";
-    
-    load_module (queue, "Co-WorkQueue", log);
+      log () << "* " << exe_name << " starting\n";
+      
+      queue = load_module <WorkQueueRoot> ("Co-WorkQueue") -> create_queue (log);
 
-    Renderer::Params params = { log, *queue, clock };
-    load_module (renderer, "Co-GLRenderer", params);
-  }
-  catch (...)
-  {
-    if (log)
+      filesystem = load_module <FilesystemRoot> ("Co-Filesystem") -> create_fs (log);
+
+      renderer = load_module <RendererRoot> ("Co-GLRenderer") -> create_renderer (log, *queue, clock);
+      renderer -> init (window.get_handle ());
+
+      // Start worker threads
+      auto thread_renderer   = renderer;
+      auto thread_filesystem = filesystem;
+      pool.reset (
+        4, 
+        [this, thread_renderer, thread_filesystem]
+        {
+          worker (*thread_renderer, *thread_filesystem);
+        }
+      );
+    }
+    catch (...)
+    {
       log_exception (log, "during frontend initialization");
+      throw std::runtime_error ("(Proxy exception)");
+    }
   }
-
+  
   void ClientFrontend::enable_ui (bool new_enabled)
   {
     if (ui_enabled != new_enabled)
       ShowCursor (new_enabled);
 
     ui_enabled = new_enabled;
+  }
+
+  ClientFrontend::~ClientFrontend ()
+  {
+    server.reset ();
+    client.reset ();
+    next_server.reset ();
+    next_client.reset ();
+    queue -> stop ();
+    log () << "* " << exe_name << " exiting\n";
   }
 
 }

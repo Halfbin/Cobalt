@@ -9,6 +9,7 @@
 // Uses
 #include <Co/ModuleManager.hpp>
 #include <Co/ClientWindow.hpp>
+#include <Co/Filesystem.hpp>
 #include <Co/WorkQueue.hpp>
 #include <Co/Renderer.hpp>
 #include <Co/UIInput.hpp>
@@ -17,6 +18,7 @@
 #include <Co/Log.hpp>
 
 #include <Rk/MethodProxy.hpp>
+#include <Rk/Thread.hpp>
 
 #include <vector>
 
@@ -24,15 +26,22 @@ namespace Co
 {
   class ClientFrontend
   {
+    // Low-level systems
     std::string     exe_name;
     LogFile         log_file;
     Rk::OutStream   log_str;
     Log             log;
     ModuleManager   modman;
+
+    // Major subsystems
     ClientWindow    window;
     MasterClock     clock;
     WorkQueue::Ptr  queue;
     Renderer::Ptr   renderer;
+    Filesystem::Ptr filesystem;
+    Rk::ThreadPool  pool;
+
+    // Game
     GameServer::Ptr server,
                     next_server;
     GameClient::Ptr client,
@@ -40,35 +49,40 @@ namespace Co
     bool            running;
 
     // UI
-    bool                  ui_enabled,
-                          prev_ui_enabled;
-    KeyState              keyboard [key_count];
-    std::vector <UIEvent> ui_events;
+    bool        ui_enabled,
+                prev_ui_enabled;
+    KeyState    keyboard [key_count];
+    std::vector 
+    <UIEvent>   ui_events;
 
-    void run_loop (GameClient& gc);
+    void run_game ();
+    void run      ();
 
     iptr handle_message (ClientWindow*, u32 message, uptr wp, iptr lp);
+
+    void worker (RenderDevice& rd, Filesystem& fs);
 
     void update_keyboard ();
     v2f  update_mouse    ();
 
+    bool switch_game () const
+    {
+      return next_client || next_server;
+    }
+
   public:
     ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen, uint w, uint h);
-
-    ~ClientFrontend ()
-    {
-      log () << "* " << exe_name << " exiting\n";
-    }
+    ~ClientFrontend ();
 
     void show ()
     {
       window.show ();
     }
 
-    template <typename T, typename Params>
-    std::shared_ptr <T> load_module (Rk::StringRef img_name, const Params& params) try
+    template <typename T>
+    std::shared_ptr <T> load_module (Rk::StringRef img_name) try
     {
-      return modman.load (img_name, params).get <T> ();
+      return modman.load (img_name).get <T> ();
     }
     catch (...)
     {
@@ -76,10 +90,10 @@ namespace Co
       throw;
     }
 
-    template <typename T, typename Params>
-    void load_module (std::shared_ptr <T>& ptr, Rk::StringRef img_name, const Params& params)
+    template <typename T>
+    void load_module (std::shared_ptr <T>& ptr, Rk::StringRef img_name)
     {
-      ptr = load_module <T> (img_name, params);
+      ptr = load_module <T> (img_name);
     }
 
     /*GameClient::Ptr load_client (Rk::StringRef img_name)
@@ -92,13 +106,20 @@ namespace Co
       return load_module <GameServer> (img_name, 0);
     }*/
 
+    Log&       get_log   () { return log; }
+    WorkQueue& get_queue () { return *queue; }
+
     void begin_game (GameClient::Ptr new_client, GameServer::Ptr new_server)
     {
       next_client = new_client;
       next_server = new_server;
     }
 
-    void run (GameClient::Ptr gc);
+    void run (GameClient::Ptr new_client)
+    {
+      begin_game (new_client, nullptr);
+      run ();
+    }
 
     void enable_ui (bool new_enabled);
 

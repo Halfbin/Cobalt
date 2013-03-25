@@ -50,23 +50,23 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Cobalt.props" />
     <Import Project="..\Cobalt-Debug.props" />
+    <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Cobalt.props" />
     <Import Project="..\Cobalt-Debug.props" />
+    <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Cobalt.props" />
     <Import Project="..\Cobalt-Release.props" />
+    <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Cobalt.props" />
     <Import Project="..\Cobalt-Release.props" />
+    <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
@@ -135,8 +135,20 @@
     <ClCompile Include="ClientWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
+      <Project>{abb70100-1fad-4a68-8a40-da9ce0526cbf}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Filesystem\Co-Filesystem.vcxproj">
+      <Project>{00caa543-becd-42ce-ba7a-d7d77a867811}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Renderer\Co-Renderer.vcxproj">
+      <Project>{2830d43b-b50c-4cfc-82ba-52b412dcafd1}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
       <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-WorkQueue\Co-WorkQueue.vcxproj">
+      <Project>{72e38e20-2807-40dd-bb04-de498eb131b8}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
