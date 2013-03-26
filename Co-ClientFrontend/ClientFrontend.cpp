@@ -391,6 +391,8 @@ namespace Co
       renderer = load_module <RendererRoot> ("Co-GLRenderer") -> create_renderer (log, *queue, clock);
       renderer -> init (window.get_handle ());
 
+      audio = load_module <AudioRoot> ("Co-Audio-XA2") -> create_audio_service (log, *queue);
+
       // Start worker threads
       auto thread_renderer   = renderer;
       auto thread_filesystem = filesystem;

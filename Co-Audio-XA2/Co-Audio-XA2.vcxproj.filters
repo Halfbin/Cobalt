@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\Include\Co\AudioBuffer.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\AudioService.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="XA2Buffer.hpp">
+      <Filter>XA2Buffer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="API">
+      <UniqueIdentifier>{0d9408fd-ddf7-4c11-acfa-9197a99c6ff2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XA2Service">
+      <UniqueIdentifier>{40b6e78f-161b-4e1c-880e-a63e732987f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XA2Buffer">
+      <UniqueIdentifier>{3e2e75ae-eb0a-4d5e-8c9a-75cda57cd0db}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="XA2Service.cpp">
+      <Filter>XA2Service</Filter>
+    </ClCompile>
+    <ClCompile Include="XA2Buffer.cpp">
+      <Filter>XA2Buffer</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

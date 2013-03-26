@@ -8,6 +8,7 @@
 
 // Uses
 #include <Co/ModuleManager.hpp>
+#include <Co/AudioService.hpp>
 #include <Co/ClientWindow.hpp>
 #include <Co/Filesystem.hpp>
 #include <Co/WorkQueue.hpp>
@@ -34,12 +35,13 @@ namespace Co
     ModuleManager   modman;
 
     // Major subsystems
-    ClientWindow    window;
-    MasterClock     clock;
-    WorkQueue::Ptr  queue;
-    Renderer::Ptr   renderer;
-    Filesystem::Ptr filesystem;
-    Rk::ThreadPool  pool;
+    ClientWindow      window;
+    MasterClock       clock;
+    WorkQueue::Ptr    queue;
+    Renderer::Ptr     renderer;
+    Filesystem::Ptr   filesystem;
+    AudioService::Ptr audio;
+    Rk::ThreadPool    pool;
 
     // Game
     GameServer::Ptr server,

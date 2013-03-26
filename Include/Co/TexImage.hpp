@@ -3,8 +3,8 @@
 // All Rights Reserved.
 //
 
-#ifndef CO_H_IXTEXIMAGE
-#define CO_H_IXTEXIMAGE
+#ifndef CO_H_TEXIMAGE
+#define CO_H_TEXIMAGE
 
 #include <Co/TextureFile.hpp>
 
