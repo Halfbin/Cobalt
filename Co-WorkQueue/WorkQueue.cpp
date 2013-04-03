@@ -30,7 +30,7 @@ namespace Co
     Rk::Condition                job_queued;
     bool                         run;
 
-    virtual void work           (RenderContext& rc, Filesystem& fs);
+    virtual void work           (LoadContext& ctx);
     virtual void do_completions ();
     virtual void stop           ();
 
@@ -44,7 +44,7 @@ namespace Co
 
   };
 
-  void QueueImpl::work (RenderContext& rc, Filesystem& fs)
+  void QueueImpl::work (LoadContext& ctx)
   {
     auto lock = mutex.get_lock ();
 
@@ -52,7 +52,7 @@ namespace Co
     {
       while (trash_queue.empty () && load_queue.empty () && run)
       {
-        rc.flush ();
+        ctx.rc.flush ();
         job_queued.wait (lock);
       }
 
@@ -61,7 +61,7 @@ namespace Co
         auto job = load_queue.front ();
         load_queue.pop_front ();
         lock = nil;
-        job (*this, rc, fs);
+        job (*this, ctx);
       }
       else if (!trash_queue.empty ())
       {

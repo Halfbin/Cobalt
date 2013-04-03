@@ -126,7 +126,7 @@ namespace Co
 
   iptr ClientWindow::message_handler (u32 message, uptr wp, iptr lp)
   {
-    if (message == wm_size)
+    if (message == wm_size && lp != 0)
     {
       width  = (lp      ) & 0xffff;
       height = (lp >> 16) & 0xffff;
@@ -166,12 +166,22 @@ namespace Co
     i32 screen_width  = GetSystemMetrics (sm_cxscreen),
         screen_height = GetSystemMetrics (sm_cyscreen);
     
+    if (window_width == 0 || window_height == 0)
+    {
+      u32 adj_screen_height = screen_height - borders.top - borders.bottom;
+      window_height = 36 * (adj_screen_height / 36 - 2);
+      window_width = (window_height / 9) * 16;
+    }
+
     u32 style_ex   = fullscreen_style_ex,
         style      = fullscreen_style,
         new_x      = 0,
         new_y      = 0,
         new_width  = screen_width,
         new_height = screen_height;
+
+    width      = screen_width,  // purely informational -
+    height     = screen_height; //  set by handler
 
     if (!new_fullscreen)
     {
@@ -181,6 +191,9 @@ namespace Co
       new_y      = (screen_height / 2) - (window_height / 2) - borders.top;
       new_width  = window_width  + borders.right + borders.left;
       new_height = window_height + borders.bottom + borders.top;
+
+      width      = window_width;
+      height     = window_height;
     }
 
     auto title_buf = title.string ();

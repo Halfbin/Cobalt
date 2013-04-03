@@ -7,6 +7,8 @@
 #define CO_H_AUDIOSERVICE
 
 #include <Co/AudioBuffer.hpp>
+#include <Co/AudioFormat.hpp>
+#include <Co/AudioFrame.hpp>
 
 #include <Co/WorkQueue.hpp>
 #include <Co/Log.hpp>
@@ -15,19 +17,19 @@
 
 namespace Co
 {
-  class AudioService
+  class AudioService :
+    public AudioFrame
   {
   public:
     typedef std::shared_ptr <AudioService> Ptr;
 
     virtual AudioBuffer::Ptr create_buffer (
-      AudioChannels channels,
-      u32 samples_per_sec,
       AudioFormat format,
-      u32 samples,
-      const void* data
+      const void* data,
+      u32         size,
+      u32         samples
     ) = 0;
-
+    
   };
 
   class AudioRoot

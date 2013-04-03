@@ -118,8 +118,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Co-AudioSample\Co-AudioSample.vcxproj">
+      <Project>{0aa00a74-0e4e-48b2-9ee1-d2c30e4b120b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Co-ClientFrontend\Co-ClientFrontend.vcxproj">
       <Project>{5f707372-521c-4953-b6bf-63317c0e9f51}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
+      <Project>{7a374145-d2be-4e29-a8c5-972276ed6da9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Co-Font\Co-Font.vcxproj">
       <Project>{0e64c3bc-a6a1-4e70-b523-e70198e6df43}</Project>
@@ -132,6 +138,12 @@
     </ProjectReference>
     <ProjectReference Include="..\Co-Texture\Co-Texture.vcxproj">
       <Project>{13ddacc6-6a8f-4eb8-a58f-f70a1876d653}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Pyr-Client\Pyr-Client.vcxproj">
+      <Project>{b019d463-2fdb-447a-8d55-7384abdb2307}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Pyr-Server\Pyr-Server.vcxproj">
+      <Project>{9292b48d-d345-402d-a3c6-84ce360f83ee}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

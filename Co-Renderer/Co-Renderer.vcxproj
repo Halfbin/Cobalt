@@ -51,14 +51,6 @@
     <ClCompile Include="SkyboxProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
-      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Co-WorkQueue\Co-WorkQueue.vcxproj">
-      <Project>{72e38e20-2807-40dd-bb04-de498eb131b8}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include="Geom-Fragment.glsl">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) $(OutDir)..\Common\Shaders</Command>
@@ -214,8 +206,12 @@
     <TargetExt>.dll</TargetExt>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -224,6 +220,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -234,6 +231,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opengl32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -248,7 +246,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <Profile>true</Profile>
+      <Profile>false</Profile>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -264,15 +262,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <Profile>true</Profile>
+      <Profile>false</Profile>
       <AdditionalDependencies>opengl32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Co-GLEW\Co-GLEW.vcxproj">
-      <Project>{54C7E226-E083-46DE-8E38-1DB1190D12C4}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="Rect-Fragment.glsl">
       <FileType>Document</FileType>
@@ -304,6 +297,20 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)..\Common\Shaders\%(Filename)%(Extension)</Outputs>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
+      <Project>{7a374145-d2be-4e29-a8c5-972276ed6da9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-GLEW\Co-GLEW.vcxproj">
+      <Project>{54c7e226-e083-46de-8e38-1db1190d12c4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
+      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Co-WorkQueue\Co-WorkQueue.vcxproj">
+      <Project>{72e38e20-2807-40dd-bb04-de498eb131b8}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

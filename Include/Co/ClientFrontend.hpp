@@ -62,7 +62,7 @@ namespace Co
 
     iptr handle_message (ClientWindow*, u32 message, uptr wp, iptr lp);
 
-    void worker (RenderDevice& rd, Filesystem& fs);
+    void worker (RenderDevice& rd, Filesystem& fs, AudioService& as);
 
     void update_keyboard ();
     v2f  update_mouse    ();
@@ -73,7 +73,7 @@ namespace Co
     }
 
   public:
-    ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen, uint w, uint h);
+    ClientFrontend (Rk::StringRef new_exe_name, Rk::WStringRef app_name, bool fullscreen = false, uint w = 0, uint h = 0);
     ~ClientFrontend ();
 
     void show ()

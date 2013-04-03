@@ -605,7 +605,7 @@ namespace Co
     );
 
   public:
-    void construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs);
+    void construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx);
 
     ~FontImpl ();
 
@@ -625,12 +625,12 @@ namespace Co
   //
   // construct
   //
-  void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
+  void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx)
   {
     Rk::Image image;
     auto mets = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
     
-    auto tex = rc.create_tex_rectangle (queue, texformat_a8, image.width, image.height, texwrap_clamp, image.data, image.size ());
+    auto tex = ctx.rc.create_tex_rectangle (queue, texformat_a8, image.width, image.height, texwrap_clamp, image.data, image.size ());
     
     auto lock = mutex.get_lock ();
     font_height = face -> size -> metrics.y_ppem;

@@ -37,6 +37,11 @@ namespace Pyr
 
     }
 
+    virtual void render_audio (Co::AudioFrame& frame)
+    {
+
+    }
+
   };
 
   class Root :

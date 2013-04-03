@@ -249,7 +249,7 @@ namespace Co
   }
 
   // TODO
-  void ClientFrontend::worker (RenderDevice& device, Filesystem& fs)
+  void ClientFrontend::worker (RenderDevice& device, Filesystem& fs, AudioService& as)
   {
     log () << "- Worker thread starting\n";
 
@@ -257,11 +257,13 @@ namespace Co
 
     auto rc = device.create_context ();
     
+    LoadContext ctx (*rc, fs, as);
+
     for (;;)
     {
       try
       {
-        queue -> work (*rc, fs);
+        queue -> work (ctx);
         break;
       }
       catch (...)
@@ -339,6 +341,9 @@ namespace Co
       while (eng.tick ())
         client -> client_tick (eng.time (), eng.time_step ());
 
+      // Audio
+      client -> render_audio (*audio);
+
       // Render
       renderer -> width  = window.get_width ();
       renderer -> height = window.get_height ();
@@ -384,6 +389,8 @@ namespace Co
 
       log () << "* " << exe_name << " starting\n";
       
+      log () << "- Client window " << window.get_width () << 'x' << window.get_height () << '\n';
+
       queue = load_module <WorkQueueRoot> ("Co-WorkQueue") -> create_queue (log);
 
       filesystem = load_module <FilesystemRoot> ("Co-Filesystem") -> create_fs (log);
@@ -396,11 +403,13 @@ namespace Co
       // Start worker threads
       auto thread_renderer   = renderer;
       auto thread_filesystem = filesystem;
+      auto thread_audio      = audio;
+
       pool.reset (
         4, 
-        [this, thread_renderer, thread_filesystem]
+        [this, thread_renderer, thread_filesystem, thread_audio]
         {
-          worker (*thread_renderer, *thread_filesystem);
+          worker (*thread_renderer, *thread_filesystem, *thread_audio);
         }
       );
     }

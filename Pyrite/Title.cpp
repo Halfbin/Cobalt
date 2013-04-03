@@ -7,6 +7,7 @@
 #include <Pyr/Server.hpp>
 
 #include <Co/ClientFrontend.hpp>
+#include <Co/AudioSample.hpp>
 #include <Co/Texture.hpp>
 #include <Co/Model.hpp>
 #include <Co/Font.hpp>
@@ -22,13 +23,17 @@ namespace Pyr
     Co::Texture::Ptr skybox,
                      boxtex;
     Co::Model::Ptr box;
-
+    Co::AudioSample::Ptr tone;
+    
     float t, tp;
-    bool begin;
+    bool begin,
+         beep;
 
     virtual void client_start ()
     {
       frontend.enable_ui (true);
+      begin = false;
+      beep = false;
     }
 
     virtual void client_stop ()
@@ -42,6 +47,8 @@ namespace Pyr
       {
         if (*e == Co::ui_key_up (Co::key_spacebar))
           begin = true;
+        else if (*e == Co::ui_key_down (Co::key_b))
+          beep = true;
       }
     }
 
@@ -105,6 +112,15 @@ namespace Pyr
       );
     }
 
+    virtual void render_audio (Co::AudioFrame& frame)
+    {
+      if (beep)
+      {
+        frame.play_sound (tone -> get ());
+        beep = false;
+      }
+    }
+
   public:
     Title (Co::ClientFrontend& frontend) :
       frontend (frontend)
@@ -122,7 +138,9 @@ namespace Pyr
       auto mf = frontend.load_module <Co::ModelRoot> ("Co-Model") -> create_factory (frontend.get_log (), frontend.get_queue ());
       box = mf -> create ("../Pyr/cube.rkmodel");
 
-      begin = false;
+      // Sound
+      auto asf = frontend.load_module <Co::AudioSampleRoot> ("Co-AudioSample") -> create_factory (frontend.get_log (), frontend.get_queue ());
+      tone = asf -> create ("");
     }
     
   };
@@ -131,10 +149,7 @@ namespace Pyr
   {
     Co::ClientFrontend frontend (
       "Pyrite",
-      L"Pyrite",
-      false,
-      1280,
-      720
+      L"Pyrite"
     );
 
     frontend.run (std::make_shared <Title> (frontend));

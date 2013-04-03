@@ -10,6 +10,13 @@
     <ClInclude Include="XA2Buffer.hpp">
       <Filter>XA2Buffer</Filter>
     </ClInclude>
+    <ClInclude Include="COMDeleter.hpp" />
+    <ClInclude Include="..\Include\Co\AudioFormat.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Co\AudioFrame.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">

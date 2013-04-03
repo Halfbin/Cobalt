@@ -139,7 +139,7 @@
       <Project>{f40052a7-ebe6-4744-835f-5cdc195b8267}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
-      <Project>{abb70100-1fad-4a68-8a40-da9ce0526cbf}</Project>
+      <Project>{7a374145-d2be-4e29-a8c5-972276ed6da9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Co-Filesystem\Co-Filesystem.vcxproj">
       <Project>{00caa543-becd-42ce-ba7a-d7d77a867811}</Project>

@@ -7,6 +7,7 @@
 #define CO_H_GAME
 
 // Uses
+#include <Co/AudioFrame.hpp>
 #include <Co/WorkQueue.hpp>
 #include <Co/PropMap.hpp>
 #include <Co/UIInput.hpp>
@@ -29,6 +30,7 @@ namespace Co
     virtual void client_input (const UIEvent* ui_events, uptr ui_event_count, const KeyState* kb, v2f mouse_delta) = 0;
     virtual void client_tick  (float time, float step) = 0;
     virtual void render       (Frame& frame, float alpha) = 0;
+    virtual void render_audio (AudioFrame& frame) = 0;
 
   };
 

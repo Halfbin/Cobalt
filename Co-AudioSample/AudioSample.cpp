@@ -4,12 +4,11 @@
 //
 
 // Implements
-#include <Co/Texture.hpp>
+#include <Co/AudioSample.hpp>
 
 // Uses
 #include <Co/ResourceFactory.hpp>
-#include <Co/RenderContext.hpp>
-#include <Co/TextureFile.hpp>
+#include <Co/AudioService.hpp>
 #include <Co/Filesystem.hpp>
 #include <Co/WorkQueue.hpp>
 
@@ -26,40 +25,51 @@
 namespace Co
 {
   //
-  // = TextureImpl =====================================================================================================
+  // = SampleImpl ======================================================================================================
   //
-  class TextureImpl :
-    public Texture
+  class SampleImpl :
+    public AudioSample
   {
-    std::string   path;
-    bool          wrap,
-                  min_filter,
-                  mag_filter;
-    TexImage::Ptr image;
-    Rk::Mutex     mutex;
+    std::string      path;
+    AudioBuffer::Ptr buffer;
+    AudioFormat      format;
+    Rk::Mutex        mutex;
 
-    virtual TexImage::Ptr retrieve ()
+    virtual AudioBuffer::Ptr retrieve (AudioFormat& fmt)
     {
       auto lock = mutex.get_lock ();
-      return std::move (image);
+      fmt = format;
+      return std::move (buffer);
     }
     
   public:
-    typedef std::shared_ptr <TextureImpl> Ptr;
+    typedef std::shared_ptr <SampleImpl> Ptr;
 
-    TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
-      path       (/*"Textures/" +*/ new_path.string ()),
-      wrap       (new_wrap),
-      min_filter (new_min_filter),
-      mag_filter (new_mag_filter)
+    SampleImpl (Rk::StringRef new_path) :
+      path (new_path.string ())
     { }
     
     void construct (Ptr& self, WorkQueue& queue, LoadContext& ctx)
     {
       using Rk::ChunkLoader;
       
+      AudioFormat new_format (audio_coding_pcm, audio_channels_mono, 44100, 16);
+
+      static const uint samples = 44100;
+      i16 data [samples];
+
+      for (uint i = 0; i != samples; i++)
+        data [i] = i16 (
+          32760.f *
+          0.25f *
+          std::sin (float (i) / 44100.0f * 2.0f * 3.14159f * 880.0f) *
+          std::sin (float (i) / 44100.0f * 2.0f * 3.14159f * 0.5f)
+        );
+
+      AudioBuffer::Ptr new_buffer = ctx.as.create_buffer (new_format, data, samples * 2, samples);
+
       //Rk::File file (path, Rk::File::open_read_existing);
-      auto file = ctx.fs.open_read (path);
+      /*auto file = fs.open_read (path);
 
       char magic [8];
       Rk::get (*file, magic);
@@ -114,20 +124,6 @@ namespace Co
       if (buffer.empty ())
         throw std::runtime_error ("Texture has no DATA");
       
-      /*TexImageFilter filter_type;
-
-      if (filter)
-        filter_type = texfilter_linear;
-      else
-        filter_type = texfilter_none;
-
-      if (filter && header.type != textype_cube && header.map_count > 1)
-        filter_type = texfilter_trilinear;*/
-
-      /*if (header.flags & texflag_cube_map)
-      {
-        
-      }*/
 
       TexImage::Ptr new_image;
       
@@ -136,7 +132,7 @@ namespace Co
         if (header.layer_count != 0)
           throw std::runtime_error ("Texture is a cube map, but has multiple layers");
 
-        new_image = ctx.rc.create_tex_cube (
+        new_image = rc.create_tex_cube (
           queue,
           (TexFormat) header.format,
           width,
@@ -155,7 +151,7 @@ namespace Co
       }
       else if (header.layer_count == 0) // 2d
       {
-        new_image = ctx.rc.create_tex_image_2d (
+        new_image = rc.create_tex_image_2d (
           queue,
           (TexFormat) header.format,
           width,
@@ -170,7 +166,7 @@ namespace Co
       }
       else // array
       {
-        new_image = ctx.rc.create_tex_array (
+        new_image = rc.create_tex_array (
           queue,
           (TexFormat) header.format,
           width,
@@ -189,34 +185,31 @@ namespace Co
           for (uint level = 0; level != header.map_count; level++)
             offset += new_image -> load_map (layer, level, buffer.data () + offset, buffer.size () - offset);
         }
-      }
-
+      }*/
+      
       auto lock = mutex.get_lock ();
-      image = std::move (new_image);
+      buffer = std::move (new_buffer);
+      format = new_format;
     }
 
-  }; // class TextureImpl
+  }; // class SampleImpl
 
   //
   // = FactoryImpl =====================================================================================================
   //
   class FactoryImpl :
-    public TextureFactory,
-    public ResourceFactory <std::string, TextureImpl>
+    public AudioSampleFactory,
+    public ResourceFactory <std::string, SampleImpl>
   {
     Log&       log;
     WorkQueue& queue;
 
-    virtual Texture::Ptr create (
-      Rk::StringRef path,
-      bool          wrap,
-      bool          min_filter,
-      bool          mag_filter)
+    virtual AudioSample::Ptr create (Rk::StringRef path)
     {
       auto ptr = find (path.string ());
       if (!ptr)
       {
-        ptr = queue.gc_construct (new TextureImpl (path, wrap, min_filter, mag_filter));
+        ptr = queue.gc_construct (new SampleImpl (path));
         add (path.string (), ptr);
       }
       return std::move (ptr);
@@ -231,9 +224,9 @@ namespace Co
   };
 
   class Root :
-    public TextureRoot
+    public AudioSampleRoot
   {
-    virtual TextureFactory::Ptr create_factory (Log& log, WorkQueue& queue)
+    virtual AudioSampleFactory::Ptr create_factory (Log& log, WorkQueue& queue)
     {
       return std::make_shared <FactoryImpl> (log, queue);
     }

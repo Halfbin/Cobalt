@@ -42,7 +42,6 @@ namespace Co
   class TextureFactory
   {
   public:
-    struct Params { Log& log; WorkQueue& queue; };
     typedef std::shared_ptr <TextureFactory> Ptr;
 
     virtual Texture::Ptr create (
