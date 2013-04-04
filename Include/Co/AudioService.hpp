@@ -30,6 +30,8 @@ namespace Co
       u32         samples
     ) = 0;
     
+    virtual void render_frame () = 0;
+
   };
 
   class AudioRoot

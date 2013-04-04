@@ -209,7 +209,8 @@ namespace Co
             return 0;
 
             case wm_keydown:
-              ui_events.push_back (ui_key_down (translate_key (message, wp, lp)));
+              if (!(lp & (1 << 30)))
+                ui_events.push_back (ui_key_down (translate_key (message, wp, lp)));
             return 0;
 
             case wm_keyup:

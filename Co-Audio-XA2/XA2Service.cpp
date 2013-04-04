@@ -50,10 +50,10 @@ namespace Co
     virtual void OnVoiceProcessingPassStart (u32 required) { }
     virtual void OnVoiceProcessingPassEnd   () { }
     virtual void OnBufferStart              (void* ctx) { }
-    virtual void OnBufferEnd                (void* ctx) { }
     virtual void OnLoopEnd                  (void* ctx) { }
     virtual void OnVoiceError               (void* ctx, HRESULT code) { }
 
+    virtual void OnBufferEnd (void* ctx);
     virtual void OnStreamEnd ();
     
     SourcePool&           pool;
@@ -122,6 +122,12 @@ namespace Co
     pool.add_free_voice (ptr.get ());
   }
 
+  void SourceVoice::OnBufferEnd (void* raw)
+  {
+    auto buf = (XA2Buffer*) raw;
+    buf -> release ();
+  }
+
   //
   // = XA2Service ======================================================================================================
   //
@@ -136,6 +142,10 @@ namespace Co
 
     SourcePool source_pool;
 
+    // Frame stuff
+    //std::vector <XA2Buffer::Ptr> ambients;
+    u32 frame_id;
+
     virtual AudioBuffer::Ptr create_buffer (
       AudioFormat format,
       const void* data,
@@ -147,6 +157,7 @@ namespace Co
       AudioBuffer::Ptr buffer
     );
 
+    virtual void render_frame ();
 
   public:
     XA2Service (Log& log, WorkQueue& queue);
@@ -163,7 +174,7 @@ namespace Co
     u32         size,
     u32         samples)
   {
-    return std::make_shared <XA2Buffer> (format, data, size, samples);
+    return XA2Buffer::create (format, data, size, samples);
   }
 
   //
@@ -171,29 +182,48 @@ namespace Co
   // FIXME: add to list, play in batch later
   //
   void XA2Service::play_sound (AudioBuffer::Ptr buffer)
-  {
+  { 
     if (!buffer)
       return; // robust against async resources
 
     auto actual = std::static_pointer_cast <XA2Buffer> (buffer);
     
-    auto voice = source_pool.get_free_voice ();
+    //ambients.push_back (std::move (actual));
+    auto voice = source_pool.get_free_voice (); // best be stopped
     if (!voice)
       return;
-
+    
     auto hr = voice -> SubmitSourceBuffer (actual -> get ());
     if (FAILED (hr))
       Rk::raise () << "XA2Service: play_sound - IXAudio2::SubmitSourceBuffer failed; HRESULT " << Rk::in_hex (ulong (hr));
+    else
+      actual -> acquire ();
 
-    hr = voice -> Start ();
+    hr = voice -> Start (0, frame_id); // TODO
+  }
+
+  void XA2Service::render_frame ()
+  {
+    ixa2 -> CommitChanges (frame_id++);
+
+    /*for (auto amb = ambients.begin (), e = ambients.end (); amb != e; amb++)
+    {
+      auto voice = source_pool.get_free_voice ();
+      if (!voice)
+        break;
+      auto hr = voice -> SubmitSourceBuffer ((*amb) -> get ());
+      if (FAILED (hr))
+        continue; // hm
+    }*/
   }
 
   //
   // Constructor
   //
   XA2Service::XA2Service (Log& log, WorkQueue& queue) :
-    log   (log),
-    queue (queue)
+    log      (log),
+    queue    (queue),
+    frame_id (0)
   {
     auto hr = CoInitializeEx (0, COINIT_MULTITHREADED);
     if (FAILED (hr))

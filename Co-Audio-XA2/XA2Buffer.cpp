@@ -12,7 +12,9 @@ namespace Co
     AudioFormat format,
     const void* data,
     u32         size,
-    u32         samples)
+    u32         samples
+  ) :
+    refs (1)
   {
     auto ptr = (const u8*) data;
 
@@ -26,7 +28,19 @@ namespace Co
     xa2buf.LoopBegin  = 0;
     xa2buf.LoopLength = 0;
     xa2buf.LoopCount  = 0;
-    xa2buf.pContext   = nullptr;
+    xa2buf.pContext   = this;
+  }
+
+  XA2Buffer::Ptr XA2Buffer::create (
+    AudioFormat format,
+    const void* data,
+    u32         size,
+    u32         samples)
+  {
+    return Ptr (
+      new XA2Buffer (format, data, size, samples),
+      [] (XA2Buffer* p) { p -> release (); }
+    );
   }
 
   XAUDIO2_BUFFER* XA2Buffer::get ()
@@ -34,4 +48,14 @@ namespace Co
     return &xa2buf;
   }
 
+  void XA2Buffer::acquire ()
+  {
+    _InterlockedIncrement ((long*) &refs);
+  }
+
+  void XA2Buffer::release ()
+  {
+    if (_InterlockedDecrement ((long*) &refs) == 0)
+      delete this;
+  }
 }

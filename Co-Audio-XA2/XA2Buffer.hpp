@@ -18,6 +18,14 @@
 
 #include <vector>
 
+extern "C"
+{
+  long _InterlockedIncrement (volatile long*);
+  long _InterlockedDecrement (volatile long*);
+}
+
+#pragma intrinsic(_InterlockedIncrement, _InterlockedDecrement)
+
 namespace Co
 {
   class XA2Buffer :
@@ -25,15 +33,28 @@ namespace Co
   {
     std::vector <u8> store;
     XAUDIO2_BUFFER   xa2buf;
+    uint             refs;
 
-  public:
     XA2Buffer (
       AudioFormat format,
       const void* data,
       u32         size,
       u32         samples
     );
-    
+
+  public:
+    typedef std::shared_ptr <XA2Buffer> Ptr;
+
+    void acquire ();
+    void release ();
+
+    static Ptr create (
+      AudioFormat format,
+      const void* data,
+      u32         size,
+      u32         samples
+    );
+
     XAUDIO2_BUFFER* get ();
 
   };
