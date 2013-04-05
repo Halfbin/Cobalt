@@ -47,11 +47,11 @@ namespace Co
   public:
     typedef std::shared_ptr <TextureImpl> Ptr;
 
-    TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
+    TextureImpl (Rk::StringRef new_path, u8 flags) :
       path       (/*"Textures/" +*/ new_path.string ()),
-      wrap       (new_wrap),
-      min_filter (new_min_filter),
-      mag_filter (new_mag_filter)
+      wrap       (bool (flags & texture_wrap)),
+      min_filter (bool (flags & texture_minfilter)),
+      mag_filter (bool (flags & texture_magfilter))
     { }
     
     void construct (Ptr& self, WorkQueue& queue, LoadContext& ctx)
@@ -209,14 +209,12 @@ namespace Co
 
     virtual Texture::Ptr create (
       Rk::StringRef path,
-      bool          wrap,
-      bool          min_filter,
-      bool          mag_filter)
+      u8            flags)
     {
       auto ptr = find (path.string ());
       if (!ptr)
       {
-        ptr = queue.gc_construct (new TextureImpl (path, wrap, min_filter, mag_filter));
+        ptr = queue.gc_construct (new TextureImpl (path, flags));
         add (path.string (), ptr);
       }
       return std::move (ptr);

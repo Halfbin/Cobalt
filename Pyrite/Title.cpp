@@ -125,14 +125,18 @@ namespace Pyr
     Title (Co::ClientFrontend& frontend) :
       frontend (frontend)
     {
+      // TODO module configuration; subsystem dependencies and queries
+      // auto fontfac = frontend.subsystem <Co::FontFactory> ();
+      // font = fontfac -> create (...);
+
       // Font
       auto ff = frontend.load_module <Co::FontRoot> ("Co-Font") -> create_factory (frontend.get_log (), frontend.get_queue ());
       font = ff -> create ("../common/fonts/palab.ttf", 36, Co::fontsize_points, ff -> get_repetoire ("WGL4"), 0);
 
       // Textures
       auto tf = frontend.load_module <Co::TextureRoot> ("Co-Texture") -> create_factory (frontend.get_log (), frontend.get_queue ());
-      skybox = tf -> create ("../Pyr/title.cotexture", false, false, false);
-      boxtex = tf -> create ("../Pyr/derp.cotexture", false, true, true);
+      skybox = tf -> create ("../Pyr/title.cotexture");
+      boxtex = tf -> create ("../Pyr/derp.cotexture", Co::texture_filter);
 
       // Model
       auto mf = frontend.load_module <Co::ModelRoot> ("Co-Model") -> create_factory (frontend.get_log (), frontend.get_queue ());

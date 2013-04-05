@@ -8,7 +8,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Rk\Include;$(SolutionDir)freetype2\include;$(GLEWPath)\include;$(DirectXPath)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";CO_W_SUFFIX=L"$(CoSuffix)";_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4355</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4355;4800</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>

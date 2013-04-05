@@ -39,6 +39,13 @@ namespace Co
 
   }; // class Texture
 
+  static const u8
+    texture_wrap      = 0x1,
+    texture_minfilter = 0x2,
+    texture_magfilter = 0x4,
+    texture_filter    = 0x6
+  ;
+
   class TextureFactory
   {
   public:
@@ -46,9 +53,7 @@ namespace Co
 
     virtual Texture::Ptr create (
       Rk::StringRef path,
-      bool          wrap,
-      bool          min_filter,
-      bool          mag_filter
+      u8            flags = 0
     ) = 0;
 
   };
