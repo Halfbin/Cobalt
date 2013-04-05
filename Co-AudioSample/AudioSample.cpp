@@ -24,6 +24,23 @@
 
 namespace Co
 {
+  enum WFTag : u16
+  {
+    wave_format_pcm = 1
+  };
+  
+  struct WaveFormat
+  {
+    u16 format_tag,
+        channel_count;
+    u32 samples_per_sec,
+        bytes_per_sec;
+    u16 bytes_per_vector,
+        bits_per_sample;
+  };
+
+  static_assert (sizeof (WaveFormat) == 16, "WaveFormat miscompiled");
+
   //
   // = SampleImpl ======================================================================================================
   //
@@ -51,142 +68,81 @@ namespace Co
     
     void construct (Ptr& self, WorkQueue& queue, LoadContext& ctx)
     {
-      using Rk::ChunkLoader;
-      
-      AudioFormat new_format (audio_coding_pcm, audio_channels_mono, 44100, 16);
+      auto file = ctx.fs.open_read (path);
 
-      static const uint samples = 44100;
-      i16 data [samples];
+      char magics [12];
+      Rk::get (*file, magics);
+      if (Rk::StringRef (magics, 4) != "RIFF" || Rk::StringRef (magics + 8, 4) != "WAVE")
+        throw std::runtime_error ("Source file corrupt or not a WAV");
 
-      for (uint i = 0; i != samples; i++)
-        data [i] = i16 (
-          32760.f *
-          0.25f *
-          std::sin (float (i) / 44100.0f * 2.0f * 3.14159f * 880.0f) *
-          std::sin (float (i) / 44100.0f * 2.0f * 3.14159f * 0.5f)
-        );
+      WaveFormat wf = { 0, 0, 0, 0, 0, 0 };
+      std::vector <u8> sample_data;
 
-      AudioBuffer::Ptr new_buffer = ctx.as.create_buffer (new_format, data, samples * 2, samples);
-
-      //Rk::File file (path, Rk::File::open_read_existing);
-      /*auto file = fs.open_read (path);
-
-      char magic [8];
-      Rk::get (*file, magic);
-      if (Rk::StringRef (magic, 8) != "COTEXTR1")
-        throw std::runtime_error ("Source file corrupt or not a texture");
-
-      TextureHeader header = { 0 };
-      u32 width, height;
-      std::vector <u8> buffer;
-      
       auto loader = Rk::make_chunk_loader (*file);
 
       while (loader.resume ())
       {
         switch (loader.type)
         {
-          case chunk_type ('H', 'E', 'A', 'D'):
-            if (header.version)
-              throw std::runtime_error ("Texture has more than one HEAD");
-            file -> read (&header, std::min (uptr (loader.size), sizeof (header)));
-            if (header.version != 0x20120711)
-              throw std::runtime_error ("Texture is of an unsupported version");
-            if (header.flags & ~u8 (texflag_mask_))
-              throw std::runtime_error ("Texture contains invalid flags");
-            if (header.map_count == 0)
-              throw std::runtime_error ("Texture contains no maps");
-            if (header.map_count > 15)
-              throw std::runtime_error ("Texture contains too many maps");
-            width  = header.width;  if (width  == 0) width  = 0x10000;
-            height = header.height; if (height == 0) height = 0x10000;
-            if ((header.flags & texflag_cube_map) && (width != height))
-              throw std::runtime_error ("Texture contains rectangular cubemap faces");
-            if (header.format >= texformat_count)
-              throw std::runtime_error ("Texture uses invalid image format");
+          case chunk_type ('f', 'm', 't', ' '):
+            if (wf.format_tag != 0)
+              Rk::raise () << "AudioSample: \"" << path << "\" contains multiple fmt subchunks";
+            if (!sample_data.empty ())
+              Rk::raise () << "AudioSample: \"" << path << "\" data subchunk before fmt";
+            if (loader.size < sizeof (wf))
+              Rk::raise () << "AudioSample: \"" << path << "\" has invalid fmt subchunk";
+
+            Rk::get (*file, wf);
+            if (wf.format_tag != wave_format_pcm)
+              Rk::raise () << "AudioSample: \"" << path << "\" uses an unsupported encoding";
+            if (wf.channel_count == 0)
+              Rk::raise () << "AudioSample: \"" << path << "\" contains no channels";
+            if (wf.channel_count > 2)
+              Rk::raise () << "AudioSample: \"" << path << "\" has more channels than supported";
+            if (wf.samples_per_sec == 0)
+              Rk::raise () << "AudioSample: \"" << path << "\" has invalid sample rate";
+            if (wf.bits_per_sample == 0 || (wf.bits_per_sample % 8))
+              Rk::raise () << "AudioSample: \"" << path << "\" has invalid sample width";
+            if (wf.bytes_per_vector != (wf.bits_per_sample / 8) * wf.channel_count)
+              Rk::raise () << "AudioSample: \"" << path << "\" specifies incorrect block alignment";
+            if (wf.bytes_per_sec != wf.bytes_per_vector * wf.samples_per_sec)
+              Rk::raise () << "AudioSample: \"" << path << "\" specifies incorrect bitrate";
+
+            if (loader.size > sizeof (wf))
+              file -> seek (loader.size - sizeof (wf)); // skip any extra header
           break;
-          
-          case chunk_type ('D', 'A', 'T', 'A'):
-            if (!header.version)
-              throw std::runtime_error ("Texture has DATA before HEAD");
-            buffer.resize (loader.size);
-            file -> read (buffer.data (), loader.size);
+
+          case chunk_type ('d', 'a', 't', 'a'):
+            if (!sample_data.empty ())
+              Rk::raise () << "AudioSample: \"" << path << "\" contains multiple data subchunks";
+            sample_data.resize (loader.size);
+            file -> read (sample_data.data (), loader.size);
           break;
-          
+
           default:
             file -> seek (loader.size);
         }
       }
 
-      if (!header.version)
-        throw std::runtime_error ("Texture has no chunks");
+      if (wf.format_tag == 0)
+        Rk::raise () << "AudioSample: \"" << path << "\" contains no fmt subchunk";
 
-      if (buffer.empty ())
-        throw std::runtime_error ("Texture has no DATA");
-      
+      if (sample_data.empty ())
+        Rk::raise () << "AudioSample: \"" << path << "\" contains no sample data";
 
-      TexImage::Ptr new_image;
-      
-      if (header.flags & texflag_cube_map) // cube map
-      {
-        if (header.layer_count != 0)
-          throw std::runtime_error ("Texture is a cube map, but has multiple layers");
+      Co::AudioFormat new_format (
+        Co::audio_coding_pcm,
+        wf.channel_count == 2 ? Co::audio_channels_stereo : Co::audio_channels_mono,
+        wf.samples_per_sec,
+        wf.bits_per_sample
+      );
 
-        new_image = rc.create_tex_cube (
-          queue,
-          (TexFormat) header.format,
-          width,
-          height,
-          min_filter,
-          mag_filter
-        );
+      auto new_buffer = ctx.as.create_buffer (
+        new_format,
+        std::move (sample_data),
+        u32 (sample_data.size () / wf.bytes_per_vector)
+      );
 
-        uptr offset = 0;
-
-        for (uint face = 0; face != 6; face++)
-        {
-          for (uint level = 0; level != header.map_count; level++)
-            offset += new_image -> load_map (face, level, buffer.data () + offset, buffer.size () - offset);
-        }
-      }
-      else if (header.layer_count == 0) // 2d
-      {
-        new_image = rc.create_tex_image_2d (
-          queue,
-          (TexFormat) header.format,
-          width,
-          height,
-          header.map_count,
-          wrap ? texwrap_wrap : texwrap_clamp,
-          min_filter,
-          mag_filter,
-          buffer.data (),
-          buffer.size ()
-        );
-      }
-      else // array
-      {
-        new_image = rc.create_tex_array (
-          queue,
-          (TexFormat) header.format,
-          width,
-          height,
-          header.layer_count,
-          header.map_count,
-          wrap ? texwrap_wrap : texwrap_clamp,
-          min_filter,
-          mag_filter
-        );
-
-        uptr offset = 0;
-
-        for (uint layer = 0; layer != header.layer_count; layer++)
-        {
-          for (uint level = 0; level != header.map_count; level++)
-            offset += new_image -> load_map (layer, level, buffer.data () + offset, buffer.size () - offset);
-        }
-      }*/
-      
       auto lock = mutex.get_lock ();
       buffer = std::move (new_buffer);
       format = new_format;

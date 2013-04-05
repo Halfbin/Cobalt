@@ -140,7 +140,7 @@ namespace Pyr
 
       // Sound
       auto asf = frontend.load_module <Co::AudioSampleRoot> ("Co-AudioSample") -> create_factory (frontend.get_log (), frontend.get_queue ());
-      tone = asf -> create ("");
+      tone = asf -> create ("../Pyr/jingle.wav");
     }
     
   };

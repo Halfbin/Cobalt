@@ -36,10 +36,9 @@ namespace Co
     uint             refs;
 
     XA2Buffer (
-      AudioFormat format,
-      const void* data,
-      u32         size,
-      u32         samples
+      AudioFormat      format,
+      std::vector <u8> data,
+      u32              samples
     );
 
   public:
@@ -49,13 +48,17 @@ namespace Co
     void release ();
 
     static Ptr create (
-      AudioFormat format,
-      const void* data,
-      u32         size,
-      u32         samples
+      AudioFormat      format,
+      std::vector <u8> data,
+      u32              samples
     );
 
     XAUDIO2_BUFFER* get ();
+
+    u8* data ()
+    {
+      return store.data ();
+    }
 
   };
 

@@ -9,19 +9,15 @@
 namespace Co
 {
   XA2Buffer::XA2Buffer (
-    AudioFormat format,
-    const void* data,
-    u32         size,
-    u32         samples
+    AudioFormat      format,
+    std::vector <u8> data,
+    u32              samples
   ) :
-    refs (1)
+    store (std::move (data)),
+    refs  (1)
   {
-    auto ptr = (const u8*) data;
-
-    store.assign (ptr, ptr + size);
-
     xa2buf.Flags = XAUDIO2_END_OF_STREAM;
-    xa2buf.AudioBytes = size;
+    xa2buf.AudioBytes = (u32) store.size ();
     xa2buf.pAudioData = store.data ();
     xa2buf.PlayBegin  = 0;
     xa2buf.PlayLength = samples;
@@ -32,13 +28,12 @@ namespace Co
   }
 
   XA2Buffer::Ptr XA2Buffer::create (
-    AudioFormat format,
-    const void* data,
-    u32         size,
-    u32         samples)
+    AudioFormat      format,
+    std::vector <u8> data,
+    u32              samples)
   {
     return Ptr (
-      new XA2Buffer (format, data, size, samples),
+      new XA2Buffer (format, std::move (data), samples),
       [] (XA2Buffer* p) { p -> release (); }
     );
   }

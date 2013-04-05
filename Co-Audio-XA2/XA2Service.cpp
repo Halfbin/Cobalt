@@ -147,10 +147,9 @@ namespace Co
     u32 frame_id;
 
     virtual AudioBuffer::Ptr create_buffer (
-      AudioFormat format,
-      const void* data,
-      u32         size,
-      u32         samples
+      AudioFormat      format,
+      std::vector <u8> data,
+      u32              samples
     );
 
     virtual void play_sound (
@@ -169,12 +168,11 @@ namespace Co
   // create_buffer
   //
   AudioBuffer::Ptr XA2Service::create_buffer (
-    AudioFormat format,
-    const void* data,
-    u32         size,
-    u32         samples)
+    AudioFormat      format,
+    std::vector <u8> data,
+    u32              samples)
   {
-    return XA2Buffer::create (format, data, size, samples);
+    return XA2Buffer::create (format, data, samples);
   }
 
   //
