@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(RkPath)\Include;$(FreetypePath)\include;$(GLEWPath)\include;$(DirectXPath)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Rk\Include;$(FreetypePath)\include;$(GLEWPath)\include;$(DirectXPath)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>CO_SUFFIX="$(CoSuffix)";CO_W_SUFFIX=L"$(CoSuffix)";_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4355</DisableSpecificWarnings>
     </ClCompile>

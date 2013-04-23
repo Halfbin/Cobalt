@@ -1,0 +1,3 @@
+[submodule "Rk"]
+	path = Rk
+	url = git://github.com/Halfbin/Rk.git
