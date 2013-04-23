@@ -12,6 +12,7 @@
 
 #include "COMDeleter.hpp"
 #include "XA2Buffer.hpp"
+#include "XA2Stream.hpp"
 
 #include <XAudio2.h>
 
@@ -152,6 +153,10 @@ namespace Co
       u32              samples
     );
 
+    virtual AudioStream::Ptr create_stream (
+      FileIn::Ptr source
+    );
+
     virtual void play_sound (
       AudioBuffer::Ptr buffer
     );
@@ -173,6 +178,14 @@ namespace Co
     u32              samples)
   {
     return XA2Buffer::create (format, data, samples);
+  }
+
+  //
+  // create_stream
+  //
+  AudioStream::Ptr XA2Service::create_stream (FileIn::Ptr source)
+  {
+    return XA2Stream::create (queue, source);
   }
 
   //

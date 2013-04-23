@@ -8,8 +8,10 @@
 
 #include <Co/AudioBuffer.hpp>
 #include <Co/AudioFormat.hpp>
+#include <Co/AudioStream.hpp>
 #include <Co/AudioFrame.hpp>
 
+#include <Co/Filesystem.hpp>
 #include <Co/WorkQueue.hpp>
 #include <Co/Log.hpp>
 
@@ -41,6 +43,10 @@ namespace Co
       auto ptr = (const u8*) data;
       return create_buffer (format, std::vector <u8> (ptr, ptr + size), samples);
     }
+
+    virtual AudioStream::Ptr create_stream (
+      FileIn::Ptr source
+    ) = 0;
 
     virtual void render_frame () = 0;
 

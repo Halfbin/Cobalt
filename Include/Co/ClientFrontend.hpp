@@ -123,6 +123,11 @@ namespace Co
       run ();
     }
 
+    void quit ()
+    {
+      running = false;
+    }
+
     void enable_ui (bool new_enabled);
 
   };

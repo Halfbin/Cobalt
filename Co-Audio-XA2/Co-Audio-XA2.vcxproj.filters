@@ -17,6 +17,12 @@
     <ClInclude Include="..\Include\Co\AudioFrame.hpp">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Co\AudioStream.hpp">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="XA2Stream.hpp">
+      <Filter>XA2Stream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">
@@ -28,6 +34,9 @@
     <Filter Include="XA2Buffer">
       <UniqueIdentifier>{3e2e75ae-eb0a-4d5e-8c9a-75cda57cd0db}</UniqueIdentifier>
     </Filter>
+    <Filter Include="XA2Stream">
+      <UniqueIdentifier>{438d7bfb-9df7-4cf6-aa2b-87e67b722f27}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="XA2Service.cpp">
@@ -35,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="XA2Buffer.cpp">
       <Filter>XA2Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="XA2Stream.cpp">
+      <Filter>XA2Stream</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -134,12 +134,15 @@
     <ClInclude Include="..\Include\Co\AudioFormat.hpp" />
     <ClInclude Include="..\Include\Co\AudioFrame.hpp" />
     <ClInclude Include="..\Include\Co\AudioService.hpp" />
+    <ClInclude Include="..\Include\Co\AudioStream.hpp" />
     <ClInclude Include="COMDeleter.hpp" />
     <ClInclude Include="XA2Buffer.hpp" />
+    <ClInclude Include="XA2Stream.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="XA2Buffer.cpp" />
     <ClCompile Include="XA2Service.cpp" />
+    <ClCompile Include="XA2Stream.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">

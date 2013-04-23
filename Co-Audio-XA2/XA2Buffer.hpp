@@ -60,6 +60,11 @@ namespace Co
       return store.data ();
     }
 
+    u32 size () const
+    {
+      return u32 (store.size ());
+    }
+
   };
 
 }

@@ -85,7 +85,7 @@ namespace Co
     }
 
     for (auto comp = comps.begin (); comp != comps.end (); comp++)
-      (*comp) ();
+      (*comp) (*this);
   }
 
   void QueueImpl::stop ()

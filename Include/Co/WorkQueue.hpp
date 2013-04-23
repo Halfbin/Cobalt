@@ -52,7 +52,9 @@ namespace Co
     typedef std::function <void (WorkQueue&, LoadContext&)>
       LoadFunc;
     typedef std::function <void ()>
-      TrashFunc, CompletionFunc;
+      TrashFunc;
+    typedef std::function <void (WorkQueue&)>
+      CompletionFunc;
 
     virtual void queue_load       (LoadFunc       load)  = 0;
     virtual void queue_trash      (TrashFunc      trash) = 0;
