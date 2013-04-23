@@ -138,15 +138,13 @@ namespace Co
     Rk::Mutex      device_mutex;
     GLContext::Ptr true_context;
 
-    // Subsystems
-    const Clock*       clock;
-    Log*               log_ptr;
+    // Shaders
     GeomProgram::Ptr   geom_program;
     RectProgram::Ptr   rect_program;
     SkyboxProgram::Ptr skybox_program;
 
     // Setup and teardown
-    virtual void init    (void* hwnd, const Clock& clock, Log& log);
+    virtual void init    (void* hwnd);
     void         cleanup ();
     
     virtual RenderContext& context ();
@@ -192,21 +190,14 @@ namespace Co
     GLContext::Ptr             create_context_impl ();
     virtual RenderContext::Ptr create_context      ();
     
-    GLRenderer ();
-
   public:
-    Log::Lock log ()
-    {
-      return log_ptr -> lock ();
-    }
+    Log&         log;
+    WorkQueue&   queue;
+    const Clock& clock;
 
-    static GLRenderer instance;
-
-    static std::shared_ptr <GLRenderer> create ();
+    GLRenderer (Log& log, WorkQueue& queue, const Clock& clock);
 
   }; // class GLRenderer
-
-  static GLRenderer& renderer = GLRenderer::instance;
 
 } // namespace Co
 

@@ -1,16 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="API">
-      <UniqueIdentifier>{ab71b72e-80cd-4839-a5f6-166e544db2d7}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Include\Co\Font.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Font.cpp" />
+    <ClCompile Include="WGL4.cpp">
+      <Filter>Repetoires</Filter>
+    </ClCompile>
+    <ClCompile Include="BMP.cpp">
+      <Filter>Repetoires</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Co\Font.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Repetoires">
+      <UniqueIdentifier>{818ebe06-ef26-4ff4-b3e4-9cac80983171}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

@@ -16,7 +16,7 @@
 #include <Rk/AsyncMethod.hpp>
 #include <Rk/ChunkLoader.hpp>
 #include <Rk/ByteStream.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
 
@@ -48,18 +48,18 @@ namespace Co
     typedef std::shared_ptr <TextureImpl> Ptr;
 
     TextureImpl (Rk::StringRef new_path, bool new_wrap, bool new_min_filter, bool new_mag_filter) :
-      path       ("Textures/" + new_path.string ()),
+      path       (/*"Textures/" +*/ new_path.string ()),
       wrap       (new_wrap),
       min_filter (new_min_filter),
       mag_filter (new_mag_filter)
     { }
     
-    void construct (Ptr& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
+    void construct (Ptr& self, WorkQueue& queue, LoadContext& ctx)
     {
       using Rk::ChunkLoader;
       
       //Rk::File file (path, Rk::File::open_read_existing);
-      auto file = fs.open_read (path);
+      auto file = ctx.fs.open_read (path);
 
       char magic [8];
       Rk::get (*file, magic);
@@ -136,7 +136,7 @@ namespace Co
         if (header.layer_count != 0)
           throw std::runtime_error ("Texture is a cube map, but has multiple layers");
 
-        new_image = rc.create_tex_cube (
+        new_image = ctx.rc.create_tex_cube (
           queue,
           (TexFormat) header.format,
           width,
@@ -155,7 +155,7 @@ namespace Co
       }
       else if (header.layer_count == 0) // 2d
       {
-        new_image = rc.create_tex_image_2d (
+        new_image = ctx.rc.create_tex_image_2d (
           queue,
           (TexFormat) header.format,
           width,
@@ -170,7 +170,7 @@ namespace Co
       }
       else // array
       {
-        new_image = rc.create_tex_array (
+        new_image = ctx.rc.create_tex_array (
           queue,
           (TexFormat) header.format,
           width,
@@ -204,8 +204,10 @@ namespace Co
     public TextureFactory,
     public ResourceFactory <std::string, TextureImpl>
   {
+    Log&       log;
+    WorkQueue& queue;
+
     virtual Texture::Ptr create (
-      WorkQueue&    queue,
       Rk::StringRef path,
       bool          wrap,
       bool          min_filter,
@@ -221,13 +223,23 @@ namespace Co
     }
 
   public:
-    static std::shared_ptr <FactoryImpl> create ()
+    FactoryImpl (Log& log, WorkQueue& queue) :
+      log   (log),
+      queue (queue)
+    { }
+    
+  };
+
+  class Root :
+    public TextureRoot
+  {
+    virtual TextureFactory::Ptr create_factory (Log& log, WorkQueue& queue)
     {
-      return std::make_shared <FactoryImpl> ();
+      return std::make_shared <FactoryImpl> (log, queue);
     }
 
   };
 
-  RK_MODULE_FACTORY (FactoryImpl);
+  RK_MODULE (Root);
 
 } // namespace Co

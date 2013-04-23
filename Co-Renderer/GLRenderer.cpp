@@ -10,7 +10,7 @@
 #include <Co/GeomCompilation.hpp>
 #include <Co/Clock.hpp>
 
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Guard.hpp>
 #include <Rk/File.hpp>
 
@@ -116,17 +116,14 @@ namespace Co
   };
 
   //
-  // Instance
-  //
-  GLRenderer GLRenderer::instance;
-
-  //
   // Constructor
   //
-  GLRenderer::GLRenderer ()
+  GLRenderer::GLRenderer (Log& log, WorkQueue& queue, const Clock& clock) :
+    log   (log),
+    queue (queue),
+    clock (clock)
   {
     target    = 0;
-    clock     = 0;
     shared_dc = 0;
     format    = 0;
     shared_rc = 0;
@@ -155,7 +152,7 @@ namespace Co
   // 9.  Initialize GLEW, using new RC
   // 10. Un-current the shared RC
   //
-  void GLRenderer::init (void* new_target, const Clock& new_clock, Log& new_logger) try
+  void GLRenderer::init (void* new_target) try
   {
     if (!new_target)
       throw std::invalid_argument ("Renderer::init - Null pointer");
@@ -164,9 +161,7 @@ namespace Co
       throw std::logic_error ("Renderer::init - Renderer already initialized");
 
     target = new_target;
-    clock  = &new_clock;
-    log_ptr = &new_logger;
-
+    
     log () << "- GLRenderer initializing\n";
 
     // BULLSHIT OPENGL INITIALIZATION
@@ -335,6 +330,7 @@ namespace Co
   catch (...)
   {
     cleanup ();
+    throw;
   }
   
   void GLRenderer::cleanup ()
@@ -353,8 +349,6 @@ namespace Co
       shared_dc = 0;
     }
 
-    log_ptr = 0;
-    clock   = 0;
     target  = 0;
     format  = 0;
     wglCreateContextAttribs = 0;
@@ -530,7 +524,7 @@ namespace Co
     float aspect = float (width) / float (height);
 
     auto eye_to_clip = Rk::eye_to_clip_xform (
-      camera_fov / aspect,
+      camera_fov,
       aspect,
       camera_near, camera_far
     );
@@ -717,14 +711,16 @@ namespace Co
   //
   // = Module ==========================================================================================================
   //
-  std::shared_ptr <GLRenderer> GLRenderer::create ()
+  class Root :
+    public RendererRoot
   {
-    return std::shared_ptr <GLRenderer> (
-      &instance,
-      [] (GLRenderer* p) { p -> cleanup (); }
-    );
-  }
+    virtual Renderer::Ptr create_renderer (Log& log, WorkQueue& queue, const Clock& clock)
+    {
+      return std::make_shared <GLRenderer> (log, queue, clock);
+    }
 
-  RK_MODULE_FACTORY (GLRenderer);
+  };
+
+  RK_MODULE (Root);
 
 } // namespace Co

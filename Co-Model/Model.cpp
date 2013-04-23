@@ -16,7 +16,7 @@
 
 #include <Rk/AsyncMethod.hpp>
 #include <Rk/ChunkLoader.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Mutex.hpp>
 #include <Rk/File.hpp>
 
@@ -62,15 +62,15 @@ namespace Co
     }
 
     ModelImpl (Rk::StringRef new_path) :
-      path ("Models/" + new_path.string ())
+      path (/*"Models/" +*/ new_path.string ())
     { }
     
   public:
-    void construct (std::shared_ptr <ModelImpl>& self, WorkQueue& queue, RenderContext& rc, Filesystem& fs)
+    void construct (std::shared_ptr <ModelImpl>& self, WorkQueue& queue, LoadContext& ctx)
     {
       using Rk::ChunkLoader;
       
-      auto file = fs.open_read (path);
+      auto file = ctx.fs.open_read (path);
 
       char magic [8];
       Rk::get (*file, magic);
@@ -100,8 +100,8 @@ namespace Co
             file -> read (&header, loader.size);
             if (header.version != (2011 << 16 | 3 << 8 | 27))
               throw std::runtime_error ("Model is of an unsupported version");
-            element_buffer = rc.create_buffer (queue, header.element_count * 32);
-            index_buffer   = rc.create_buffer (queue, header.index_count   *  2);
+            element_buffer = ctx.rc.create_buffer (queue, header.element_count * 32);
+            index_buffer   = ctx.rc.create_buffer (queue, header.index_count   *  2);
             meshes.resize (header.vismesh_count);
           break;
           
@@ -145,7 +145,7 @@ namespace Co
       };
 
       auto lock = mutex.get_lock ();
-      comp = rc.create_compilation (queue, attribs, element_buffer, index_buffer, index_u16);
+      comp = ctx.rc.create_compilation (queue, attribs, element_buffer, index_buffer, index_u16);
     }
 
     static Ptr create (WorkQueue& queue, Rk::StringRef new_path)
@@ -162,7 +162,10 @@ namespace Co
     public ModelFactory,
     public ResourceFactory <std::string, ModelImpl>
   {
-    virtual Model::Ptr create (WorkQueue& queue, Rk::StringRef path)
+    Log&       log;
+    WorkQueue& queue;
+
+    virtual Model::Ptr create (Rk::StringRef path)
     {
       auto ptr = find (path.string ());
       if (!ptr)
@@ -174,13 +177,23 @@ namespace Co
     }
 
   public:
-    static std::shared_ptr <FactoryImpl> create ()
+    FactoryImpl (Log& log, WorkQueue& queue) :
+      log   (log),
+      queue (queue)
+    { }
+    
+  };
+
+  class Root :
+    public ModelRoot
+  {
+    virtual ModelFactory::Ptr create_factory (Log& log, WorkQueue& queue)
     {
-      return std::make_shared <FactoryImpl> ();
+      return std::make_shared <FactoryImpl> (log, queue);
     }
 
   };
 
-  RK_MODULE_FACTORY (FactoryImpl);
+  RK_MODULE (Root);
 
 } // namespace Co

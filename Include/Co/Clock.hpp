@@ -100,11 +100,19 @@ namespace Co
       RegGetValueA (hkey_local_machine, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "~MHz", rrf_rt_reg_dword, 0, &mhz, &size);
       
       ticks_per_second = float (u64 (mhz) * 1000000ull);
-      start = rdtsc ();
     #else
       u64 perf_freq;
       QueryPerformanceFrequency (&perf_freq);
       ticks_per_second = float (perf_freq);
+    #endif
+      restart ();
+    }
+
+    void restart ()
+    {
+    #if defined (CO_CLOCK_USE_RDTSC) || defined (CO_CLOCK_USE_RDTSCP)
+      start = rdtsc ();
+    #else
       QueryPerformanceCounter (&start);
     #endif
     }

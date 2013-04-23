@@ -10,7 +10,7 @@
 #include <Co/RenderContext.hpp>
 
 #include <Rk/Condition.hpp>
-#include <Rk/Module.hpp>
+#include <Rk/Modular.hpp>
 #include <Rk/Mutex.hpp>
 
 #include <vector>
@@ -21,6 +21,7 @@ namespace Co
   class QueueImpl :
     public WorkQueue
   {
+    Log&                         log;
     std::deque <LoadFunc>        load_queue;
     std::deque <TrashFunc>       trash_queue;
     std::vector <CompletionFunc> completion_queue;
@@ -29,7 +30,7 @@ namespace Co
     Rk::Condition                job_queued;
     bool                         run;
 
-    virtual void work           (RenderContext& rc, Filesystem& fs);
+    virtual void work           (LoadContext& ctx);
     virtual void do_completions ();
     virtual void stop           ();
 
@@ -38,19 +39,12 @@ namespace Co
     virtual void queue_completion (CompletionFunc comp);
 
   public:
-    QueueImpl ();
+    QueueImpl (Log&);
     ~QueueImpl ();
-
-    static Ptr create ()
-    {
-      return std::make_shared <QueueImpl> ();
-    }
 
   };
 
-  RK_MODULE_FACTORY (QueueImpl);
-
-  void QueueImpl::work (RenderContext& rc, Filesystem& fs)
+  void QueueImpl::work (LoadContext& ctx)
   {
     auto lock = mutex.get_lock ();
 
@@ -58,7 +52,7 @@ namespace Co
     {
       while (trash_queue.empty () && load_queue.empty () && run)
       {
-        rc.flush ();
+        ctx.rc.flush ();
         job_queued.wait (lock);
       }
 
@@ -67,7 +61,7 @@ namespace Co
         auto job = load_queue.front ();
         load_queue.pop_front ();
         lock = nil;
-        job (*this, rc, fs);
+        job (*this, ctx);
       }
       else if (!trash_queue.empty ())
       {
@@ -121,7 +115,8 @@ namespace Co
     completion_queue.push_back (std::move (comp));
   }
 
-  QueueImpl::QueueImpl () :
+  QueueImpl::QueueImpl (Log& log) :
+    log (log),
     run (true)
   { }
   
@@ -132,4 +127,16 @@ namespace Co
     completion_queue.clear ();
   }
 
+  class Root :
+    public WorkQueueRoot
+  {
+    virtual WorkQueue::Ptr create_queue (Log& log)
+    {
+      return std::make_shared <QueueImpl> (log);
+    }
+
+  };
+
+  RK_MODULE (Root);
+  
 }

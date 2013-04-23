@@ -7,28 +7,49 @@
 #define CO_H_WORKQUEUE
 
 // Uses
+#include <Co/Log.hpp>
+
 #include <Rk/AsyncMethod.hpp>
 
 #include <functional>
 #include <memory>
+//#include <tuple>
 
 namespace Co
 {
   class RenderContext;
+  class AudioService;
   class Filesystem;
+  
+  struct LoadContext
+  {
+    RenderContext& rc;
+    Filesystem&    fs;
+    AudioService&  as;
+
+    LoadContext (
+      RenderContext& rc,
+      Filesystem&    fs,
+      AudioService&  as
+    ) :
+      rc (rc),
+      fs (fs),
+      as (as)
+    { }
+    
+  };
 
   class WorkQueue
   {
   public:
-    static Rk::StringRef ix_name () { return "Co::WorkQueue"; }
     typedef std::shared_ptr <WorkQueue> Ptr;
 
-    virtual void work           (RenderContext& rc, Filesystem& fs) = 0;
+    virtual void work           (LoadContext& ctx) = 0;
     virtual void do_completions () = 0;
     virtual void stop           () = 0;
 
     // Asynchronous jobs
-    typedef std::function <void (WorkQueue&, RenderContext&, Filesystem&)>
+    typedef std::function <void (WorkQueue&, LoadContext&)>
       LoadFunc;
     typedef std::function <void ()>
       TrashFunc, CompletionFunc;
@@ -61,7 +82,8 @@ namespace Co
     {
       return [this, nested] (T* p)
       {
-        queue_trash ([nested, p] { nested (p); });
+        auto n = nested;
+        queue_trash ([n, p] { n (p); });
       };
     }
 
@@ -107,6 +129,13 @@ namespace Co
       queue_load (ptr, &T::construct);
       return std::move (ptr);
     }
+
+  };
+
+  class WorkQueueRoot
+  {
+  public:
+    virtual WorkQueue::Ptr create_queue (Log& log) = 0;
 
   };
 

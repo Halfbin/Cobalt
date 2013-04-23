@@ -125,7 +125,7 @@ namespace Co
     u32 location = glGetUniformLocation (name, uniform);
     check_gl ("glGetUniformLocation");
     if (location == 0xffffffff)
-      throw std::runtime_error ("Co-GLRenderer: GLProgram::link_uniform - Uniform not present or inactive");
+      Rk::raise () << "Co-GLRenderer: GLProgram::link_uniform - Uniform \"" << uniform << "\" not present or inactive";
     return location;
   }
 

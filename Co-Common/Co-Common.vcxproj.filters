@@ -1,28 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\Clock.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\Profile.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\Spatial.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\PropMap.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\ResourceFactory.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Co\Log.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="API">
-      <UniqueIdentifier>{3f98cab1-e7e1-43c0-bedd-daf4dfd4a86b}</UniqueIdentifier>
-    </Filter>
+    <ClInclude Include="..\Include\Co\Clock.hpp" />
+    <ClInclude Include="..\Include\Co\UIInput.hpp" />
+    <ClInclude Include="..\Include\Co\Engine.hpp" />
+    <ClInclude Include="..\Include\Co\Game.hpp" />
+    <ClInclude Include="..\Include\Co\InputSink.hpp" />
+    <ClInclude Include="..\Include\Co\Log.hpp" />
+    <ClInclude Include="..\Include\Co\ModuleManager.hpp" />
+    <ClInclude Include="..\Include\Co\Profile.hpp" />
+    <ClInclude Include="..\Include\Co\PropMap.hpp" />
+    <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
+    <ClInclude Include="..\Include\Co\Spatial.hpp" />
   </ItemGroup>
 </Project>

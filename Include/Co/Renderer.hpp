@@ -10,6 +10,7 @@
 #include <Co/RenderDevice.hpp>
 
 // Uses
+#include <Co/WorkQueue.hpp>
 #include <Co/Clock.hpp>
 #include <Co/Frame.hpp>
 #include <Co/Log.hpp>
@@ -26,13 +27,19 @@ namespace Co
     public Frame
   {
   public:
-    static Rk::StringRef ix_name () { return "Co::Renderer"; }
     typedef std::shared_ptr <Renderer> Ptr;
 
-    virtual void init         (void* hwnd, const Clock& clock, Log& log) = 0;
+    virtual void init         (void* hwnd) = 0;
     virtual void render_frame () = 0;
 
     virtual RenderContext& context () = 0;
+
+  };
+
+  class RendererRoot
+  {
+  public:
+    virtual Renderer::Ptr create_renderer (Log& log, WorkQueue& queue, const Clock& clock) = 0;
 
   };
 

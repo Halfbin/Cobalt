@@ -4,13 +4,6 @@
     <ClCompile Include="Model.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="API">
-      <UniqueIdentifier>{a56dcc1a-0c9a-47e6-8e8e-4c75a6302a33}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Include\Co\Model.hpp">
-      <Filter>API</Filter>
-    </ClInclude>
+    <ClInclude Include="..\Include\Co\Model.hpp" />
   </ItemGroup>
 </Project>

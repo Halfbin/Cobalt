@@ -18,21 +18,8 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Include\Co\Clock.hpp" />
-    <ClInclude Include="..\Include\Co\Log.hpp" />
-    <ClInclude Include="..\Include\Co\Profile.hpp" />
-    <ClInclude Include="..\Include\Co\PropMap.hpp" />
-    <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
-    <ClInclude Include="..\Include\Co\Spatial.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
-      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{ABB70100-1FAD-4A68-8A40-DA9CE0526CBF}</ProjectGuid>
+    <ProjectGuid>{7A374145-D2BE-4E29-A8C5-972276ED6DA9}</ProjectGuid>
     <RootNamespace>CoCommon</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -83,14 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetExt>.dll</TargetExt>
-    <IgnoreImportLibrary>true</IgnoreImportLibrary>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetExt>.dll</TargetExt>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +85,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>CO_COMMON_API=__declspec(dllexport);RK_API=__declspec(dllimport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -111,7 +95,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>CO_COMMON_API=__declspec(dllexport);RK_API=__declspec(dllimport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -124,14 +107,12 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>CO_COMMON_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <NoEntryPoint>true</NoEntryPoint>
-      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,16 +121,32 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>CO_COMMON_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <NoEntryPoint>true</NoEntryPoint>
-      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Co\Clock.hpp" />
+    <ClInclude Include="..\Include\Co\Engine.hpp" />
+    <ClInclude Include="..\Include\Co\Game.hpp" />
+    <ClInclude Include="..\Include\Co\InputSink.hpp" />
+    <ClInclude Include="..\Include\Co\Log.hpp" />
+    <ClInclude Include="..\Include\Co\ModuleManager.hpp" />
+    <ClInclude Include="..\Include\Co\Profile.hpp" />
+    <ClInclude Include="..\Include\Co\PropMap.hpp" />
+    <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
+    <ClInclude Include="..\Include\Co\Spatial.hpp" />
+    <ClInclude Include="..\Include\Co\UIInput.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
+      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

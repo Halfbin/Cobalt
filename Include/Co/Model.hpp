@@ -51,10 +51,16 @@ namespace Co
   class ModelFactory
   {
   public:
-    static Rk::StringRef ix_name () { return "Co::ModelFactory"; }
     typedef std::shared_ptr <ModelFactory> Ptr;
 
-    virtual Model::Ptr create (WorkQueue& queue, Rk::StringRef path) = 0;
+    virtual Model::Ptr create (Rk::StringRef path) = 0;
+
+  };
+
+  class ModelRoot
+  {
+  public:
+    virtual ModelFactory::Ptr create_factory (Log& log, WorkQueue& queue) = 0;
 
   };
 

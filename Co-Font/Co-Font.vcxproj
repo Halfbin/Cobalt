@@ -75,6 +75,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -127,9 +133,14 @@
     <ClInclude Include="..\Include\Co\Font.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BMP.cpp" />
     <ClCompile Include="Font.cpp" />
+    <ClCompile Include="WGL4.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Co-Common\Co-Common.vcxproj">
+      <Project>{7a374145-d2be-4e29-a8c5-972276ed6da9}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Co-Freetype\Co-Freetype.vcxproj">
       <Project>{fd1cd69b-b8ed-40a0-962a-2e89e43d538b}</Project>
     </ProjectReference>

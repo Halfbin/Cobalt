@@ -6,53 +6,94 @@
 #ifndef CO_H_ENGINE
 #define CO_H_ENGINE
 
-#include <Co/WorkQueue.hpp>
-#include <Co/Renderer.hpp>
-#include <Co/PropMap.hpp>
-#include <Co/UIInput.hpp>
-#include <Co/Entity.hpp>
-#include <Co/Game.hpp>
-#include <Co/Host.hpp>
-#include <Co/Log.hpp>
+#include <Co/Clock.hpp>
 
-#include <Rk/StringRef.hpp>
-
-#include <typeinfo>
+#include <Rk/Vector2.hpp>
+#include <Rk/Clamp.hpp>
 
 namespace Co
 {
   class Engine
   {
+    Clock& clock;
+    float  prev_real_time,
+           sim_time,
+           time_delta,
+           time_accum;
+    bool   ticking;
+
   public:
-    static Rk::StringRef ix_name () { return "Co::Engine"; }
-    typedef std::shared_ptr <Engine> Ptr;
-
-    virtual void init      (Host&, Renderer::Ptr, WorkQueue&, Game::Ptr) = 0;
-    virtual void start     () = 0;
-    virtual bool update    (uint width, uint height, const UIEvent* ui_events, uint ui_event_count, const KeyState* keyboard, v2f mouse_delta) = 0;
-    virtual void stop      () = 0;
-    virtual void enable_ui (bool enable) = 0;
-
-    virtual Entity::Ptr create_entity (Rk::StringRef type, const PropMap* props = 0) = 0;
+    Engine (Clock& clock, float tick_frequency) :
+      clock      (clock),
+      time_delta (1.0f / tick_frequency),
+      ticking    (false)
+    {
+      restart ();
+    }
     
-    virtual std::shared_ptr <void> get_object (Rk::StringRef type) = 0;
-
-    template <typename T>
-    std::shared_ptr <T> get_object ()
+    void restart ()
     {
-      return std::static_pointer_cast <T> (
-        get_object (T::ix_name ())
-      );
+      sim_time    = 0.0f;
+      time_accum  = 0.0f;
+      
+      prev_real_time = clock.time ();
     }
 
-    template <typename T>
-    void get_object (std::shared_ptr <T>& ptr)
+    float time_step () const
     {
-      ptr = get_object <T> ();
+      return time_delta;
     }
+
+    float time () const
+    {
+      return sim_time;
+    }
+
+    float alpha () const
+    {
+      return time_accum / time_delta;
+    }
+
+    void update_clock ()
+    {
+      float real_time = clock.time ();
+      float delta_real_time = real_time - prev_real_time;
+      prev_real_time = real_time;
+
+      delta_real_time = Rk::clamp (delta_real_time, 0.0f, 0.25f);
+      time_accum += delta_real_time;
+
+      ticking = false;
+    }
+
+    bool tick ()
+    {
+      if (ticking)
+      {
+        time_accum -= time_delta;
+        sim_time   += time_delta;
+      }
+
+      ticking = time_accum >= time_delta;
+
+      return ticking;
+    }
+
+    /*void tick_client (GameClient& gc, Renderer& rr)
+    {
+      update ();
+
+      while (begin_tick ())
+      {
+        gc.client_tick (time (), time_step ());
+        end_tick ();
+      }
+
+      gc.render (rr, alpha ());
+    }*/
 
   };
 
-} // namespace Co
+}
 
 #endif
