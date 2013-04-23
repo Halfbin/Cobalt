@@ -127,22 +127,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(FreetypePath)\src\base\ftbase.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftbbox.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftbitmap.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftdebug.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftglyph.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftinit.c" />
-    <ClCompile Include="$(FreetypePath)\src\base\ftsystem.c" />
-    <ClCompile Include="$(FreetypePath)\src\psnames\psnames.c" />
-    <ClCompile Include="$(FreetypePath)\src\sfnt\sfnt.c" />
-    <ClCompile Include="$(FreetypePath)\src\smooth\smooth.c" />
-    <ClCompile Include="$(FreetypePath)\src\truetype\truetype.c" />
+    <ClCompile Include="..\freetype2\src\base\ftbase.c" />
+    <ClCompile Include="..\freetype2\src\base\ftbbox.c" />
+    <ClCompile Include="..\freetype2\src\base\ftbitmap.c" />
+    <ClCompile Include="..\freetype2\src\base\ftdebug.c" />
+    <ClCompile Include="..\freetype2\src\base\ftglyph.c" />
+    <ClCompile Include="..\freetype2\src\base\ftinit.c" />
+    <ClCompile Include="..\freetype2\src\base\ftsystem.c" />
+    <ClCompile Include="..\freetype2\src\psnames\psnames.c" />
+    <ClCompile Include="..\freetype2\src\sfnt\sfnt.c" />
+    <ClCompile Include="..\freetype2\src\smooth\smooth.c" />
+    <ClCompile Include="..\freetype2\src\truetype\truetype.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftconfig.h" />
-    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftheader.h" />
-    <ClInclude Include="$(FreetypePath)\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="..\freetype2\include\freetype\config\ftconfig.h" />
+    <ClInclude Include="..\freetype2\include\freetype\config\ftheader.h" />
+    <ClInclude Include="..\freetype2\include\freetype\config\ftstdlib.h" />
     <ClInclude Include="..\Include\Co\FreetypeModules.h" />
     <ClInclude Include="..\Include\Co\FreetypeOptions.h" />
     <ClInclude Include="..\Include\ft2build.h" />

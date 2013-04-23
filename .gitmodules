@@ -1,3 +1,6 @@
 [submodule "Rk"]
 	path = Rk
 	url = git://github.com/Halfbin/Rk.git
+[submodule "freetype2"]
+	path = freetype2
+	url = git://git.sv.gnu.org/freetype/freetype2.git
