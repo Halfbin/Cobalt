@@ -258,7 +258,7 @@ namespace Co
 
     auto rc = device.create_context ();
     
-    LoadContext ctx (*rc, fs, as);
+    LoadContext ctx (log, *rc, fs, as);
 
     for (;;)
     {

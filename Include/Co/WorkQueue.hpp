@@ -23,18 +23,21 @@ namespace Co
   
   struct LoadContext
   {
+    Log&           log;
     RenderContext& rc;
     Filesystem&    fs;
     AudioService&  as;
-
+    
     LoadContext (
+      Log&           log,
       RenderContext& rc,
       Filesystem&    fs,
       AudioService&  as
     ) :
-      rc (rc),
-      fs (fs),
-      as (as)
+      log (log),
+      rc  (rc),
+      fs  (fs),
+      as  (as)
     { }
     
   };

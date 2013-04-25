@@ -484,6 +484,22 @@ namespace Co
     if (error)
       throw std::runtime_error ("Co-Font: create_font - FT_New_Face failed");
 
+    #ifdef CO_DEBUG
+
+    if (face -> num_fixed_sizes != 0)
+    {
+      auto lock = ctx.log.lock ();
+      lock << "i Strike sizes for \"" << path << "\":\n";
+    
+      for (uint i = 0; i != face -> num_fixed_sizes; i++)
+      {
+        auto& size = face -> available_sizes [i];
+        lock << "    " << (size.x_ppem >> 6) << "x" << (size.y_ppem >> 6) << '\n';
+      }
+    }
+
+    #endif
+
     // Set size
     if (mode == fontsize_points)
     {
@@ -536,9 +552,16 @@ namespace Co
 
     for (auto remap = glyph_remaps.begin (); remap != glyph_remaps.end (); remap++)
     {
-      error = FT_Load_Glyph (face, remap -> first, FT_LOAD_RENDER | FT_LOAD_NO_AUTOHINT);
+      error = FT_Load_Glyph (face, remap -> first, FT_LOAD_NO_AUTOHINT);
       if (error)
         throw std::runtime_error ("Co-Font: create_font - FT_Load_Glyph failed");
+
+      if (face -> glyph -> format != FT_GLYPH_FORMAT_BITMAP)
+      {
+        error = FT_Render_Glyph (face -> glyph, FT_RENDER_MODE_NORMAL);
+        if (error)
+          throw std::runtime_error ("Co-Font: create_font - FT_Render_Glyph failed");
+      }
 
       glyphs [remap -> second].init (face -> glyph, remap -> second);
     }

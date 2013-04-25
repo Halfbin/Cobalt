@@ -18,10 +18,12 @@ namespace Pyr
     public Co::GameClient
   {
     Co::ClientFrontend& frontend;
-    Co::Font::Ptr font;
+    Co::Font::Ptr font,
+                  ui_small_font;
     Rk::ShortU16String <1024> str;
     Co::Texture::Ptr skybox,
-                     boxtex;
+                     boxtex,
+                     ui_tex;
     Co::Model::Ptr box;
     Co::AudioSample::Ptr tone;
     
@@ -95,6 +97,12 @@ namespace Pyr
         &boxmat, 1
       );
 
+      Co::TexRect rects [1] = {
+        Co::TexRect (80, 80, 300, 50, 0, 0, 0, 0)
+      };
+
+      frame.add_label (nullptr, rects, 1, Co::Spatial2D (nil), nil, v4f (0.00f, 0.00f, 0.60f, 1.0f));
+
       Co::draw_ui_text_wrap (
         frame,
         v2f (
@@ -103,13 +111,31 @@ namespace Pyr
         ),
         frame.width,
         *font,
-        Rk::u16_string (L"Press space"),
-        Rk::lerp (
-          v4f (0, 0, 0, 1),
-          v4f (1, 0, 0, 1),
-          0.5 + 0.5 * std::sin (now * 3.0f)
-        )
+        Rk::u16_string (L"New Game"),
+        v4f (1, 1, 1, 1)
       );
+
+      /*uint wx = 300,
+           wy = 300,
+           ww = 1200,
+           wh = 400;
+
+      Co::TexRect rects [1] = {
+        Co::TexRect (wx, wy, ww, wh, 0, 0, 0, 0)
+      };
+
+      frame.add_label (nullptr, rects, 1, Co::Spatial2D (nil), nil, v4f (0.25f, 0.25f, 0.25f, 1.0f));
+
+      Co::TexRect motif (wx, wy + 8, 20, 4, 0, 0, 0, 0);
+      frame.add_label (nullptr, &motif, 1, Co::Spatial2D (nil), nil, v4f (1.0f, 0.5f, 0.0f, 1.0f));
+
+      Co::draw_ui_text (
+        frame,
+        v2f (wx + 24, wy + 4),
+        *ui_small_font,
+        Rk::u16_string (L"Test window"),
+        v4f (1, 1, 1, 1)
+      );*/
     }
 
     virtual void render_audio (Co::AudioFrame& frame)
@@ -127,12 +153,14 @@ namespace Pyr
     {
       // Font
       auto ff = frontend.load_module <Co::FontRoot> ("Co-Font") -> create_factory (frontend.get_log (), frontend.get_queue ());
-      font = ff -> create ("../common/fonts/palab.ttf", 36, Co::fontsize_points, ff -> get_repetoire ("WGL4"), 0);
+      font          = ff -> create ("../pyr/Russo_One.ttf", 20, Co::fontsize_points, ff -> get_repetoire ("WGL4"));
+      ui_small_font = ff -> create ("../pyr/profontwindows.ttf", 11, Co::fontsize_pixels, ff -> get_repetoire ("WGL4"));
 
       // Textures
       auto tf = frontend.load_module <Co::TextureRoot> ("Co-Texture") -> create_factory (frontend.get_log (), frontend.get_queue ());
       skybox = tf -> create ("../Pyr/title.cotexture", false, false, false);
       boxtex = tf -> create ("../Pyr/derp.cotexture", false, true, true);
+      //ui_tex = tf -> create ("../Pyr/ui.cotexture", false, false, false);
 
       // Model
       auto mf = frontend.load_module <Co::ModelRoot> ("Co-Model") -> create_factory (frontend.get_log (), frontend.get_queue ());
