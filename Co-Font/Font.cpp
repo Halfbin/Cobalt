@@ -19,6 +19,7 @@
 #include <Rk/ShortString.hpp>
 #include <Rk/Exception.hpp>
 #include <Rk/Modular.hpp>
+#include <Rk/Guard.hpp>
 #include <Rk/Image.hpp>
 #include <Rk/File.hpp>
 
@@ -34,15 +35,13 @@
 
 namespace Co
 {
-  // Freetype
-  FT_Library ft = 0;
-
   //
   // = Glyph =========================================================================================================
   // An individual character glyph, used for packing
   //
   class Glyph
   {
+    FT_Library       ft; // ugh
     FT_Bitmap        bitmap;
     FT_Glyph_Metrics metrics;
     uint             best_x,
@@ -97,6 +96,8 @@ namespace Co
 
     void init (FT_GlyphSlot slot, uint new_index)
     {
+      ft = slot -> library;
+
       index = new_index;
 
       Rk::zero_out (bitmap);
@@ -409,10 +410,10 @@ namespace Co
   //
   // = create_font =====================================================================================================
   //
-  template <typename CharMap, typename Iter>
+  template <typename CharMap, typename KernMap, typename Iter>
   GlyphMetrics::Vector create_font (
-    FT_Face&      face,
     CharMap&      char_map,
+    KernMap&      kerning_pairs,
     Rk::Image&    image,
     Rk::StringRef path,
     uint          index,
@@ -420,17 +421,19 @@ namespace Co
     FontSizeMode  mode,
     Iter          ranges,
     Iter          end,
-    float         threshold)
+    float         threshold,
+    uint&         approx_height)
   {
-    FT_Error error;
+    FT_Library ft;
+    auto error = FT_Init_FreeType (&ft); // FIXME holy shit
+    if (error)
+      throw std::runtime_error ("X Co-Font: create_font - FT_Init_FreeType failed");
+    
+    auto ft_guard = Rk::guard (
+      [&ft] { FT_Done_FreeType (ft); }
+    );
 
-    if (!ft)
-    {
-      error = FT_Init_FreeType (&ft);
-      if (error)
-        throw std::runtime_error ("X Co-Font: create_font - FT_Init_FreeType failed");
-    }
-
+    FT_Face face;
     Rk::ShortString <512> path_buf = path;
     error = FT_New_Face (ft, path_buf.c_str (), 0, &face);
     if (error)
@@ -440,6 +443,8 @@ namespace Co
     if (error)
       throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
 
+    approx_height = face -> size -> metrics.y_ppem;
+
     std::map <uint, uint> glyph_remaps; // Remaps FreeType glyph indices to private glyph indices
     
     uint glyph_count = 0;
@@ -448,6 +453,21 @@ namespace Co
     {
       for (char32 cp = range -> begin; cp != range -> end; cp++)
         map_char (face, cp, char_map, glyph_remaps, glyph_count);
+    }
+
+    // Discover kerning pairs
+    for (auto left = glyph_remaps.begin (); left != glyph_remaps.end (); left++)
+    {
+      for (auto right = glyph_remaps.begin (); right != glyph_remaps.end (); right++)
+      {
+        FT_Vector kerning;
+        auto error = FT_Get_Kerning (face, left -> first, right -> first, 0, &kerning);
+        if (kerning.x || kerning.y)
+        {
+          u64 key = (u64 (left -> second) << 32) | right -> second;
+          kerning_pairs [key] = v2i (kerning.x >> 6, kerning.y >> 6);
+        }
+      }
     }
 
     // Make sure we have U+FFFD REPLACEMENT CHARACTER
@@ -464,7 +484,7 @@ namespace Co
 
       glyphs [remap -> second].init (face -> glyph, remap -> second);
     }
-      
+    
     // Sort glyphs by longest side for packing
     std::sort (
       glyphs.begin (),
@@ -561,7 +581,7 @@ namespace Co
       //metrics [dest_index].y = image.height - metrics [dest_index].y;
       dest_index++;
     }
-    
+
     return std::move (metrics);
   }
 
@@ -579,17 +599,17 @@ namespace Co
     std::vector <CodeRange> code_ranges;
 
     // Data
-    FT_Face                          face;
     std::unordered_map <char32, u32> char_map;
     GlyphMetrics::Vector             mets;
     TexImage::Ptr                    tex;
     uint                             font_height;
     mutable Rk::Mutex                mutex;
+    std::unordered_map <u64, v2i>    kerning_pairs;
 
     // Management
     virtual void retrieve (TexImage::Ptr& tex, GlyphMetrics::Vector& mets, uint& font_height) const;
 
-    Character translate_codepoint (char32 cp, u32& prev_ft_index) const;
+    Character translate_codepoint (char32 cp, u32& prev_index) const;
 
     virtual void translate_codepoints (const char32* begin, const char32* end, Character* chars) const;
     virtual void translate_utf16      (const char16* utf16, const char16* end, Character* chars) const;
@@ -606,8 +626,6 @@ namespace Co
 
   public:
     void construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx);
-
-    ~FontImpl ();
 
     template <typename Iter>
     static Ptr create (
@@ -628,12 +646,13 @@ namespace Co
   void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx)
   {
     Rk::Image image;
-    auto mets = create_font (face, char_map, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f);
+    uint approx_height;
+    auto mets = create_font (char_map, kerning_pairs, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f, approx_height);
     
     auto tex = ctx.rc.create_tex_rectangle (queue, texformat_a8, image.width, image.height, texwrap_clamp, image.data, image.size ());
     
     auto lock = mutex.get_lock ();
-    font_height = face -> size -> metrics.y_ppem;
+    font_height = approx_height;
     this -> mets = std::move (mets);
     this -> tex  = std::move (tex);
   }
@@ -652,22 +671,25 @@ namespace Co
   //
   // translate_codepoint
   //
-  Character FontImpl::translate_codepoint (char32 cp, u32& prev_ft_index) const
+  Character FontImpl::translate_codepoint (char32 cp, u32& prev_index) const
   {
     auto iter = char_map.find (cp);
 
     if (iter == char_map.end () && cp != 0xfffd)
-      return translate_codepoint (0xfffd, prev_ft_index);
+      return translate_codepoint (0xfffd, prev_index);
 
-    u32 ft_index = FT_Get_Char_Index (face, iter -> first);
+    v2i kerning (0, 0);
+    if (prev_index && iter -> second)
+    {
+      u64 key = (u64 (prev_index) << 32) | iter -> second;
+      auto kern_iter = kerning_pairs.find (key);
+      if (kern_iter != kerning_pairs.end ())
+        kerning = kern_iter -> second;
+    }
 
-    FT_Vector kerning = { 0, 0 };
-    if (prev_ft_index && iter -> first)
-      FT_Get_Kerning (face, prev_ft_index, ft_index, 0, &kerning);
+    prev_index = iter -> second;
 
-    prev_ft_index = ft_index;
-
-    return Character (iter -> second, kerning.x >> 6);
+    return Character (iter -> second, kerning.x);
   }
 
   //
@@ -680,10 +702,10 @@ namespace Co
 
     Rk::check_range (begin, end);
 
-    u32 prev_ft_index = 0;
+    u32 prev_index = 0;
 
     while (begin != end)
-      *chars++ = translate_codepoint (*begin++, prev_ft_index);
+      *chars++ = translate_codepoint (*begin++, prev_index);
   }
 
   //
@@ -748,12 +770,7 @@ namespace Co
     mode        (new_mode),
     code_ranges (ranges, end)
   { }
-    
-  FontImpl::~FontImpl ()
-  {
-    FT_Done_Face (face);
-  }
-
+  
   template <typename Iter>
   static Font::Ptr FontImpl::create (
     WorkQueue&     queue,
