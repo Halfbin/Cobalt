@@ -36,6 +36,61 @@
 namespace Co
 {
   //
+  // = FontImpl ======================================================================================================
+  //
+  class FontImpl :
+    public Font
+  {
+    // Parameters
+    std::string             path;
+    uint                    size,
+                            index;
+    FontSizeMode            mode;
+    std::vector <CodeRange> code_ranges;
+
+    // Data
+    std::unordered_map <char32, u32> char_map;
+    GlyphMetrics::Vector             mets;
+    TexImage::Ptr                    tex;
+    uint                             font_height;
+    mutable Rk::Mutex                mutex;
+    std::unordered_map <u64, v2i>    kerning_pairs;
+
+    // Management
+    virtual void retrieve (TexImage::Ptr& tex, GlyphMetrics::Vector& mets, uint& font_height) const;
+
+    Character translate_codepoint (char32 cp, u32& prev_index) const;
+
+    virtual void translate_codepoints (const char32* begin, const char32* end, Character* chars) const;
+    virtual void translate_utf16      (const char16* utf16, const char16* end, Character* chars) const;
+
+    template <typename Iter>
+    FontImpl (
+      Rk::StringRef  new_path,
+      uint           new_size,
+      FontSizeMode   new_mode,
+      Iter           ranges,
+      Iter           end,
+      uint           new_index
+    );
+
+  public:
+    void construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx);
+
+    template <typename Iter>
+    static Ptr create (
+      WorkQueue&     queue,
+      Rk::StringRef  path,
+      uint           size,
+      FontSizeMode   mode,
+      Iter           ranges,
+      Iter           end,
+      uint           index
+    );
+
+  }; // class FontImpl
+
+  //
   // = Glyph =========================================================================================================
   // An individual character glyph, used for packing
   //
@@ -198,7 +253,7 @@ namespace Co
   struct Rect
   {
     uint x, y,
-          width, height;
+         width, height;
 
     Rect () { }
 
@@ -233,8 +288,6 @@ namespace Co
   template <typename Iter>
   bool pack_glyphs (Iter first, Iter end, uint width, uint height)
   {
-    //Profiler prof ("Co-Font: pack_glyphs", log);
-
     typedef std::multiset <Rect> Rects;
     Rects rects;
     rects.insert (Rect (0, 0, width, height));
@@ -333,10 +386,8 @@ namespace Co
   template <typename Iter>
   float make_atlas (Iter first, Iter end, float threshold, uint& best_width, uint& best_height)
   {
-    //Profiler prof ("Co-Font: make_atlas", log);
-
     if (first == end)
-      throw std::runtime_error ("X Co-Font: make_atlas - no glyphs to pack");
+      throw std::runtime_error ("Co-Font: make_atlas - no glyphs to pack");
 
     threshold = Rk::clamp (threshold, 0.0f, 1.0f);
 
@@ -408,58 +459,54 @@ namespace Co
   }
 
   //
-  // = create_font =====================================================================================================
+  // construct
   //
-  template <typename CharMap, typename KernMap, typename Iter>
-  GlyphMetrics::Vector create_font (
-    CharMap&      char_map,
-    KernMap&      kerning_pairs,
-    Rk::Image&    image,
-    Rk::StringRef path,
-    uint          index,
-    uint          size,
-    FontSizeMode  mode,
-    Iter          ranges,
-    Iter          end,
-    float         threshold,
-    uint&         approx_height)
+  void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx)
   {
+    Rk::Image image;
+    uint approx_height;
+    float threshold = 0.95f;
+
+    // Load FreeType
     FT_Library ft;
-    auto error = FT_Init_FreeType (&ft); // FIXME holy shit
+    auto error = FT_Init_FreeType (&ft);
     if (error)
-      throw std::runtime_error ("X Co-Font: create_font - FT_Init_FreeType failed");
+      throw std::runtime_error ("Co-Font: create_font - FT_Init_FreeType failed");
     
     auto ft_guard = Rk::guard (
       [&ft] { FT_Done_FreeType (ft); }
     );
 
+    // Load face
     FT_Face face;
     Rk::ShortString <512> path_buf = path;
     error = FT_New_Face (ft, path_buf.c_str (), 0, &face);
     if (error)
-      throw std::runtime_error ("X Co-Font: create_font - FT_New_Face failed");
+      throw std::runtime_error ("Co-Font: create_font - FT_New_Face failed");
 
+    // Set size
     if (mode == fontsize_points)
     {
       uint dpi = 96;
       error = FT_Set_Char_Size (face, 0, size << 6, dpi, dpi);
       if (error)
-        throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
+        throw std::runtime_error ("Co-Font: create_font - FT_Set_Char_Size failed");
       approx_height = (size * dpi) / 72;
     }
     else
     {
       error = FT_Set_Pixel_Sizes (face, 0, size);
       if (error)
-        throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
+        throw std::runtime_error ("Co-Font: create_font - FT_Set_Char_Size failed");
       approx_height = size;
     }
 
-    std::map <uint, uint> glyph_remaps; // Remaps FreeType glyph indices to private glyph indices
+    // Map codepoints to glyph indices
+    std::map <uint, uint> glyph_remaps; 
     
     uint glyph_count = 0;
 
-    for (auto range = ranges; range != end; range++)
+    for (auto range = code_ranges.begin (); range != code_ranges.end (); range++)
     {
       for (char32 cp = range -> begin; cp != range -> end; cp++)
         map_char (face, cp, char_map, glyph_remaps, glyph_count);
@@ -483,6 +530,7 @@ namespace Co
     // Make sure we have U+FFFD REPLACEMENT CHARACTER
     map_char (face, 0xfffd, char_map, glyph_remaps, glyph_count);
 
+    // Render necessary glyphs
     std::vector <Glyph> glyphs;
     glyphs.resize (glyph_count);
 
@@ -490,7 +538,7 @@ namespace Co
     {
       error = FT_Load_Glyph (face, remap -> first, FT_LOAD_RENDER | FT_LOAD_NO_AUTOHINT);
       if (error)
-        throw std::runtime_error ("X Co-Font: create_font - FT_Load_Glyph failed");
+        throw std::runtime_error ("Co-Font: create_font - FT_Load_Glyph failed");
 
       glyphs [remap -> second].init (face -> glyph, remap -> second);
     }
@@ -508,11 +556,6 @@ namespace Co
     // Pack
     float efficiency = make_atlas (glyphs.begin (), glyphs.end (), threshold, image.width, image.height);
 
-    //auto lock = log ();
-      //lock.set_precision (2);
-      //lock << "- Co-Font: " << path << " packed to " << efficiency * 100.0f << "% efficiency\n";
-    //lock.clear ();
-
     // Render the packed glyphs to an image
     image.pixel_type   = Rk::i_8;
     image.row_stride   = image.width;
@@ -524,6 +567,9 @@ namespace Co
 
     for (auto iter = glyphs.begin (); iter != glyphs.end (); iter++)
       iter -> blit (image);
+
+    // Dump packed glyph map
+    #ifdef CO_DEBUG
 
     #pragma pack (push)
     #pragma pack (1)
@@ -546,16 +592,12 @@ namespace Co
 
     #pragma pack (pop)
 
-    // DEBUG: Dump image 
     TGAHeader head = {
       0,
-      1,
-      1,
+      1, 1,
       0, 256, 24,
-      0,
-      0,
-      image.width,
-      image.height,
+      0, 0,
+      image.width, image.height,
       8,
       0x20
     };
@@ -568,10 +610,12 @@ namespace Co
       palette [i * 3 + 2] = u8 (i);
     }
 
-    Rk::File dump (path.string () + ".dump.tga", Rk::File::open_replace_or_create);
+    Rk::File dump (path + ".dump.tga", Rk::File::open_replace_or_create);
     dump.put (head)
         .put (palette)
         .write (image.data, image.size ());
+
+    #endif // CO_DEBUG
 
     // Re-sort glyphs by private index for use and caching
     std::sort (
@@ -583,87 +627,18 @@ namespace Co
       }
     );
 
-    GlyphMetrics::Vector metrics (glyph_count);
+    // Build glyph metrics
+    GlyphMetrics::Vector new_metrics (glyph_count);
     uint dest_index = 0;
     for (auto source = glyphs.begin (); source != glyphs.end (); source++)
-    {
-      metrics [dest_index] = source -> get_metrics ();
-      //metrics [dest_index].y = image.height - metrics [dest_index].y;
-      dest_index++;
-    }
+      new_metrics [dest_index++] = source -> get_metrics ();
 
-    return std::move (metrics);
-  }
-
-  //
-  // = FontImpl ======================================================================================================
-  //
-  class FontImpl :
-    public Font
-  {
-    // Parameters
-    std::string             path;
-    uint                    size,
-                            index;
-    FontSizeMode            mode;
-    std::vector <CodeRange> code_ranges;
-
-    // Data
-    std::unordered_map <char32, u32> char_map;
-    GlyphMetrics::Vector             mets;
-    TexImage::Ptr                    tex;
-    uint                             font_height;
-    mutable Rk::Mutex                mutex;
-    std::unordered_map <u64, v2i>    kerning_pairs;
-
-    // Management
-    virtual void retrieve (TexImage::Ptr& tex, GlyphMetrics::Vector& mets, uint& font_height) const;
-
-    Character translate_codepoint (char32 cp, u32& prev_index) const;
-
-    virtual void translate_codepoints (const char32* begin, const char32* end, Character* chars) const;
-    virtual void translate_utf16      (const char16* utf16, const char16* end, Character* chars) const;
-
-    template <typename Iter>
-    FontImpl (
-      Rk::StringRef  new_path,
-      uint           new_size,
-      FontSizeMode   new_mode,
-      Iter           ranges,
-      Iter           end,
-      uint           new_index
-    );
-
-  public:
-    void construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx);
-
-    template <typename Iter>
-    static Ptr create (
-      WorkQueue&     queue,
-      Rk::StringRef  path,
-      uint           size,
-      FontSizeMode   mode,
-      Iter           ranges,
-      Iter           end,
-      uint           index
-    );
-
-  }; // class Font
-
-  //
-  // construct
-  //
-  void FontImpl::construct (std::shared_ptr <FontImpl>& self, WorkQueue& queue, LoadContext& ctx)
-  {
-    Rk::Image image;
-    uint approx_height;
-    auto mets = create_font (char_map, kerning_pairs, image, path, index, size, mode, code_ranges.begin (), code_ranges.end (), 0.95f, approx_height);
-    
+    // Upload texture
     auto tex = ctx.rc.create_tex_rectangle (queue, texformat_a8, image.width, image.height, texwrap_clamp, image.data, image.size ());
     
     auto lock = mutex.get_lock ();
     font_height = approx_height;
-    this -> mets = std::move (mets);
+    this -> mets = std::move (new_metrics);
     this -> tex  = std::move (tex);
   }
 
@@ -708,7 +683,7 @@ namespace Co
   void FontImpl::translate_codepoints (const char32* begin, const char32* end, Character* chars) const
   {
     if (!begin || !end || !chars)
-      throw std::invalid_argument ("Co::Font::translate_codepoints - null pointer");
+      throw std::invalid_argument ("Co-Font: translate_codepoints - null pointer");
 
     Rk::check_range (begin, end);
 
@@ -724,7 +699,7 @@ namespace Co
   void FontImpl::translate_utf16 (const char16* begin, const char16* end, Character* chars) const
   {
     if (!begin || !end || !chars)
-      throw std::invalid_argument ("Co::Font::translate_codepoints - null pointer");
+      throw std::invalid_argument ("Co-Font: translate_codepoints - null pointer");
 
     Rk::check_range (begin, end);
 
@@ -742,7 +717,7 @@ namespace Co
         if (unit < 0xdc00) // lead surrogate
         {
           if (in_pair)
-            throw std::runtime_error ("Co::Font: translate_utf16 - invalid string - double lead surrogate");
+            throw std::runtime_error ("Co-Font: translate_utf16 - invalid string - double lead surrogate");
 
           cp = unit - 0xd800;
           in_pair = true;
@@ -750,7 +725,7 @@ namespace Co
         else
         {
           if (!in_pair)
-            throw std::runtime_error ("Co::Font: translate_utf16 - invalid_string - unpaired trail surrogate");
+            throw std::runtime_error ("Co-Font: translate_utf16 - invalid_string - unpaired trail surrogate");
 
           cp = (cp << 10) | (unit - 0xdc00);
           in_pair = false;
