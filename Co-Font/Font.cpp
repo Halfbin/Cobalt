@@ -439,11 +439,21 @@ namespace Co
     if (error)
       throw std::runtime_error ("X Co-Font: create_font - FT_New_Face failed");
 
-    error = FT_Set_Char_Size (face, 0, size << 6, 96, 96);
-    if (error)
-      throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
-
-    approx_height = face -> size -> metrics.y_ppem;
+    if (mode == fontsize_points)
+    {
+      uint dpi = 96;
+      error = FT_Set_Char_Size (face, 0, size << 6, dpi, dpi);
+      if (error)
+        throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
+      approx_height = (size * dpi) / 72;
+    }
+    else
+    {
+      error = FT_Set_Pixel_Sizes (face, 0, size);
+      if (error)
+        throw std::runtime_error ("X Co-Font: create_font - FT_Set_Char_Size failed");
+      approx_height = size;
+    }
 
     std::map <uint, uint> glyph_remaps; // Remaps FreeType glyph indices to private glyph indices
     
