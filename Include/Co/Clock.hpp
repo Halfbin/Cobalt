@@ -14,15 +14,9 @@ namespace Co
 {
   extern "C"
   {
-  /*__declspec(dllimport) __stdcall i32 QueryPerformanceFrequency (u64*);
-    __declspec(dllimport) __stdcall i32 QueryPerformanceCounter (u64*);*/
-
     void* const hkey_local_machine ((void*) uptr (0x80000002));
     enum WinRegConstants : u32 { rrf_rt_reg_dword = 0x10 };
     __declspec(dllimport) i32 __stdcall RegGetValueA (void* key, const char* sub, const char* value, u32 flags, u32* type, void* out, u32* size);
-
-    __declspec(dllimport) u32 __stdcall timeBeginPeriod (u32);
-    __declspec(dllimport) u32 __stdcall timeEndPeriod (u32);
 
     __declspec(dllimport) i32 __stdcall QueryPerformanceFrequency (u64*);
     __declspec(dllimport) i32 __stdcall QueryPerformanceCounter (u64*);
@@ -130,21 +124,7 @@ namespace Co
 
   };
 
-  class MasterClock :
-    public Clock
-  {
-  public:
-    MasterClock ()
-    {
-      timeBeginPeriod (1);
-    }
-    
-    ~MasterClock ()
-    {
-      timeEndPeriod (1);
-    }
-
-  };
+  typedef Clock MasterClock;
 
 } // namespace Co
 
