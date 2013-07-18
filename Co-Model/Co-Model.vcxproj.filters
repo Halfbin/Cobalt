@@ -5,5 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Co\Model.hpp" />
+    <ClInclude Include="..\Include\Co\GeomFile.hpp" />
   </ItemGroup>
 </Project>
