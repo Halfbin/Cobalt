@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7A374145-D2BE-4E29-A8C5-972276ED6DA9}</ProjectGuid>
-    <RootNamespace>CoCommon</RootNamespace>
+    <ProjectGuid>{0DFFCF24-0D9D-4B56-B3AE-A10FB6B5C6E5}</ProjectGuid>
+    <RootNamespace>PyrCommon</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -69,18 +69,7 @@
     <Import Project="..\Cobalt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IgnoreImportLibrary>true</IgnoreImportLibrary>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IgnoreImportLibrary>true</IgnoreImportLibrary>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IgnoreImportLibrary>true</IgnoreImportLibrary>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IgnoreImportLibrary>true</IgnoreImportLibrary>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -88,7 +77,6 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -98,7 +86,6 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,7 +99,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -126,29 +112,15 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Co\Clock.hpp" />
-    <ClInclude Include="..\Include\Co\Engine.hpp" />
-    <ClInclude Include="..\Include\Co\Entity.hpp" />
-    <ClInclude Include="..\Include\Co\EntityManager.hpp" />
-    <ClInclude Include="..\Include\Co\Game.hpp" />
-    <ClInclude Include="..\Include\Co\InputSink.hpp" />
-    <ClInclude Include="..\Include\Co\Log.hpp" />
-    <ClInclude Include="..\Include\Co\ModuleManager.hpp" />
-    <ClInclude Include="..\Include\Co\Profile.hpp" />
-    <ClInclude Include="..\Include\Co\PropMap.hpp" />
-    <ClInclude Include="..\Include\Co\ReplicationServer.hpp" />
-    <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
-    <ClInclude Include="..\Include\Co\Spatial.hpp" />
-    <ClInclude Include="..\Include\Co\UIInput.hpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="Proxies.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Co-Rk\Co-Rk.vcxproj">
-      <Project>{224a74a3-9981-4fb2-85e9-b073d3ca98b1}</Project>
-    </ProjectReference>
+    <ClInclude Include="..\Include\Pyr\Common.hpp" />
+    <ClInclude Include="..\Include\Pyr\TestProxy.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

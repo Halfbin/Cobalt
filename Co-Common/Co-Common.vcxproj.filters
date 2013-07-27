@@ -12,5 +12,8 @@
     <ClInclude Include="..\Include\Co\PropMap.hpp" />
     <ClInclude Include="..\Include\Co\ResourceFactory.hpp" />
     <ClInclude Include="..\Include\Co\Spatial.hpp" />
+    <ClInclude Include="..\Include\Co\Entity.hpp" />
+    <ClInclude Include="..\Include\Co\ReplicationServer.hpp" />
+    <ClInclude Include="..\Include\Co\EntityManager.hpp" />
   </ItemGroup>
 </Project>

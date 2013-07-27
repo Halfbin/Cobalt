@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Proxies">
+      <UniqueIdentifier>{11c1550f-ae5b-4342-9ebf-2d2872ddfc5b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Proxies.cpp">
+      <Filter>Proxies</Filter>
+    </ClCompile>
+    <ClCompile Include="Common.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Pyr\TestProxy.hpp">
+      <Filter>Proxies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Pyr\Common.hpp" />
+  </ItemGroup>
+</Project>

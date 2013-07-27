@@ -26,17 +26,18 @@ struct Message
 
 extern "C"
 {
-  #define fromdll __declspec(dllimport)
-  fromdll void  __stdcall PostQuitMessage (u32);
-  fromdll i32   __stdcall PeekMessageW (Message*, void*, u32, u32, u32);
-  fromdll i32   __stdcall DispatchMessageW (const Message*);
-  fromdll i32   __stdcall ShowCursor (i32);
-  fromdll i32   __stdcall GetKeyboardState (u8*);
-  fromdll i32   __stdcall GetSystemMetrics (i32);
-  fromdll i32   __stdcall GetCursorPos (Point*);
-  fromdll i32   __stdcall SetCursorPos (i32, i32);
-  fromdll void* __stdcall GetCurrentThread ();
-  fromdll i32   __stdcall SetThreadPriority (void*, i32);
+  #define fromdll(R) __declspec(dllimport) R __stdcall
+
+  fromdll (void)  PostQuitMessage (u32);
+  fromdll (i32)   PeekMessageW (Message*, void*, u32, u32, u32);
+  fromdll (i32)   DispatchMessageW (const Message*);
+  fromdll (i32)   ShowCursor (i32);
+  fromdll (i32)   GetKeyboardState (u8*);
+  fromdll (i32)   GetSystemMetrics (i32);
+  fromdll (i32)   GetCursorPos (Point*);
+  fromdll (i32)   SetCursorPos (i32, i32);
+  fromdll (void*) GetCurrentThread ();
+  fromdll (i32)   SetThreadPriority (void*, i32);
 }
 
 enum Messages
